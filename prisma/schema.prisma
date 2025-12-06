@@ -11,7 +11,9 @@ model User {
   id        String   @id @default(uuid()) @db.Uuid
   email     String   @unique
   password  String   // Hashed password
-  fullName  String?
+  firstName String?
+  lastName  String?
+  fullName  String?  // Keeping for backward compatibility or computed use
   isActive  Boolean  @default(true)
 
   userRoles UserRole[]
