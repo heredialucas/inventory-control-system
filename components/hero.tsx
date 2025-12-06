@@ -1,34 +1,9 @@
-import { NextLogo } from "./next-logo";
-
 export function Hero() {
   return (
-    <div className="flex flex-col gap-16 items-center">
-      <div className="flex gap-8 justify-center items-center">
-        <span className="border-l rotate-45 h-6" />
-        <a href="https://nextjs.org/" target="_blank" rel="noreferrer">
-          <NextLogo />
-        </a>
-      </div>
-      <h1 className="sr-only">Plantilla de inicio de Supabase y Next.js</h1>
-      <p className="text-3xl lg:text-4xl !leading-tight mx-auto max-w-xl text-center">
-        La forma más rápida de construir aplicaciones con{" "}
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Supabase
-        </a>{" "}
-        y{" "}
-        <a
-          href="https://nextjs.org/"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Next.js
-        </a>
+    <div className="flex flex-col gap-8 md:gap-12 lg:gap-16 items-center">
+      <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold text-center mx-auto max-w-4xl">DIRECCIÓN DE MATERIALES Y CONSTRUCCIONES ESCOLARES</h1>
+      <p className="text-lg md:text-xl lg:text-2xl text-center mx-auto max-w-xl">
+        Sistema de Gestión de Control de Stock
       </p>
       <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
     </div>
