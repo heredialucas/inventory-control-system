@@ -5,6 +5,15 @@ import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+export async function getProducts() {
+    const products = await inventoryService.getProducts();
+    return products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        sku: p.sku,
+    }));
+}
+
 export async function createProductAction(formData: FormData) {
     const user = await getCurrentUser();
     if (!user || !hasPermission(user, "inventory.create")) {

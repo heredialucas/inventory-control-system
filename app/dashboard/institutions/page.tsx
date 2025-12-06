@@ -1,0 +1,98 @@
+import { getInstitutions } from "@/app/actions/institutions";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Building2 } from "lucide-react";
+import Link from "next/link";
+
+export const metadata = {
+    title: "Institutions | Inventory Control",
+    description: "Manage institutions and deliveries",
+};
+
+export default async function InstitutionsPage() {
+    const institutions = await getInstitutions();
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Institutions</h1>
+                    <p className="text-muted-foreground">
+                        Manage institutions that receive deliveries
+                    </p>
+                </div>
+                <Button>
+                    <Building2 className="mr-2 h-4 w-4" />
+                    Add Institution
+                </Button>
+            </div>
+
+            {institutions.length === 0 ? (
+                <Card>
+                    <CardContent className="py-12 text-center">
+                        <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No institutions found</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Create an institution to start managing deliveries
+                        </p>
+                    </CardContent>
+                </Card>
+            ) : (
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Code</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Contact</TableHead>
+                                <TableHead>Deliveries</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {institutions.map((institution) => (
+                                <TableRow key={institution.id}>
+                                    <TableCell className="font-mono font-medium">
+                                        <Link
+                                            href={`/dashboard/institutions/${institution.id}`}
+                                            className="hover:underline"
+                                        >
+                                            {institution.code}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell>{institution.name}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {institution.type || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {institution.contactName || "-"}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary">
+                                            {institution._count.deliveries}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={institution.isActive ? "default" : "secondary"}>
+                                            {institution.isActive ? "Active" : "Inactive"}
+                                        </Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+        </div>
+    );
+}

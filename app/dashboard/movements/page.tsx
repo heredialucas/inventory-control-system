@@ -1,0 +1,126 @@
+import { getStockMovements } from "@/app/actions/traceability";
+import { getWarehouses } from "@/app/actions/warehouses";
+import { getProducts } from "@/app/actions/inventory";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Activity, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
+export const metadata = {
+    title: "Stock Movements | Inventory Control",
+    description: "Track all stock movements and changes",
+};
+
+export default async function MovementsPage() {
+    const movements = await getStockMovements();
+    const warehouses = await getWarehouses();
+    const products = await getProducts();
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Stock Movements</h1>
+                    <p className="text-muted-foreground">
+                        Complete traceability of all inventory movements
+                    </p>
+                </div>
+                <Activity className="h-8 w-8 text-muted-foreground" />
+            </div>
+
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="grid gap-4 md:grid-cols-3 mb-6">
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Total Movements</p>
+                            <p className="text-2xl font-bold">{movements.length}</p>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Stock In</p>
+                            <p className="text-2xl font-bold text-green-600">
+                                {movements.filter((m) => m.type === "IN").length}
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Stock Out</p>
+                            <p className="text-2xl font-bold text-red-600">
+                                {movements.filter((m) => m.type === "OUT").length}
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {movements.length === 0 ? (
+                <Card>
+                    <CardContent className="py-12 text-center">
+                        <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No movements found</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Stock movements will appear here
+                        </p>
+                    </CardContent>
+                </Card>
+            ) : (
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Product</TableHead>
+                                <TableHead>Quantity</TableHead>
+                                <TableHead>Warehouse</TableHead>
+                                <TableHead>User</TableHead>
+                                <TableHead>Reason</TableHead>
+                                <TableHead>Date</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {movements.map((movement) => (
+                                <TableRow key={movement.id}>
+                                    <TableCell>
+                                        <Badge variant={movement.type === "IN" ? "default" : "secondary"}>
+                                            {movement.type === "IN" ? (
+                                                <ArrowUpRight className="w-3 h-3 mr-1" />
+                                            ) : (
+                                                <ArrowDownRight className="w-3 h-3 mr-1" />
+                                            )}
+                                            {movement.type}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div>
+                                            <p className="font-medium">{movement.product.name}</p>
+                                            <p className="text-xs text-muted-foreground font-mono">
+                                                {movement.product.sku}
+                                            </p>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="font-medium">{movement.quantity}</TableCell>
+                                    <TableCell className="text-sm">
+                                        {movement.warehouse?.name || "N/A"}
+                                    </TableCell>
+                                    <TableCell className="text-sm">{movement.user.email}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
+                                        {movement.reason || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {formatDistanceToNow(new Date(movement.createdAt), { addSuffix: true })}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+        </div>
+    );
+}

@@ -6,6 +6,13 @@ import {
     LayoutDashboard,
     Package,
     Users,
+    Warehouse,
+    ArrowRightLeft,
+    ShoppingCart,
+    Building2,
+    Truck,
+    BarChart3,
+    Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +31,46 @@ const sidebarItems = [
         title: "Inventario",
         href: "/dashboard/inventory",
         icon: Package,
+    },
+    {
+        title: "Depósitos",
+        href: "/dashboard/warehouses",
+        icon: Warehouse,
+    },
+    {
+        title: "Transferencias",
+        href: "/dashboard/warehouses/transfers",
+        icon: ArrowRightLeft,
+    },
+    {
+        title: "Proveedores",
+        href: "/dashboard/suppliers",
+        icon: Users,
+    },
+    {
+        title: "Compras",
+        href: "/dashboard/purchases",
+        icon: ShoppingCart,
+    },
+    {
+        title: "Instituciones",
+        href: "/dashboard/institutions",
+        icon: Building2,
+    },
+    {
+        title: "Entregas",
+        href: "/dashboard/deliveries",
+        icon: Truck,
+    },
+    {
+        title: "Reportes",
+        href: "/dashboard/reports",
+        icon: BarChart3,
+    },
+    {
+        title: "Movimientos",
+        href: "/dashboard/movements",
+        icon: Activity,
     },
 ];
 
