@@ -5,15 +5,15 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function loginAction(formData: FormData) {
-    const email = formData.get("email") as string;
+    const identifier = formData.get("identifier") as string;
     const password = formData.get("password") as string;
 
-    if (!email || !password) {
+    if (!identifier || !password) {
         return { error: "Faltan datos" };
     }
 
     try {
-        const { token } = await authService.login(email, password);
+        const { token } = await authService.login(identifier, password);
 
         // Set HTTP-only cookie
         const cookieStore = await cookies();
@@ -30,15 +30,15 @@ export async function loginAction(formData: FormData) {
     }
 }
 
-export async function registerAction(data: { email: string, password: string }) {
-    const { email, password } = data;
+export async function registerAction(data: { email: string, password: string, username?: string }) {
+    const { email, password, username } = data;
 
     if (!email || !password) {
         return { error: "Faltan datos" };
     }
 
     try {
-        await authService.register(email, password);
+        await authService.register(email, password, username);
         // Auto-login after register
         const { token } = await authService.login(email, password);
 

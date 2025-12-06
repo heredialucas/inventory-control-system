@@ -1,32 +1,14 @@
-import { config } from "dotenv";
-config({ path: ".env.local" });
-config({ path: ".env" });
 import { PrismaClient } from "@prisma/client";
-import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
 
-const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 async function main() {
-    console.log("Start seeding...");
-
-    // 1. Define Permissions
+    // Define permissions
     const permissions = [
-        // Dashboard / General
-        { action: "dashboard.view", description: "Ver el dashboard principal" },
-
-        // Inventory
         { action: "inventory.view", description: "Ver inventario" },
-        { action: "inventory.create", description: "Crear/Editar productos" },
+        { action: "inventory.create", description: "Crear productos" },
+        { action: "inventory.edit", description: "Editar productos" },
         { action: "inventory.delete", description: "Eliminar productos" },
-
-        // Users (Management)
-        { action: "users.view", description: "Ver usuarios y roles" },
-        { action: "users.create", description: "Crear/Editar usuarios y roles" },
-        { action: "users.delete", description: "Eliminar usuarios" },
     ];
 
     for (const perm of permissions) {
@@ -37,93 +19,82 @@ async function main() {
         });
     }
 
-    const allPerms = await prisma.permission.findMany();
-
-    // 2. Define Roles
-    const roles = [
-        {
-            name: "Administrador",
-            description: "Acceso total al sistema",
-            permissions: allPerms.map(p => p.id), // All permissions
-        },
-        {
-            name: "Encargado",
-            description: "Gestión de inventario y ver dashboard",
-            permissions: allPerms
-                .filter(p => ["dashboard.view", "inventory.view", "inventory.create", "inventory.delete"].includes(p.action))
-                .map(p => p.id),
-        },
-        {
-            name: "Observador",
-            description: "Solo ver inventario y dashboard",
-            permissions: allPerms
-                .filter(p => ["dashboard.view", "inventory.view"].includes(p.action))
-                .map(p => p.id),
-        },
-    ];
-
-    for (const role of roles) {
-        const existingRole = await prisma.role.findUnique({
-            where: { name: role.name }
-        });
-
-        if (existingRole) {
-            console.log(`Role ${role.name} already exists.`);
-        } else {
-            await prisma.role.create({
-                data: {
-                    name: role.name,
-                    description: role.description,
-                    permissions: {
-                        create: role.permissions.map(pid => ({
-                            permission: { connect: { id: pid } }
-                        }))
-                    }
-                }
-            });
-            console.log(`Created role: ${role.name}`);
-        }
-    }
-
-    // 3. Assign Admin Role to specific user
-    const targetEmail = "heredialucasfac22@gmail.com";
-    const user = await prisma.user.findUnique({
-        where: { email: targetEmail }
+    // Create Roles
+    const adminRole = await prisma.role.upsert({
+        where: { name: "ADMIN" },
+        update: {},
+        create: { name: "ADMIN", description: "Administrador del sistema" },
     });
 
-    if (user) {
-        const adminRole = await prisma.role.findUnique({
-            where: { name: "Administrador" }
-        });
+    const managerRole = await prisma.role.upsert({
+        where: { name: "MANAGER" },
+        update: {},
+        create: { name: "MANAGER", description: "Gestor de inventario" },
+    });
 
-        if (adminRole) {
-            // Check if user already has the role
-            const userRole = await prisma.userRole.findUnique({
-                where: {
-                    userId_roleId: {
-                        userId: user.id,
-                        roleId: adminRole.id
-                    }
+    const viewerRole = await prisma.role.upsert({
+        where: { name: "VIEWER" },
+        update: {},
+        create: { name: "VIEWER", description: "Visualizador" },
+    });
+
+    // Assign Permissions to Roles
+    const allPermissions = await prisma.permission.findMany();
+
+    // ADMIN gets everything
+    for (const p of allPermissions) {
+        await prisma.rolePermission.upsert({
+            where: {
+                roleId_permissionId: {
+                    roleId: adminRole.id,
+                    permissionId: p.id
                 }
-            });
-
-            if (!userRole) {
-                await prisma.userRole.create({
-                    data: {
-                        userId: user.id,
-                        roleId: adminRole.id
-                    }
-                });
-                console.log(`Assigned 'Administrador' role to ${targetEmail}`);
-            } else {
-                console.log(`User ${targetEmail} already has 'Administrador' role`);
+            },
+            update: {},
+            create: {
+                roleId: adminRole.id,
+                permissionId: p.id
             }
-        }
-    } else {
-        console.warn(`User with email ${targetEmail} not found. Skipping role assignment.`);
+        });
     }
 
-    console.log("Seeding finished.");
+    // MANAGER gets inventory.*
+    const inventoryPermissions = allPermissions.filter(p => p.action.startsWith("inventory."));
+    for (const p of inventoryPermissions) {
+        await prisma.rolePermission.upsert({
+            where: {
+                roleId_permissionId: {
+                    roleId: managerRole.id,
+                    permissionId: p.id
+                }
+            },
+            update: {},
+            create: {
+                roleId: managerRole.id,
+                permissionId: p.id
+            }
+        });
+    }
+
+    // VIEWER gets inventory.view
+    const viewPermission = allPermissions.find(p => p.action === "inventory.view");
+    if (viewPermission) {
+        await prisma.rolePermission.upsert({
+            where: {
+                roleId_permissionId: {
+                    roleId: viewerRole.id,
+                    permissionId: viewPermission.id
+                }
+            },
+            update: {},
+            create: {
+                roleId: viewerRole.id,
+                permissionId: viewPermission.id
+            }
+        });
+    }
+
+    console.log("Seeding completed.");
 }
 
 main()

@@ -9,16 +9,24 @@ const SECRET_KEY = new TextEncoder().encode(
 const ALG = "HS256";
 
 export const authService = {
-    async register(email: string, password: string): Promise<any> {
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-            throw new Error("El usuario ya existe");
+    async register(email: string, password: string, username?: string): Promise<any> {
+        const existingEmail = await prisma.user.findUnique({ where: { email } });
+        if (existingEmail) {
+            throw new Error("El email ya está registrado");
+        }
+
+        if (username) {
+            const existingUsername = await prisma.user.findUnique({ where: { username } });
+            if (existingUsername) {
+                throw new Error("El nombre de usuario ya está en uso");
+            }
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({
             data: {
                 email,
+                username,
                 password: hashedPassword,
             },
         });
@@ -26,8 +34,16 @@ export const authService = {
         return user;
     },
 
-    async login(email: string, password: string): Promise<{ user: any; token: string }> {
-        const user = await prisma.user.findUnique({ where: { email } });
+    async login(identifier: string, password: string): Promise<{ user: any; token: string }> {
+        const user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: identifier },
+                    { username: identifier }
+                ]
+            }
+        });
+
         if (!user) {
             throw new Error("Credenciales inválidas");
         }
@@ -37,7 +53,7 @@ export const authService = {
             throw new Error("Credenciales inválidas");
         }
 
-        const token = await new SignJWT({ userId: user.id, email: user.email })
+        const token = await new SignJWT({ userId: user.id, email: user.email, username: user.username })
             .setProtectedHeader({ alg: ALG })
             .setIssuedAt()
             .setExpirationTime("7d")

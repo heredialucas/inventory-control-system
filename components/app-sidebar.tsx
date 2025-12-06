@@ -27,11 +27,11 @@ const sidebarItems = [
     },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
     const pathname = usePathname();
 
     return (
-        <aside className="w-64 border-r bg-card min-h-screen flex flex-col hidden md:flex">
+        <aside className={cn("w-64 bg-card flex flex-col", className)}>
             <div className="p-6 border-b flex items-center justify-center">
                 <h2 className="font-bold text-xl tracking-tight">Gestión</h2>
             </div>
@@ -44,6 +44,7 @@ export function AppSidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
+                            onClick={onNavigate}
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                                 isActive

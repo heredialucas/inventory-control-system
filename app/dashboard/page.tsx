@@ -10,7 +10,7 @@ export default async function DashboardPage() {
                 Bienvenido al sistema de gestión, {user?.email}.
             </p>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {/* Placeholder cards */}
                 <div className="p-6 border rounded-lg shadow-sm bg-card">
                     <h3 className="font-semibold mb-2">Inventario</h3>

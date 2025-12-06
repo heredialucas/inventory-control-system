@@ -10,37 +10,87 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { deleteUserAction } from "@/app/actions/users";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { EditUserDialog } from "@/components/users/edit-user-dialog";
 
 export function UserList({ users, roles }: { users: any[], roles?: any[] }) {
+    if (users.length === 0) {
+        return (
+            <div className="text-center p-8 border rounded-lg text-muted-foreground bg-card">
+                No hay usuarios registrados.
+            </div>
+        );
+    }
+
     return (
-        <div className="rounded-md border">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Roles</TableHead>
-                        <TableHead>Fecha Creación</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {users.length === 0 ? (
+        <>
+            {/* Desktop Table View */}
+            <div className="rounded-md border hidden md:block bg-card">
+                <Table>
+                    <TableHeader>
                         <TableRow>
-                            <TableCell colSpan={5} className="text-center h-24">
-                                No hay usuarios registrados.
-                            </TableCell>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Nombre</TableHead>
+                            <TableHead>Roles</TableHead>
+                            <TableHead>Fecha Creación</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
-                    ) : (
-                        users.map((user) => (
+                    </TableHeader>
+                    <TableBody>
+                        {users.map((user) => (
                             <UserRow key={user.id} user={user} roles={roles || []} />
-                        ))
-                    )}
-                </TableBody>
-            </Table>
-        </div>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+                {users.map((user) => (
+                    <Card key={user.id}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                {user.firstName || user.lastName
+                                    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                                    : "Sin nombre"
+                                }
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xs text-muted-foreground mb-4">{user.email}</div>
+                            <div className="flex flex-wrap gap-1 mb-4">
+                                {user.userRoles?.length > 0 ? (
+                                    user.userRoles.map((ur: any) => (
+                                        <Badge key={ur.role.id} variant="secondary" className="text-xs">
+                                            {ur.role.name}
+                                        </Badge>
+                                    ))
+                                ) : (
+                                    <span className="text-muted-foreground text-xs">Sin roles</span>
+                                )}
+                            </div>
+                            <div className="flex items-center justify-between mt-4">
+                                <span className="text-xs text-muted-foreground">
+                                    {new Date(user.createdAt).toLocaleDateString()}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <EditUserDialog user={user} roles={roles || []} />
+                                    <form action={async () => {
+                                        "use server";
+                                        await deleteUserAction(user.id);
+                                    }}>
+                                        <Button variant="ghost" size="icon" type="submit">
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </form>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </>
     );
 }
 

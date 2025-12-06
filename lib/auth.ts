@@ -1,6 +1,5 @@
 import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 import { authService } from "@/services/auth-service";
 
@@ -47,8 +46,10 @@ export async function getCurrentUser() {
     return user;
 }
 
-export async function signOut() {
-    const cookieStore = await cookies();
-    cookieStore.delete("session_token");
-    redirect("/auth/login");
+export function hasPermission(user: any, action: string): boolean {
+    if (!user || !user.userRoles) return false;
+
+    return user.userRoles.some((ur: any) =>
+        ur.role.permissions.some((rp: any) => rp.permission.action === action)
+    );
 }

@@ -21,6 +21,7 @@ export function SignUpForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export function SignUpForm({
     }
 
     try {
-      const result = await registerAction({ email, password });
+      const result = await registerAction({ email, username, password });
       if (result?.error) throw new Error(result.error);
 
       router.push("/dashboard");
@@ -69,6 +70,16 @@ export function SignUpForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="username">Usuario (opcional)</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="nombreusuario"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">

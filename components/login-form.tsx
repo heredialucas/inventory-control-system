@@ -20,7 +20,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +32,7 @@ export function LoginForm({
     setError(null);
 
     const formData = new FormData();
-    formData.append("email", email);
+    formData.append("identifier", identifier);
     formData.append("password", password);
 
     try {
@@ -53,21 +53,21 @@ export function LoginForm({
         <CardHeader>
           <CardTitle className="text-2xl">Iniciar sesión</CardTitle>
           <CardDescription>
-            Ingresa tu correo electrónico para iniciar sesión en tu cuenta
+            Ingresa tu correo o usuario para iniciar sesión
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Correo electrónico</Label>
+                <Label htmlFor="identifier">Correo o Usuario</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="ejemplo@correo.com"
+                  id="identifier"
+                  type="text"
+                  placeholder="usuario@ejemplo.com o nombreusuario"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
