@@ -73,7 +73,7 @@ function RoleRow({ role, permissions }: { role: any, permissions: any[] }) {
                     "use server";
                     await deleteRoleAction(role.id);
                 }}>
-                    <Button variant="ghost" size="icon" type="submit" disabled={role.name === "Administrador"}>
+                    <Button variant="ghost" size="icon" type="submit" disabled={role.name === "ADMIN"}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                 </form>

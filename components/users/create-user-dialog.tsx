@@ -62,7 +62,7 @@ export function CreateUserDialog({ roles = [] }: { roles?: any[] }) {
     }
 
     // We DO NOT allow creating Admins explicitly as requested
-    const availableRoles = roles.filter(role => role.name !== "Administrador");
+    const availableRoles = roles.filter(role => role.name !== "ADMIN");
     // const availableRoles = roles;
 
     return (

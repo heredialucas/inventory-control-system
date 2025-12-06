@@ -1,4 +1,6 @@
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getDeliveries } from "@/app/actions/deliveries";
+import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +30,17 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
 };
 
 export default async function DeliveriesPage() {
+    const user = await getCurrentUser();
+
+    if (!user || !hasPermission(user, "deliveries.view")) {
+        return <UnauthorizedAccess action="ver" resource="entregas" />;
+    }
+
     const allDeliveries = await getDeliveries();
     const draftDeliveries = allDeliveries.filter((d) => d.status === "DRAFT");
     const confirmedDeliveries = allDeliveries.filter((d) => d.status === "CONFIRMED");
     const deliveredDeliveries = allDeliveries.filter((d) => d.status === "DELIVERED");
+    const canManage = hasPermission(user, "deliveries.manage");
 
     return (
         <div className="space-y-6">
@@ -42,10 +51,12 @@ export default async function DeliveriesPage() {
                         Manage deliveries to institutions
                     </p>
                 </div>
-                <Button>
-                    <Truck className="mr-2 h-4 w-4" />
-                    New Delivery
-                </Button>
+                {canManage && (
+                    <Button>
+                        <Truck className="mr-2 h-4 w-4" />
+                        New Delivery
+                    </Button>
+                )}
             </div>
 
             <Tabs defaultValue="all" className="w-full">

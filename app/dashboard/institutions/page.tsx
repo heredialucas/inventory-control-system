@@ -1,4 +1,6 @@
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getInstitutions } from "@/app/actions/institutions";
+import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +21,14 @@ export const metadata = {
 };
 
 export default async function InstitutionsPage() {
+    const user = await getCurrentUser();
+
+    if (!user || !hasPermission(user, "institutions.view")) {
+        return <UnauthorizedAccess action="ver" resource="instituciones" />;
+    }
+
     const institutions = await getInstitutions();
+    const canManage = hasPermission(user, "institutions.manage");
 
     return (
         <div className="space-y-6">
@@ -30,10 +39,12 @@ export default async function InstitutionsPage() {
                         Manage institutions that receive deliveries
                     </p>
                 </div>
-                <Button>
-                    <Building2 className="mr-2 h-4 w-4" />
-                    Add Institution
-                </Button>
+                {canManage && (
+                    <Button>
+                        <Building2 className="mr-2 h-4 w-4" />
+                        Add Institution
+                    </Button>
+                )}
             </div>
 
             {institutions.length === 0 ? (

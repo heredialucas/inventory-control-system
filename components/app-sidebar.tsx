@@ -84,9 +84,39 @@ export function AppSidebar({ className, onNavigate }: { className?: string; onNa
             </div>
             <nav className="flex-1 p-4 space-y-2">
                 {sidebarItems.map((item) => {
-                    const isActive = item.href === "/dashboard"
-                        ? pathname === "/dashboard"
-                        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    // Exact match for dashboard home
+                    if (item.href === "/dashboard") {
+                        const isActive = pathname === "/dashboard";
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={onNavigate}
+                                className={cn(
+                                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+                                    isActive
+                                        ? "bg-primary text-primary-foreground"
+                                        : "hover:bg-muted"
+                                )}
+                            >
+                                <item.icon className="h-5 w-5" />
+                                <span>{item.title}</span>
+                            </Link>
+                        );
+                    }
+
+                    // For other routes, check if it's an exact match OR a child route
+                    // But exclude cases where a longer route might match a shorter one
+                    // (e.g., /warehouses/transfers shouldn't activate /warehouses)
+                    const isExactMatch = pathname === item.href;
+                    const isChildRoute = pathname.startsWith(`${item.href}/`) &&
+                        !sidebarItems.some(otherItem =>
+                            otherItem.href !== item.href &&
+                            otherItem.href.startsWith(item.href) &&
+                            pathname.startsWith(otherItem.href)
+                        );
+                    const isActive = isExactMatch || isChildRoute;
+
                     return (
                         <Link
                             key={item.href}

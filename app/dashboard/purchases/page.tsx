@@ -1,4 +1,6 @@
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getPurchaseOrders } from "@/app/actions/purchases";
+import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,10 +31,17 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
 };
 
 export default async function PurchasesPage() {
+    const user = await getCurrentUser();
+
+    if (!user || !hasPermission(user, "purchases.view")) {
+        return <UnauthorizedAccess action="ver" resource="órdenes de compra" />;
+    }
+
     const allOrders = await getPurchaseOrders();
     const draftOrders = allOrders.filter((o) => o.status === "DRAFT");
     const pendingOrders = allOrders.filter((o) => o.status === "PENDING");
     const receivedOrders = allOrders.filter((o) => o.status === "RECEIVED" || o.status === "PARTIAL");
+    const canManage = hasPermission(user, "purchases.manage");
 
     return (
         <div className="space-y-6">
@@ -43,12 +52,14 @@ export default async function PurchasesPage() {
                         Manage purchase orders and inventory receiving
                     </p>
                 </div>
-                <Button asChild>
-                    <Link href="/dashboard/purchases/new">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        New Purchase Order
-                    </Link>
-                </Button>
+                {canManage && (
+                    <Button asChild>
+                        <Link href="/dashboard/purchases/new">
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                            New Purchase Order
+                        </Link>
+                    </Button>
+                )}
             </div>
 
             <Tabs defaultValue="all" className="w-full">

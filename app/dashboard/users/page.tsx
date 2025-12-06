@@ -22,7 +22,7 @@ export default async function UsersPage() {
         getUsersAction()
     ]);
 
-    const isAdmin = currentUser.userRoles.some((ur: any) => ur.role.name === "Administrador");
+    const isAdmin = currentUser.userRoles.some((ur: any) => ur.role.name === "ADMIN");
 
     if (isAdmin) {
         // Filter out current user from the list so they don't see themselves

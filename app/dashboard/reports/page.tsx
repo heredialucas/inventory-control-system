@@ -1,3 +1,4 @@
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import {
     getStockByCategory,
     getStockByWarehouse,
@@ -5,6 +6,7 @@ import {
     getTopProductsByMovement,
     getLowStockProducts,
 } from "@/app/actions/analytics";
+import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,6 +26,12 @@ export const metadata = {
 };
 
 export default async function ReportsPage() {
+    const user = await getCurrentUser();
+
+    if (!user || !hasPermission(user, "reports.view")) {
+        return <UnauthorizedAccess action="ver" resource="reportes y analíticas" />;
+    }
+
     const [
         stockByCategory,
         stockByWarehouse,

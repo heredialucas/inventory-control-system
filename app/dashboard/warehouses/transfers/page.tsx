@@ -1,7 +1,8 @@
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getTransfers, getWarehouses } from "@/app/actions/warehouses";
 import { TransferList } from "@/components/warehouses/transfer-list";
 import { TransferForm } from "@/components/warehouses/transfer-form";
-import { getCurrentUser } from "@/lib/auth";
+import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight } from "lucide-react";
@@ -13,12 +14,18 @@ export const metadata = {
 
 export default async function WarehouseTransfersPage() {
     const user = await getCurrentUser();
+
+    if (!user || !hasPermission(user, "transfers.view")) {
+        return <UnauthorizedAccess action="ver" resource="transferencias entre depósitos" />;
+    }
+
     const warehouses = await getWarehouses();
     const allTransfers = await getTransfers();
 
     const pendingTransfers = allTransfers.filter((t) => t.status === "PENDING");
     const inTransitTransfers = allTransfers.filter((t) => t.status === "IN_TRANSIT");
     const completedTransfers = allTransfers.filter((t) => t.status === "COMPLETED");
+    const canManage = hasPermission(user, "transfers.manage");
 
     return (
         <div className="space-y-6">
@@ -29,16 +36,18 @@ export default async function WarehouseTransfersPage() {
                         Manage stock movements between warehouse locations
                     </p>
                 </div>
-                <TransferForm
-                    warehouses={warehouses}
-                    userId={user!.id}
-                    trigger={
-                        <Button>
-                            <ArrowRight className="mr-2 h-4 w-4" />
-                            New Transfer
-                        </Button>
-                    }
-                />
+                {canManage && (
+                    <TransferForm
+                        warehouses={warehouses}
+                        userId={user!.id}
+                        trigger={
+                            <Button>
+                                <ArrowRight className="mr-2 h-4 w-4" />
+                                New Transfer
+                            </Button>
+                        }
+                    />
+                )}
             </div>
 
             <Tabs defaultValue="all" className="w-full">

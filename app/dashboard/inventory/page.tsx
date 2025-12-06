@@ -10,16 +10,17 @@ import {
 } from "@/components/ui/table";
 import { inventoryService } from "@/services/inventory-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/unauthorized-access";
 
 export default async function InventoryPage() {
     const user = await getCurrentUser();
+
     if (!user || !hasPermission(user, "inventory.view")) {
-        redirect("/dashboard");
+        return <UnauthorizedAccess action="ver" resource="inventario" />;
     }
 
     const products = await inventoryService.getProducts();
-    const canCreate = hasPermission(user, "inventory.create");
+    const canCreate = hasPermission(user, "inventory.manage");
 
     return (
         <div className="flex flex-col gap-6">

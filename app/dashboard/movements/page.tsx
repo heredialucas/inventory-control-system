@@ -1,6 +1,8 @@
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getStockMovements } from "@/app/actions/traceability";
 import { getWarehouses } from "@/app/actions/warehouses";
 import { getProducts } from "@/app/actions/inventory";
+import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,6 +22,13 @@ export const metadata = {
 };
 
 export default async function MovementsPage() {
+    const user = await getCurrentUser();
+
+    // Check basic view permission for movements/inventory
+    if (!user || !hasPermission(user, "inventory.view")) {
+        return <UnauthorizedAccess action="ver" resource="movimientos de stock" />;
+    }
+
     const movements = await getStockMovements();
     const warehouses = await getWarehouses();
     const products = await getProducts();
