@@ -136,11 +136,24 @@ export function ProductForm({ categories, warehouses, initialData }: ProductForm
                     {!initialData && (
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="warehouseId">
-                                    Depósito Inicial <span className="text-muted-foreground">(opcional)</span>
+                                <Label htmlFor="initialStock">
+                                    Stock Inicial *
                                 </Label>
-                                <Select name="warehouseId">
-                                    <SelectTrigger id="warehouseId">
+                                <Input
+                                    id="initialStock"
+                                    name="initialStock"
+                                    type="number"
+                                    min="1"
+                                    placeholder="1"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="initialWarehouseId">
+                                    Depósito Inicial *
+                                </Label>
+                                <Select name="initialWarehouseId" required>
+                                    <SelectTrigger id="initialWarehouseId">
                                         <SelectValue placeholder="Seleccionar depósito" />
                                     </SelectTrigger>
                                     <SelectContent>

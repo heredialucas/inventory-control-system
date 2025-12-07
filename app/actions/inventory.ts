@@ -35,8 +35,11 @@ export async function createProductAction(formData: FormData) {
         return { error: "Datos inválidos" };
     }
 
-    // Validation: if there's initial stock, must have warehouse
-    if (initialStock > 0 && !initialWarehouseId) { // Changed to initialWarehouseId
+    // Validation: Initial stock is mandatory and must be positive
+    if (initialStock <= 0) {
+        return { error: "El stock inicial debe ser mayor a 0" };
+    }
+    if (!initialWarehouseId) {
         return { error: "Debe seleccionar un depósito para el stock inicial" };
     }
 
