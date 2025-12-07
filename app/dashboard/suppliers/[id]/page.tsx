@@ -20,15 +20,16 @@ import { formatDistanceToNow } from "date-fns";
 export default async function SupplierDetailPage({
     params,
 }: {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
-    const supplier = await getSupplier(params.id);
+    const { id } = await params;
+    const supplier = await getSupplier(id);
 
     if (!supplier) {
         notFound();
     }
 
-    const purchaseOrders = await getPurchaseOrders({ supplierId: params.id });
+    const purchaseOrders = await getPurchaseOrders({ supplierId: id });
 
     return (
         <div className="space-y-6">

@@ -140,6 +140,8 @@ export async function getProductStockByWarehouse(productId: string) {
     }
 }
 
+
+
 export async function getWarehouseProducts(warehouseId: string) {
     try {
         if (warehouseId === "unassigned") {
@@ -148,7 +150,8 @@ export async function getWarehouseProducts(warehouseId: string) {
                 id: p.id,
                 name: p.name,
                 sku: p.sku,
-                quantity: p.stock // Total stock
+                quantity: p.stock, // Total stock
+                price: p.price?.toString() || "0",
             }));
         }
 
@@ -160,7 +163,8 @@ export async function getWarehouseProducts(warehouseId: string) {
                 id: item.product.id,
                 name: item.product.name,
                 sku: item.product.sku,
-                quantity: item.quantity
+                quantity: item.quantity,
+                price: item.product.price?.toString() || "0",
             }));
     } catch (error) {
         console.error("Error getting warehouse products:", error);

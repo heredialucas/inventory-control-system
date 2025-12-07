@@ -34,15 +34,17 @@ export default async function InstitutionsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Institutions</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Escuelas</h1>
                     <p className="text-muted-foreground">
-                        Manage institutions that receive deliveries
+                        Gestión de establecimientos educativos
                     </p>
                 </div>
                 {canManage && (
-                    <Button>
-                        <Building2 className="mr-2 h-4 w-4" />
-                        Add Institution
+                    <Button asChild>
+                        <Link href="/dashboard/institutions/new">
+                            <Building2 className="mr-2 h-4 w-4" />
+                            Nueva Escuela
+                        </Link>
                     </Button>
                 )}
             </div>
@@ -51,9 +53,9 @@ export default async function InstitutionsPage() {
                 <Card>
                     <CardContent className="py-12 text-center">
                         <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No institutions found</h3>
-                        <p className="text-sm text-muted-foreground">
-                            Create an institution to start managing deliveries
+                        <h3 className="text-lg font-semibold mb-2">No se encontraron escuelas</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Comience registrando una nueva escuela en el sistema
                         </p>
                     </CardContent>
                 </Card>

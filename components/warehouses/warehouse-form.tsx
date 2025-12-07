@@ -20,7 +20,7 @@ import { createWarehouse, updateWarehouse } from "@/app/actions/warehouses";
 import { Warehouse } from "@prisma/client";
 
 interface WarehouseFormProps {
-    warehouse?: Warehouse;
+    warehouse?: Warehouse & { [key: string]: any };
     trigger?: React.ReactNode;
     isOpen?: boolean;
     onOpenChange?: (open: boolean) => void;

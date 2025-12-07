@@ -52,9 +52,11 @@ export default async function DeliveriesPage() {
                     </p>
                 </div>
                 {canManage && (
-                    <Button>
-                        <Truck className="mr-2 h-4 w-4" />
-                        New Delivery
+                    <Button asChild>
+                        <Link href="/dashboard/deliveries/new">
+                            <Truck className="mr-2 h-4 w-4" />
+                            New Delivery
+                        </Link>
                     </Button>
                 )}
             </div>
@@ -91,9 +93,14 @@ function DeliveryTable({ deliveries }: { deliveries: any[] }) {
                 <CardContent className="py-12 text-center">
                     <Truck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No deliveries found</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-4">
                         Create a delivery to start distributing products
                     </p>
+                    <Button asChild>
+                        <Link href="/dashboard/deliveries/new">
+                            Create Delivery
+                        </Link>
+                    </Button>
                 </CardContent>
             </Card>
         );

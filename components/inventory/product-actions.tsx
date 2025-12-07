@@ -91,7 +91,7 @@ export function ProductActions({
                         </Link>
                     </DropdownMenuItem>
 
-                    {canEdit && (
+                    {/* {canEdit && (
                         <DropdownMenuItem
                             onSelect={(e) => {
                                 e.preventDefault();
@@ -102,7 +102,7 @@ export function ProductActions({
                             <PackagePlus className="mr-2 h-4 w-4" />
                             Asignar Stock
                         </DropdownMenuItem>
-                    )}
+                    )} */}
 
                     {canEdit && (
                         <DropdownMenuItem asChild>

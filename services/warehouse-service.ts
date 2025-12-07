@@ -379,15 +379,6 @@ export const warehouseService = {
                 },
             });
 
-            // Update product total stock
-            await tx.product.update({
-                where: { id: productId },
-                data: {
-                    stock: {
-                        decrement: quantity,
-                    },
-                },
-            });
 
             // Create transfer record
             return await tx.warehouseTransfer.create({
@@ -478,15 +469,7 @@ export const warehouseService = {
                 },
             });
 
-            // Update product total stock
-            await tx.product.update({
-                where: { id: transfer.productId },
-                data: {
-                    stock: {
-                        increment: transfer.quantity,
-                    },
-                },
-            });
+
 
             // Mark transfer as completed
             return await tx.warehouseTransfer.update({
@@ -544,15 +527,7 @@ export const warehouseService = {
                 },
             });
 
-            // Update product total stock
-            await tx.product.update({
-                where: { id: transfer.productId },
-                data: {
-                    stock: {
-                        increment: transfer.quantity,
-                    },
-                },
-            });
+
 
             // Mark transfer as cancelled
             return await tx.warehouseTransfer.update({

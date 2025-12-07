@@ -72,7 +72,7 @@ export default async function WarehouseDetailPage({
                             </Button>
                         }
                     />
-                    <WarehouseForm warehouse={warehouse} />
+                    <WarehouseForm warehouse={JSON.parse(JSON.stringify(warehouse))} />
                 </div>
             </div>
 
