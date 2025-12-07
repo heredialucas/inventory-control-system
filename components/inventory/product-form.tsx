@@ -26,21 +26,29 @@ interface Category {
     name: string;
 }
 
+interface Warehouse {
+    id: string;
+    code: string;
+    name: string;
+}
+
 interface Product {
     id: string;
     sku: string;
     name: string;
     price: number | string; // serialized Decimal
+    stock: number;
     minStock: number;
     categoryId: string | null;
 }
 
 interface ProductFormProps {
     categories: Category[];
+    warehouses: Warehouse[];
     initialData?: Product | null;
 }
 
-export function ProductForm({ categories, initialData }: ProductFormProps) {
+export function ProductForm({ categories, warehouses, initialData }: ProductFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -78,45 +86,74 @@ export function ProductForm({ categories, initialData }: ProductFormProps) {
                             <Input id="sku" name="sku" placeholder="PROD-001" defaultValue={initialData?.sku} required />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="price">Precio</Label>
+                            <Label htmlFor="name">Nombre</Label>
+                            <Input id="name" name="name" placeholder="Cemento Portland" defaultValue={initialData?.name} required />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="price">Precio (Opcional)</Label>
                             <Input
                                 id="price"
                                 name="price"
                                 type="number"
                                 step="0.01"
+                                min="0"
+                                defaultValue={initialData?.price ? Number(initialData.price) : ""}
                                 placeholder="0.00"
-                                defaultValue={initialData?.price ? Number(initialData.price) : undefined}
-                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="minStock">Stock Mínimo (Opcional)</Label>
+                            <Input
+                                id="minStock"
+                                name="minStock"
+                                type="number"
+                                min="0"
+                                defaultValue={initialData?.minStock || ""}
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="name">Nombre</Label>
-                        <Input id="name" name="name" placeholder="Cemento Portland" defaultValue={initialData?.name} required />
+                        <Label htmlFor="categoryId">Categoría</Label>
+                        <Select name="categoryId" defaultValue={initialData?.categoryId || undefined}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map(c => (
+                                    <SelectItem key={c.id} value={c.id}>
+                                        {c.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="categoryId">Categoría</Label>
-                            <Select name="categoryId" defaultValue={initialData?.categoryId || undefined}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar categoría" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories.map(c => (
-                                        <SelectItem key={c.id} value={c.id}>
-                                            {c.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+
+                    {!initialData && (
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="warehouseId">
+                                    Depósito Inicial <span className="text-muted-foreground">(opcional)</span>
+                                </Label>
+                                <Select name="warehouseId">
+                                    <SelectTrigger id="warehouseId">
+                                        <SelectValue placeholder="Seleccionar depósito" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {warehouses.map((w) => (
+                                            <SelectItem key={w.id} value={w.id}>
+                                                {w.code} - {w.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="minStock">Stock Mínimo</Label>
-                            <Input id="minStock" name="minStock" type="number" defaultValue={initialData?.minStock || 0} />
-                        </div>
-                    </div>
+                    )}
 
                     {error && <p className="text-sm text-red-500">{error}</p>}
 
@@ -134,7 +171,7 @@ export function ProductForm({ categories, initialData }: ProductFormProps) {
                         </Button>
                     </div>
                 </form>
-            </CardContent>
-        </Card>
+            </CardContent >
+        </Card >
     );
 }

@@ -28,11 +28,12 @@ import { formatDistanceToNow } from "date-fns";
 
 type TransferWithRelations = {
     id: string;
+    type?: "TRANSFER" | "MOVEMENT";
     quantity: number;
-    status: TransferStatus;
+    status: TransferStatus | string;
     notes: string | null;
-    createdAt: Date;
-    completedAt: Date | null;
+    createdAt: Date | string;
+    completedAt: Date | string | null;
     fromWarehouse: {
         id: string;
         name: string;
@@ -60,14 +61,14 @@ interface TransferListProps {
     userId: string;
 }
 
-const statusColors: Record<TransferStatus, "default" | "secondary" | "destructive" | "outline"> = {
+const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     PENDING: "secondary",
     IN_TRANSIT: "default",
     COMPLETED: "outline",
     CANCELLED: "destructive",
 };
 
-const statusIcons: Record<TransferStatus, React.ReactNode> = {
+const statusIcons: Record<string, React.ReactNode> = {
     PENDING: null,
     IN_TRANSIT: <Truck className="h-3 w-3 mr-1" />,
     COMPLETED: <Check className="h-3 w-3 mr-1" />,
@@ -144,91 +145,121 @@ export function TransferList({ transfers, userId }: TransferListProps) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {transfers.map((transfer) => (
-                        <TableRow key={transfer.id}>
-                            <TableCell>
-                                <div>
-                                    <div className="font-medium">{transfer.product.name}</div>
-                                    <div className="text-sm text-muted-foreground font-mono">{transfer.product.sku}</div>
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono text-sm">{transfer.fromWarehouse.code}</span>
-                                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-mono text-sm">{transfer.toWarehouse.code}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                    {transfer.fromWarehouse.name} → {transfer.toWarehouse.name}
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <Badge variant="secondary">{transfer.quantity}</Badge>
-                            </TableCell>
-                            <TableCell>
-                                <Badge variant={statusColors[transfer.status]} className="flex items-center w-fit">
-                                    {statusIcons[transfer.status]}
-                                    {transfer.status}
-                                </Badge>
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                                {formatDistanceToNow(new Date(transfer.createdAt), { addSuffix: true })}
-                            </TableCell>
-                            <TableCell>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" disabled={isPending}>
-                                            <MoreHorizontal className="h-4 w-4" />
-                                            <span className="sr-only">Actions</span>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-                                        {transfer.status === "PENDING" && (
-                                            <>
-                                                <DropdownMenuItem onClick={() => handleMarkInTransit(transfer.id)}>
-                                                    <Truck className="mr-2 h-4 w-4" />
-                                                    Mark In Transit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleComplete(transfer.id)}>
+                    {transfers.map((transfer) => {
+                        const isIngreso = transfer.type === "MOVEMENT" || transfer.fromWarehouse.id === "unassigned";
+
+                        return (
+                            <TableRow key={transfer.id}>
+                                <TableCell>
+                                    <div>
+                                        <div className="font-medium">{transfer.product.name}</div>
+                                        <div className="text-sm text-muted-foreground font-mono">{transfer.product.sku}</div>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    {isIngreso ? (
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2 text-primary">
+                                                <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">
+                                                    ✨ Ingreso
+                                                </Badge>
+                                                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                                <span className="font-mono text-sm font-medium">{transfer.toWarehouse.code}</span>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                                Destino: {transfer.toWarehouse.name}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-mono text-sm">{transfer.fromWarehouse.code}</span>
+                                                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                                <span className="font-mono text-sm">{transfer.toWarehouse.code}</span>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                                {transfer.fromWarehouse.name} → {transfer.toWarehouse.name}
+                                            </div>
+                                        </>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant="secondary">{transfer.quantity}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant={statusColors[transfer.status as string] || "default"} className="flex items-center w-fit">
+                                        {statusIcons[transfer.status as string]}
+                                        {transfer.status}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                    {formatDistanceToNow(new Date(transfer.createdAt), { addSuffix: true })}
+                                </TableCell>
+                                <TableCell>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" disabled={isPending}>
+                                                <MoreHorizontal className="h-4 w-4" />
+                                                <span className="sr-only">Actions</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            {isIngreso ? (
+                                                <DropdownMenuItem disabled>
                                                     <Check className="mr-2 h-4 w-4" />
-                                                    Complete Transfer
+                                                    Ingreso Completado
                                                 </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className="text-destructive"
-                                                    onClick={() => handleCancel(transfer.id)}
-                                                >
-                                                    <X className="mr-2 h-4 w-4" />
-                                                    Cancel
-                                                </DropdownMenuItem>
-                                            </>
-                                        )}
-                                        {transfer.status === "IN_TRANSIT" && (
-                                            <>
-                                                <DropdownMenuItem onClick={() => handleComplete(transfer.id)}>
-                                                    <Check className="mr-2 h-4 w-4" />
-                                                    Complete Transfer
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className="text-destructive"
-                                                    onClick={() => handleCancel(transfer.id)}
-                                                >
-                                                    <X className="mr-2 h-4 w-4" />
-                                                    Cancel
-                                                </DropdownMenuItem>
-                                            </>
-                                        )}
-                                        {(transfer.status === "COMPLETED" || transfer.status === "CANCELLED") && (
-                                            <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                        </TableRow>
-                    ))}
+                                            ) : (
+                                                <>
+                                                    {transfer.status === "PENDING" && (
+                                                        <>
+                                                            <DropdownMenuItem onClick={() => handleMarkInTransit(transfer.id)}>
+                                                                <Truck className="mr-2 h-4 w-4" />
+                                                                Mark In Transit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleComplete(transfer.id)}>
+                                                                <Check className="mr-2 h-4 w-4" />
+                                                                Complete Transfer
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                className="text-destructive"
+                                                                onClick={() => handleCancel(transfer.id)}
+                                                            >
+                                                                <X className="mr-2 h-4 w-4" />
+                                                                Cancel
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
+                                                    {transfer.status === "IN_TRANSIT" && (
+                                                        <>
+                                                            <DropdownMenuItem onClick={() => handleComplete(transfer.id)}>
+                                                                <Check className="mr-2 h-4 w-4" />
+                                                                Complete Transfer
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                className="text-destructive"
+                                                                onClick={() => handleCancel(transfer.id)}
+                                                            >
+                                                                <X className="mr-2 h-4 w-4" />
+                                                                Cancel
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
+                                                    {(transfer.status === "COMPLETED" || transfer.status === "CANCELLED") && (
+                                                        <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
+                                                    )}
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                        );
+                    })}
                 </TableBody>
             </Table>
         </div>

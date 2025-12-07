@@ -21,9 +21,10 @@ import Link from "next/link";
 export default async function WarehouseDetailPage({
     params,
 }: {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
-    const warehouse = await getWarehouse(params.id);
+    const { id } = await params;
+    const warehouse = await getWarehouse(id);
 
     if (!warehouse) {
         notFound();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react"; // Added useEffect explicitly if missing
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,9 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { createTransfer } from "@/app/actions/warehouses";
-import { getProducts } from "@/app/actions/inventory";
-import { useEffect } from "react";
+import { createTransfer, addStockToWarehouse, getWarehouseProducts } from "@/app/actions/warehouses";
 
 type Warehouse = {
     id: string;
@@ -37,6 +35,7 @@ type Product = {
     id: string;
     name: string;
     sku: string;
+    quantity?: number; // Available quantity in source
 };
 
 interface TransferFormProps {
@@ -44,12 +43,14 @@ interface TransferFormProps {
     userId: string;
     defaultFromWarehouseId?: string;
     trigger?: React.ReactNode;
+    isIngreso?: boolean;
 }
 
-export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigger }: TransferFormProps) {
+export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigger, isIngreso = false }: TransferFormProps) {
     const [open, setOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [products, setProducts] = useState<Product[]>([]);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(false);
     const router = useRouter();
 
     const [formData, setFormData] = useState({
@@ -60,32 +61,74 @@ export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigg
         notes: "",
     });
 
+    // Fetch products when source warehouse changes
     useEffect(() => {
-        if (open) {
-            getProducts().then((data: any) => setProducts(data));
-        }
-    }, [open]);
+        if (!open) return;
+
+        const fetchProducts = async () => {
+            if (!isIngreso && !formData.fromWarehouseId) {
+                setProducts([]);
+                return;
+            }
+
+            setIsLoadingProducts(true);
+            try {
+                const sourceId = isIngreso ? "unassigned" : formData.fromWarehouseId;
+                const data = await getWarehouseProducts(sourceId);
+                setProducts(data);
+            } catch (error) {
+                toast.error("Error al cargar productos");
+                setProducts([]);
+            } finally {
+                setIsLoadingProducts(false);
+            }
+        };
+
+        fetchProducts();
+    }, [formData.fromWarehouseId, open, isIngreso]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.fromWarehouseId || !formData.toWarehouseId || !formData.productId) {
-            toast.error("Please fill in all required fields");
+        if ((!isIngreso && !formData.fromWarehouseId) || !formData.toWarehouseId || !formData.productId) {
+            toast.error("Por favor complete todos los campos requeridos");
             return;
         }
 
-        if (formData.fromWarehouseId === formData.toWarehouseId) {
-            toast.error("Source and destination warehouses must be different");
+        if (!isIngreso && formData.fromWarehouseId === formData.toWarehouseId) {
+            toast.error("El depósito de origen y destino deben ser diferentes");
             return;
+        }
+
+        // Validate quantity against available stock (only for transfers)
+        if (!isIngreso) {
+            const selectedProduct = products.find(p => p.id === formData.productId);
+            if (selectedProduct && selectedProduct.quantity !== undefined && formData.quantity > selectedProduct.quantity) {
+                toast.error(`Cantidad excede el stock disponible (${selectedProduct.quantity})`);
+                return;
+            }
         }
 
         startTransition(async () => {
             try {
-                await createTransfer({
-                    ...formData,
-                    userId,
-                });
-                toast.success("Transfer created successfully");
+                if (isIngreso) {
+                    await addStockToWarehouse({
+                        warehouseId: formData.toWarehouseId,
+                        productId: formData.productId,
+                        quantity: formData.quantity,
+                        userId,
+                        notes: formData.notes,
+                        isNewStock: true,
+                    });
+                    toast.success("Ingreso registrado exitosamente");
+                } else {
+                    await createTransfer({
+                        ...formData,
+                        userId,
+                    });
+                    toast.success("Transferencia creada exitosamente");
+                }
+
                 setOpen(false);
                 setFormData({
                     fromWarehouseId: defaultFromWarehouseId || "",
@@ -96,7 +139,7 @@ export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigg
                 });
                 router.refresh();
             } catch (error: any) {
-                toast.error(error.message || "Failed to create transfer");
+                toast.error(error.message || "Error al realizar la operación");
             }
         });
     };
@@ -104,73 +147,101 @@ export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigg
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                {trigger || <Button>New Transfer</Button>}
+                {trigger || <Button>Nueva Transferencia</Button>}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>Create Warehouse Transfer</DialogTitle>
+                        <DialogTitle>
+                            Nueva Transferencia
+                        </DialogTitle>
                         <DialogDescription>
-                            Transfer stock between warehouses
+                            Mover stock entre depósitos existentes.
                         </DialogDescription>
                     </DialogHeader>
+
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="fromWarehouse">From Warehouse *</Label>
+                            <Label htmlFor="fromWarehouse">Origen *</Label>
                             <Select
                                 value={formData.fromWarehouseId}
-                                onValueChange={(value) => setFormData({ ...formData, fromWarehouseId: value })}
+                                onValueChange={(value) => {
+                                    setFormData(prev => ({ ...prev, fromWarehouseId: value, productId: "" }));
+                                }}
                             >
                                 <SelectTrigger id="fromWarehouse">
-                                    <SelectValue placeholder="Select source warehouse" />
+                                    <SelectValue placeholder="Seleccionar origen" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {warehouses.filter(w => w.id !== formData.toWarehouseId).map((warehouse) => (
                                         <SelectItem key={warehouse.id} value={warehouse.id}>
-                                            {warehouse.code} - {warehouse.name}
+                                            🔄 Transferir desde {warehouse.code}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="toWarehouse">To Warehouse *</Label>
+                            <Label htmlFor="toWarehouse">
+                                {isIngreso ? "Depósito Destino *" : "Hacia Depósito *"}
+                            </Label>
                             <Select
                                 value={formData.toWarehouseId}
                                 onValueChange={(value) => setFormData({ ...formData, toWarehouseId: value })}
                             >
                                 <SelectTrigger id="toWarehouse">
-                                    <SelectValue placeholder="Select destination warehouse" />
+                                    <SelectValue placeholder="Seleccionar destino" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {warehouses.filter(w => w.id !== formData.fromWarehouseId).map((warehouse) => (
-                                        <SelectItem key={warehouse.id} value={warehouse.id}>
-                                            {warehouse.code} - {warehouse.name}
-                                        </SelectItem>
-                                    ))}
+                                    {warehouses
+                                        .filter(w => w.id !== formData.fromWarehouseId)
+                                        .map((warehouse) => (
+                                            <SelectItem key={warehouse.id} value={warehouse.id}>
+                                                {warehouse.code} - {warehouse.name}
+                                            </SelectItem>
+                                        ))}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="product">Product *</Label>
+                            <Label htmlFor="product">Producto *</Label>
                             <Select
                                 value={formData.productId}
                                 onValueChange={(value) => setFormData({ ...formData, productId: value })}
+                                disabled={!formData.fromWarehouseId || isLoadingProducts}
                             >
                                 <SelectTrigger id="product">
-                                    <SelectValue placeholder="Select product" />
+                                    <SelectValue placeholder={isLoadingProducts ? "Cargando..." : "Seleccionar producto"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {products.map((product: any) => (
-                                        <SelectItem key={product.id} value={product.id}>
-                                            {product.sku} - {product.name}
-                                        </SelectItem>
-                                    ))}
+                                    {products.length === 0 ? (
+                                        <div className="p-2 text-sm text-muted-foreground text-center">
+                                            {formData.fromWarehouseId ? "No hay productos disponibles" : "Seleccione origen primero"}
+                                        </div>
+                                    ) : (
+                                        products.map((product) => (
+                                            <SelectItem key={product.id} value={product.id}>
+                                                <div className="flex justify-between w-full min-w-[200px] gap-4">
+                                                    <span>{product.sku} - {product.name}</span>
+                                                    {product.quantity !== undefined && (
+                                                        <span className={isIngreso ? "text-primary font-medium" : "text-muted-foreground"}>
+                                                            {isIngreso ? `(Stock total: ${product.quantity})` : `(Disp: ${product.quantity})`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </SelectItem>
+                                        ))
+                                    )}
                                 </SelectContent>
                             </Select>
+                            {isIngreso && (
+                                <p className="text-[10px] text-muted-foreground">
+                                    * Se muestran todos los productos del sistema.
+                                </p>
+                            )}
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="quantity">Quantity *</Label>
+                            <Label htmlFor="quantity">Cantidad *</Label>
                             <Input
                                 id="quantity"
                                 type="number"
@@ -181,22 +252,22 @@ export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigg
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="notes">Notes</Label>
+                            <Label htmlFor="notes">Notas / Referencia</Label>
                             <Textarea
                                 id="notes"
                                 value={formData.notes}
                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                placeholder="Optional notes about this transfer..."
+                                placeholder={isIngreso ? "Ej: Factura #1234, Compra a proveedor X..." : "Motivo de la transferencia..."}
                                 rows={3}
                             />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
+                            Cancelar
                         </Button>
-                        <Button type="submit" disabled={isPending}>
-                            {isPending ? "Creating..." : "Create Transfer"}
+                        <Button type="submit" disabled={isPending} className={isIngreso ? "bg-primary hover:bg-primary/90" : ""}>
+                            {isPending ? "Procesando..." : (isIngreso ? "Confirmar Ingreso" : "Crear Transferencia")}
                         </Button>
                     </DialogFooter>
                 </form>

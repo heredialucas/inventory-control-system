@@ -40,7 +40,8 @@ export const inventoryService = {
                     include: {
                         user: {
                             select: { email: true, username: true, id: true }
-                        }
+                        },
+                        warehouse: true
                     }
                 },
             },
@@ -63,6 +64,56 @@ export const inventoryService = {
         });
     },
 
+    async createProductWithInitialStock(data: {
+        sku: string;
+        name: string;
+        description?: string;
+        price: number;
+        categoryId?: string;
+        minStock?: number;
+        initialStock?: number;
+        warehouseId?: string;
+        userId: string;
+    }) {
+        const { initialStock, warehouseId, userId, ...productData } = data;
+
+        return await prisma.$transaction(async (tx) => {
+            // 1. Create product with total stock
+            const product = await tx.product.create({
+                data: {
+                    ...productData,
+                    stock: initialStock || 0,
+                },
+            });
+
+            // 2. If there's initial stock, create warehouse entry and movement
+            if (initialStock && initialStock > 0 && warehouseId) {
+                // Create entry in WarehouseStock
+                await tx.warehouseStock.create({
+                    data: {
+                        warehouseId,
+                        productId: product.id,
+                        quantity: initialStock,
+                    },
+                });
+
+                // Create stock movement (IN)
+                await tx.stockMovement.create({
+                    data: {
+                        productId: product.id,
+                        warehouseId,
+                        type: "IN",
+                        quantity: initialStock,
+                        userId,
+                        reason: "Stock inicial al crear producto",
+                    },
+                });
+            }
+
+            return product;
+        });
+    },
+
     async updateProduct(id: string, data: {
         name?: string;
         description?: string;
@@ -79,12 +130,13 @@ export const inventoryService = {
     // Stock Movements
     async registerMovement(data: {
         productId: string;
+        warehouseId?: string; // Made optional to support legacy calls if any, or strictly optional
         type: "IN" | "OUT" | "ADJUSTMENT";
         quantity: number;
         userId: string;
         reason?: string;
     }) {
-        const { productId, type, quantity, userId, reason } = data;
+        const { productId, warehouseId, type, quantity, userId, reason } = data;
 
         return await prisma.$transaction(async (tx) => {
             const product = await tx.product.findUnique({ where: { id: productId } });
@@ -137,6 +189,7 @@ export const inventoryService = {
             return await tx.stockMovement.create({
                 data: {
                     productId,
+                    warehouseId,
                     type,
                     quantity,
                     userId,
@@ -146,17 +199,85 @@ export const inventoryService = {
         });
     },
 
+    async registerStockAssignment(data: {
+        productId: string;
+        warehouseId: string;
+        quantity: number;
+        userId: string;
+        reason?: string;
+    }) {
+        // Records an assignment (IN) to a warehouse without changing Product Total Stock
+        // This implies the stock was "Unassigned" and is now "Assigned".
+        return await prisma.stockMovement.create({
+            data: {
+                productId: data.productId,
+                warehouseId: data.warehouseId,
+                type: "IN", // We keep it IN for the warehouse perspective
+                quantity: data.quantity,
+                userId: data.userId,
+                reason: data.reason || "Asignación de stock"
+            }
+        });
+    },
+
+    async getStockMovements(filters?: {
+        type?: "IN" | "OUT" | "ADJUSTMENT";
+        warehouseId?: string;
+        productId?: string;
+        userId?: string;
+        limit?: number;
+    }) {
+        const where: any = {};
+        if (filters?.type) where.type = filters.type;
+        if (filters?.warehouseId) where.warehouseId = filters.warehouseId;
+        if (filters?.productId) where.productId = filters.productId;
+        if (filters?.userId) where.userId = filters.userId;
+
+        return await prisma.stockMovement.findMany({
+            where,
+            orderBy: { createdAt: "desc" },
+            take: filters?.limit,
+            include: {
+                product: {
+                    include: { category: true }
+                },
+                warehouse: true,
+                user: {
+                    select: {
+                        id: true,
+                        username: true,
+                        email: true,
+                        firstName: true,
+                        lastName: true
+                    }
+                }
+            }
+        });
+    },
+
     async deleteProduct(id: string) {
-        // Check if there are movements? 
-        // If we want to allow delete, we cascade or check.
-        // Schema says: movements StockMovement[]
-        // If we delete product, what happens to movements?
-        // In schema: `product Product @relation(fields: [productId], references: [id])`.
-        // Default is usually restrict. 
-        // If we want to delete, we might need to delete movements first or cascade.
-        // Let's assume for now we just try delete. If constraint fails, it throws.
-        return await prisma.product.delete({
-            where: { id }
+        return await prisma.$transaction(async (tx) => {
+            // 1. Delete Warehouse Stock
+            await tx.warehouseStock.deleteMany({
+                where: { productId: id }
+            });
+
+            // 2. Delete Stock Movements
+            await tx.stockMovement.deleteMany({
+                where: { productId: id }
+            });
+
+            // 3. Delete Transfers 
+            // We need to decide if we want to keep transfer history with null product or delete them.
+            // Usually for a hard delete of product ("removing from system"), we delete everything.
+            await tx.warehouseTransfer.deleteMany({
+                where: { productId: id }
+            });
+
+            // 4. Finally delete the Product
+            return await tx.product.delete({
+                where: { id }
+            });
         });
     },
 };

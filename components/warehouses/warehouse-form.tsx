@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,12 +22,21 @@ import { Warehouse } from "@prisma/client";
 interface WarehouseFormProps {
     warehouse?: Warehouse;
     trigger?: React.ReactNode;
+    isOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export function WarehouseForm({ warehouse, trigger }: WarehouseFormProps) {
-    const [open, setOpen] = useState(false);
+export function WarehouseForm({ warehouse, trigger, isOpen, onOpenChange }: WarehouseFormProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+
+    // Use external control if provided, otherwise use internal state
+    const open = isOpen ?? internalOpen;
+    const setOpen = (value: boolean) => {
+        setInternalOpen(value);
+        onOpenChange?.(value);
+    };
 
     const [formData, setFormData] = useState({
         name: warehouse?.name || "",
@@ -35,6 +44,18 @@ export function WarehouseForm({ warehouse, trigger }: WarehouseFormProps) {
         description: warehouse?.description || "",
         address: warehouse?.address || "",
     });
+
+    // Sync form data when warehouse changes or dialog opens
+    useEffect(() => {
+        if (warehouse && open) {
+            setFormData({
+                name: warehouse.name || "",
+                code: warehouse.code || "",
+                description: warehouse.description || "",
+                address: warehouse.address || "",
+            });
+        }
+    }, [warehouse, open]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

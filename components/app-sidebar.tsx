@@ -13,6 +13,7 @@ import {
     Truck,
     BarChart3,
     Activity,
+    Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +37,11 @@ const sidebarItems = [
         title: "Depósitos",
         href: "/dashboard/warehouses",
         icon: Warehouse,
+    },
+    {
+        title: "Categorías",
+        href: "/dashboard/categories",
+        icon: Layers,
     },
     {
         title: "Transferencias",

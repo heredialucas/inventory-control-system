@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     Table,
@@ -44,12 +44,21 @@ type WarehouseWithCounts = {
 
 interface WarehouseListProps {
     warehouses: WarehouseWithCounts[];
+    canManage?: boolean;
 }
 
-export function WarehouseList({ warehouses }: WarehouseListProps) {
+export function WarehouseList({ warehouses, canManage = false }: WarehouseListProps) {
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
     const [editingWarehouse, setEditingWarehouse] = useState<WarehouseWithCounts | null>(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+    // Open dialog when warehouse is set for editing
+    useEffect(() => {
+        if (editingWarehouse) {
+            setEditDialogOpen(true);
+        }
+    }, [editingWarehouse]);
 
     const handleToggleStatus = (id: string) => {
         startTransition(async () => {
@@ -147,22 +156,26 @@ export function WarehouseList({ warehouses }: WarehouseListProps) {
                                                     View Details
                                                 </Link>
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setEditingWarehouse(warehouse)}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleToggleStatus(warehouse.id)}>
-                                                <Power className="mr-2 h-4 w-4" />
-                                                {warehouse.isActive ? "Deactivate" : "Activate"}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                className="text-destructive"
-                                                onClick={() => handleDelete(warehouse.id, warehouse.name)}
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
+                                            {canManage && (
+                                                <>
+                                                    <DropdownMenuItem onClick={() => setEditingWarehouse(warehouse)}>
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleToggleStatus(warehouse.id)}>
+                                                        <Power className="mr-2 h-4 w-4" />
+                                                        {warehouse.isActive ? "Deactivate" : "Activate"}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        className="text-destructive"
+                                                        onClick={() => handleDelete(warehouse.id, warehouse.name)}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
@@ -172,10 +185,17 @@ export function WarehouseList({ warehouses }: WarehouseListProps) {
                 </Table>
             </div>
 
+            {/* Edit Dialog */}
             {editingWarehouse && (
                 <WarehouseForm
                     warehouse={editingWarehouse}
-                    trigger={<div />}
+                    isOpen={editDialogOpen}
+                    onOpenChange={(open) => {
+                        setEditDialogOpen(open);
+                        if (!open) {
+                            setEditingWarehouse(null);
+                        }
+                    }}
                 />
             )}
         </>

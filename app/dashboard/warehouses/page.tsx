@@ -42,7 +42,7 @@ export default async function WarehousesPage() {
                 )}
             </div>
 
-            <WarehouseList warehouses={warehouses} />
+            <WarehouseList warehouses={warehouses} canManage={canManage} />
         </div>
     );
 }

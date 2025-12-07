@@ -9,8 +9,11 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { inventoryService } from "@/services/inventory-service";
+import { getWarehouses } from "@/app/actions/warehouses";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
+import { ProductActions } from "@/components/inventory/product-actions";
+import { Badge } from "@/components/ui/badge";
 
 export default async function InventoryPage() {
     const user = await getCurrentUser();
@@ -19,8 +22,17 @@ export default async function InventoryPage() {
         return <UnauthorizedAccess action="ver" resource="inventario" />;
     }
 
-    const products = await inventoryService.getProducts();
+    const rawProducts = await inventoryService.getProducts();
+    const products = rawProducts.map(product => ({
+        ...product,
+        price: Number(product.price),
+    }));
     const canCreate = hasPermission(user, "inventory.manage");
+    const canEdit = hasPermission(user, "inventory.manage");
+    const canDelete = hasPermission(user, "inventory.manage");
+
+    // Fetch warehouses for stock assignment action
+    const warehouses = await getWarehouses();
 
     return (
         <div className="flex flex-col gap-6">
@@ -60,15 +72,28 @@ export default async function InventoryPage() {
                                     <TableCell>{product.name}</TableCell>
                                     <TableCell>{product.category?.name || "-"}</TableCell>
                                     <TableCell>
-                                        <span className={product.stock <= product.minStock ? "text-red-500 font-bold" : ""}>
-                                            {product.stock}
-                                        </span>
+                                        <div className="flex flex-col gap-1">
+                                            <span className={product.stock <= product.minStock ? "text-red-500 font-bold" : ""}>
+                                                {product.stock}
+                                            </span>
+                                            {product.stock === 0 && (
+                                                <Badge variant="outline" className="w-fit text-xs border-yellow-500 text-yellow-600 bg-yellow-50">
+                                                    Sin Asignar
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </TableCell>
                                     <TableCell>${Number(product.price).toFixed(2)}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link href={`/dashboard/inventory/${product.id}`}>Ver</Link>
-                                        </Button>
+                                        <ProductActions
+                                            productId={product.id}
+                                            productName={product.name}
+                                            productSku={product.sku}
+                                            canEdit={canEdit}
+                                            canDelete={canDelete}
+                                            warehouses={warehouses}
+                                            userId={user.id}
+                                        />
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -96,15 +121,26 @@ export default async function InventoryPage() {
                                     <div className={`text-xs ${product.stock <= product.minStock ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
                                         Stock: {product.stock}
                                     </div>
+                                    {product.stock === 0 && (
+                                        <Badge variant="outline" className="mt-1 text-xs border-yellow-500 text-yellow-600 bg-yellow-50">
+                                            Sin Asignar
+                                        </Badge>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="bg-muted px-2 py-0.5 rounded text-xs">
                                     {product.category?.name || "Sin categoría"}
                                 </span>
-                                <Button variant="outline" size="sm" asChild className="h-8">
-                                    <Link href={`/dashboard/inventory/${product.id}`}>Ver Detalles</Link>
-                                </Button>
+                                <ProductActions
+                                    productId={product.id}
+                                    productName={product.name}
+                                    productSku={product.sku}
+                                    canEdit={canEdit}
+                                    canDelete={canDelete}
+                                    warehouses={warehouses}
+                                    userId={user.id}
+                                />
                             </div>
                         </div>
                     ))
