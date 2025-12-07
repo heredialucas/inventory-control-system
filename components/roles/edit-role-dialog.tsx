@@ -72,7 +72,7 @@ export function EditRoleDialog({ role, permissions }: EditRoleDialogProps) {
                     <Pencil className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Editar Rol</DialogTitle>
@@ -82,43 +82,55 @@ export function EditRoleDialog({ role, permissions }: EditRoleDialogProps) {
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         {error && <p className="text-red-500 text-sm">{error}</p>}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-role-name" className="text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-center gap-4">
+                            <Label htmlFor="edit-role-name" className="sm:text-right">
                                 Nombre
                             </Label>
                             <Input
                                 id="edit-role-name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="col-span-3"
+                                className="sm:col-span-3"
                                 placeholder="Ej. Vendedor"
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-role-desc" className="text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-center gap-4">
+                            <Label htmlFor="edit-role-desc" className="sm:text-right">
                                 Descripción
                             </Label>
                             <Input
                                 id="edit-role-desc"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                className="col-span-3"
+                                className="sm:col-span-3"
                                 placeholder="Descripción del rol"
                             />
                         </div>
 
-                        <div className="grid grid-cols-4 gap-4">
-                            <Label className="text-right pt-2">Permisos</Label>
-                            <div className="col-span-3 border rounded-md p-3 h-64 overflow-y-auto space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <Label className="sm:text-right sm:pt-2">Permisos</Label>
+                            <div className="sm:col-span-3 border rounded-md p-3 h-64 overflow-y-auto space-y-4">
                                 {permissions.length === 0 ? (
                                     <p className="text-xs text-muted-foreground">No hay permisos disponibles.</p>
                                 ) : (
                                     // Group permissions by prefix (inventory, sales, etc)
                                     Object.entries(permissions.reduce<Record<string, any[]>>((acc, perm) => {
                                         const prefix = perm.action.split('.')[0];
-                                        if (!acc[prefix]) acc[prefix] = [];
-                                        acc[prefix].push(perm);
+                                        const groupTranslations: Record<string, string> = {
+                                            inventory: "Inventario",
+                                            warehouses: "Almacenes",
+                                            transfers: "Transferencias",
+                                            purchases: "Compras",
+                                            deliveries: "Entregas",
+                                            suppliers: "Proveedores",
+                                            institutions: "Instituciones",
+                                            reports: "Reportes",
+                                            users: "Usuarios"
+                                        };
+                                        const groupName = groupTranslations[prefix] || prefix;
+                                        if (!acc[groupName]) acc[groupName] = [];
+                                        acc[groupName].push(perm);
                                         return acc;
                                     }, {})).map(([prefix, perms]) => (
                                         <div key={prefix}>
@@ -145,7 +157,10 @@ export function EditRoleDialog({ role, permissions }: EditRoleDialogProps) {
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                            Cancelar
+                        </Button>
                         <Button type="submit" disabled={loading}>
                             {loading ? "Guardando..." : "Guardar Cambios"}
                         </Button>

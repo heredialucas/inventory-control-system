@@ -64,15 +64,15 @@ export function WarehouseForm({ warehouse, trigger, isOpen, onOpenChange }: Ware
             try {
                 if (warehouse) {
                     await updateWarehouse(warehouse.id, formData);
-                    toast.success("Warehouse updated successfully");
+                    toast.success("Depósito actualizado exitosamente");
                 } else {
                     await createWarehouse(formData);
-                    toast.success("Warehouse created successfully");
+                    toast.success("Depósito creado exitosamente");
                 }
                 setOpen(false);
                 router.refresh();
             } catch (error: any) {
-                toast.error(error.message || "An error occurred");
+                toast.error(error.message || "Ocurrió un error");
             }
         });
     };
@@ -80,69 +80,69 @@ export function WarehouseForm({ warehouse, trigger, isOpen, onOpenChange }: Ware
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                {trigger || <Button>{warehouse ? "Edit" : "Add Warehouse"}</Button>}
+                {trigger || <Button>{warehouse ? "Editar" : "Agregar Depósito"}</Button>}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>{warehouse ? "Edit Warehouse" : "Add New Warehouse"}</DialogTitle>
+                        <DialogTitle>{warehouse ? "Editar Depósito" : "Agregar Nuevo Depósito"}</DialogTitle>
                         <DialogDescription>
                             {warehouse
-                                ? "Update warehouse information"
-                                : "Create a new warehouse location for inventory storage"}
+                                ? "Actualizar información del depósito"
+                                : "Crear una nueva ubicación de depósito para almacenamiento de inventario"}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Name *</Label>
+                            <Label htmlFor="name">Nombre *</Label>
                             <Input
                                 id="name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="e.g., Main Warehouse"
+                                placeholder="ej. Depósito Principal"
                                 required
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="code">Code *</Label>
+                            <Label htmlFor="code">Código *</Label>
                             <Input
                                 id="code"
                                 value={formData.code}
                                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                placeholder="e.g., WH-01"
+                                placeholder="ej. DEP-01"
                                 required
                                 maxLength={20}
                             />
                             <p className="text-xs text-muted-foreground">
-                                Short unique identifier (e.g., WH-01, DEP-A)
+                                Identificador único corto (ej. DEP-01, ALM-A)
                             </p>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="address">Address</Label>
+                            <Label htmlFor="address">Dirección</Label>
                             <Input
                                 id="address"
                                 value={formData.address}
                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                placeholder="e.g., 123 Main St, City"
+                                placeholder="ej. Calle Principal 123, Ciudad"
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="description">Descripción</Label>
                             <Textarea
                                 id="description"
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                placeholder="Optional description..."
+                                placeholder="Descripción opcional..."
                                 rows={3}
                             />
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
+                            Cancelar
                         </Button>
                         <Button type="submit" disabled={isPending}>
-                            {isPending ? "Saving..." : warehouse ? "Update" : "Create"}
+                            {isPending ? "Guardando..." : warehouse ? "Actualizar" : "Crear"}
                         </Button>
                     </DialogFooter>
                 </form>

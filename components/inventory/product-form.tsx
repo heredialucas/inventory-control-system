@@ -36,7 +36,7 @@ interface Product {
     id: string;
     sku: string;
     name: string;
-    price: number | string; // serialized Decimal
+    price: number | string; // Decimal serializado
     stock: number;
     minStock: number;
     categoryId: string | null;
@@ -68,7 +68,7 @@ export function ProductForm({ categories, warehouses, initialData }: ProductForm
             setError(result.error);
             setIsLoading(false);
         } else {
-            // Success handled by action redirect
+            // Éxito manejado por redirección de acción
         }
     }
 
@@ -82,7 +82,7 @@ export function ProductForm({ categories, warehouses, initialData }: ProductForm
                 <form action={handleSubmit} className="space-y-6">
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                            <Label htmlFor="sku">SKU</Label>
+                            <Label htmlFor="sku">Código</Label>
                             <Input id="sku" name="sku" placeholder="PROD-001" defaultValue={initialData?.sku} required />
                         </div>
                         <div className="space-y-2">

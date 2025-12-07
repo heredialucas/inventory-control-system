@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -56,26 +57,26 @@ export function SupplierList({ suppliers }: SupplierListProps) {
         startTransition(async () => {
             try {
                 await toggleSupplierStatus(id);
-                toast.success("Supplier status updated");
+                toast.success("Estado del proveedor actualizado");
                 router.refresh();
             } catch (error: any) {
-                toast.error(error.message || "Failed to update status");
+                toast.error(error.message || "Error al actualizar el estado");
             }
         });
     };
 
     const handleDelete = (id: string, name: string) => {
-        if (!confirm(`Are you sure you want to delete supplier "${name}"?`)) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar el proveedor "${name}"?`)) {
             return;
         }
 
         startTransition(async () => {
             try {
                 await deleteSupplier(id);
-                toast.success("Supplier deleted successfully");
+                toast.success("Proveedor eliminado exitosamente");
                 router.refresh();
             } catch (error: any) {
-                toast.error(error.message || "Failed to delete supplier");
+                toast.error(error.message || "Error al eliminar el proveedor");
             }
         });
     };
@@ -84,9 +85,9 @@ export function SupplierList({ suppliers }: SupplierListProps) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No suppliers found</h3>
+                <h3 className="text-lg font-semibold mb-2">No se encontraron proveedores</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                    Get started by creating your first supplier
+                    Comienza creando tu primer proveedor
                 </p>
             </div>
         );
@@ -94,16 +95,78 @@ export function SupplierList({ suppliers }: SupplierListProps) {
 
     return (
         <>
-            <div className="rounded-md border">
+            {/* Vista móvil - Cards */}
+            <div className="md:hidden space-y-4">
+                {suppliers.map((supplier) => (
+                    <Card key={supplier.id}>
+                        <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <h3 className="font-semibold truncate">{supplier.name}</h3>
+                                        <Badge variant={supplier.isActive ? "default" : "secondary"}>
+                                            {supplier.isActive ? "Activo" : "Inactivo"}
+                                        </Badge>
+                                    </div>
+                                    <div className="space-y-1 text-sm text-muted-foreground">
+                                        <p className="font-mono">{supplier.code}</p>
+                                        {supplier.contactName && <p>Contacto: {supplier.contactName}</p>}
+                                        {supplier.email && <p>{supplier.email}</p>}
+                                        {supplier.phone && <p>{supplier.phone}</p>}
+                                        <p>Pedidos: {supplier._count.purchaseOrders}</p>
+                                    </div>
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" disabled={isPending}>
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/dashboard/suppliers/${supplier.id}`}>
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                Ver Detalles
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Editar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleToggleStatus(supplier.id)}>
+                                            <Power className="mr-2 h-4 w-4" />
+                                            {supplier.isActive ? "Desactivar" : "Activar"}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            className="text-destructive"
+                                            onClick={() => handleDelete(supplier.id, supplier.name)}
+                                        >
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Eliminar
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Vista desktop - Tabla */}
+            <div className="hidden md:block">
+                <div className="rounded-md border">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Code</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Contact</TableHead>
+                            <TableHead>Código</TableHead>
+                            <TableHead>Nombre</TableHead>
+                            <TableHead>Contacto</TableHead>
                             <TableHead>Email</TableHead>
-                            <TableHead>Orders</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Pedidos</TableHead>
+                            <TableHead>Estado</TableHead>
                             <TableHead className="w-[70px]"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -123,7 +186,7 @@ export function SupplierList({ suppliers }: SupplierListProps) {
                                 </TableCell>
                                 <TableCell>
                                     <Badge variant={supplier.isActive ? "default" : "secondary"}>
-                                        {supplier.isActive ? "Active" : "Inactive"}
+                                        {supplier.isActive ? "Activo" : "Inactivo"}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
@@ -131,25 +194,25 @@ export function SupplierList({ suppliers }: SupplierListProps) {
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" disabled={isPending}>
                                                 <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">Actions</span>
+                                                <span className="sr-only">Acciones</span>
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem asChild>
                                                 <Link href={`/dashboard/suppliers/${supplier.id}`}>
                                                     <Eye className="mr-2 h-4 w-4" />
-                                                    View Details
+                                                    Ver Detalles
                                                 </Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
                                                 <Edit className="mr-2 h-4 w-4" />
-                                                Edit
+                                                Editar
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => handleToggleStatus(supplier.id)}>
                                                 <Power className="mr-2 h-4 w-4" />
-                                                {supplier.isActive ? "Deactivate" : "Activate"}
+                                                {supplier.isActive ? "Desactivar" : "Activar"}
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem
@@ -157,7 +220,7 @@ export function SupplierList({ suppliers }: SupplierListProps) {
                                                 onClick={() => handleDelete(supplier.id, supplier.name)}
                                             >
                                                 <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
+                                                Eliminar
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -166,6 +229,7 @@ export function SupplierList({ suppliers }: SupplierListProps) {
                         ))}
                     </TableBody>
                 </Table>
+                </div>
             </div>
 
             {editingSupplier && (

@@ -14,10 +14,12 @@ import {
 } from "@/components/ui/table";
 import { Building2 } from "lucide-react";
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 export const metadata = {
-    title: "Institutions | Inventory Control",
-    description: "Manage institutions and deliveries",
+    title: "Instituciones | Control de Inventario",
+    description: "Gestionar instituciones y entregas",
 };
 
 export default async function InstitutionsPage() {
@@ -32,7 +34,7 @@ export default async function InstitutionsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Escuelas</h1>
                     <p className="text-muted-foreground">
@@ -60,51 +62,88 @@ export default async function InstitutionsPage() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Code</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Contact</TableHead>
-                                <TableHead>Deliveries</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {institutions.map((institution) => (
-                                <TableRow key={institution.id}>
-                                    <TableCell className="font-mono font-medium">
-                                        <Link
-                                            href={`/dashboard/institutions/${institution.id}`}
-                                            className="hover:underline"
-                                        >
-                                            {institution.code}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell>{institution.name}</TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {institution.type || "-"}
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {institution.contactName || "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary">
-                                            {institution._count.deliveries}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
+                <>
+                    {/* Mobile Cards */}
+                    <div className="block md:hidden space-y-4">
+                        {institutions.map((institution) => (
+                            <Card key={institution.id}>
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between">
+                                        <div className="space-y-1">
+                                            <Link
+                                                href={`/dashboard/institutions/${institution.id}`}
+                                                className="font-mono font-medium text-lg hover:underline"
+                                            >
+                                                {institution.code}
+                                            </Link>
+                                            <div className="text-sm text-muted-foreground">{institution.name}</div>
+                                            <div className="text-sm text-muted-foreground">{institution.type || "Sin tipo"}</div>
+                                        </div>
                                         <Badge variant={institution.isActive ? "default" : "secondary"}>
-                                            {institution.isActive ? "Active" : "Inactive"}
+                                            {institution.isActive ? "Activo" : "Inactivo"}
                                         </Badge>
-                                    </TableCell>
+                                    </div>
+                                    <div className="mt-4 flex items-center justify-between text-sm">
+                                        <div>
+                                            <span className="text-muted-foreground">Contacto:</span>
+                                            <span className="ml-2">{institution.contactName || "No especificado"}</span>
+                                        </div>
+                                        <div>
+                                            <Badge variant="secondary">{institution._count.deliveries} entregas</Badge>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
+                    {/* Desktop Table */}
+                    <div className="hidden md:block rounded-md border overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Código</TableHead>
+                                    <TableHead>Nombre</TableHead>
+                                    <TableHead>Tipo</TableHead>
+                                    <TableHead>Contacto</TableHead>
+                                    <TableHead>Entregas</TableHead>
+                                    <TableHead>Estado</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
+                            </TableHeader>
+                            <TableBody>
+                                {institutions.map((institution) => (
+                                    <TableRow key={institution.id}>
+                                        <TableCell className="font-mono font-medium">
+                                            <Link
+                                                href={`/dashboard/institutions/${institution.id}`}
+                                                className="hover:underline"
+                                            >
+                                                {institution.code}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell>{institution.name}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {institution.type || "-"}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {institution.contactName || "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="secondary">
+                                                {institution._count.deliveries}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={institution.isActive ? "default" : "secondary"}>
+                                                {institution.isActive ? "Activo" : "Inactivo"}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </>
             )}
         </div>
     );

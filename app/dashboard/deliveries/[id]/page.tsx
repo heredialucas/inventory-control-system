@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { ArrowLeft, CheckCircle2, XCircle, Truck, Building2, Package } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -51,7 +52,7 @@ export default async function DeliveryDetailPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <Link href="/dashboard/deliveries">
                     <Button variant="ghost" size="icon">
                         <ArrowLeft className="h-4 w-4" />
@@ -69,10 +70,10 @@ export default async function DeliveryDetailPage({
                         </Badge>
                     </div>
                     <p className="text-muted-foreground text-sm mt-1">
-                        Creado el {format(new Date(delivery.createdAt), "PPP")}
+                        Creado el {format(new Date(delivery.createdAt), "PPP", { locale: es })}
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     {isDraft && (
                         <>
                             <form action={handleCancel}>
@@ -98,24 +99,46 @@ export default async function DeliveryDetailPage({
                         <CardTitle>Ítems de la Entrega</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Producto</TableHead>
-                                    <TableHead>SKU</TableHead>
-                                    <TableHead className="text-right">Cantidad</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {delivery.items.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="font-medium">{item.product.name}</TableCell>
-                                        <TableCell className="font-mono text-xs text-muted-foreground">{item.product.sku}</TableCell>
-                                        <TableCell className="text-right font-medium">{item.quantity}</TableCell>
+                        {/* Mobile Cards */}
+                        <div className="block md:hidden space-y-4">
+                            {delivery.items.map((item) => (
+                                <Card key={item.id}>
+                                    <CardContent className="p-4">
+                                        <div className="flex items-start justify-between">
+                                            <div className="space-y-1">
+                                                <div className="font-medium">{item.product.name}</div>
+                                                <div className="font-mono text-xs text-muted-foreground">{item.product.sku}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-sm font-medium">Cant: {item.quantity}</div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Desktop Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Producto</TableHead>
+                                        <TableHead>SKU</TableHead>
+                                        <TableHead className="text-right">Cantidad</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {delivery.items.map((item) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium">{item.product.name}</TableCell>
+                                            <TableCell className="font-mono text-xs text-muted-foreground">{item.product.sku}</TableCell>
+                                            <TableCell className="text-right font-medium">{item.quantity}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -147,7 +170,7 @@ export default async function DeliveryDetailPage({
                                         <div className="text-sm font-medium mb-1 flex items-center gap-2">
                                             <Truck className="h-4 w-4" /> Fecha de Entrega
                                         </div>
-                                        <div className="text-base">{format(new Date(delivery.deliveryDate), "PPP")}</div>
+                                        <div className="text-base">{format(new Date(delivery.deliveryDate), "PPP", { locale: es })}</div>
                                     </div>
                                 </>
                             )}

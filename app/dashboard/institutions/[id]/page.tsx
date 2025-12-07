@@ -17,6 +17,22 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Power, History, Settings } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
+
+const getDeliveryStatusLabel = (status: string) => {
+    switch (status) {
+        case "DELIVERED":
+            return "Entregado";
+        case "CANCELLED":
+            return "Cancelado";
+        case "PENDING":
+            return "Pendiente";
+        case "IN_TRANSIT":
+            return "En Tránsito";
+        default:
+            return status;
+    }
+};
 
 /* Next.js 15: params is a Promise */
 export default async function InstitutionDetailPage({
@@ -53,28 +69,28 @@ export default async function InstitutionDetailPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{institution.name}</h1>
-                    <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex-1">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <h1 className="text-3xl font-bold tracking-tight">{institution.name}</h1>
                         <Badge variant="outline">{institution.code}</Badge>
                         <Badge variant={institution.isActive ? "default" : "secondary"}>
-                            {institution.isActive ? "Active" : "Inactive"}
+                            {institution.isActive ? "Activo" : "Inactivo"}
                         </Badge>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     <form action={toggleStatus}>
                         <Button variant="outline" size="sm">
                             <Power className="mr-2 h-4 w-4" />
-                            {institution.isActive ? "Deactivate" : "Activate"}
+                            {institution.isActive ? "Desactivar" : "Activar"}
                         </Button>
                     </form>
                     {institution._count.deliveries === 0 && (
                         <form action={removeInstitution}>
                             <Button variant="destructive" size="sm">
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
+                                Eliminar
                             </Button>
                         </form>
                     )}
@@ -83,8 +99,8 @@ export default async function InstitutionDetailPage({
 
             <Tabs defaultValue="details" className="w-full">
                 <TabsList>
-                    <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="history">Delivery History</TabsTrigger>
+                    <TabsTrigger value="details">Detalles</TabsTrigger>
+                    <TabsTrigger value="history">Historial de Entregas</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="details" className="mt-6">
@@ -94,46 +110,80 @@ export default async function InstitutionDetailPage({
                 <TabsContent value="history" className="mt-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Recent Deliveries</CardTitle>
+                            <CardTitle>Entregas Recientes</CardTitle>
                         </CardHeader>
                         <CardContent>
                             {institution.deliveries.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-8">No deliveries found for this institution.</p>
+                                <p className="text-sm text-muted-foreground text-center py-8">No se encontraron entregas para esta institución.</p>
                             ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Warehouse</TableHead>
-                                            <TableHead>Items</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Action</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
+                                <>
+                                    {/* Mobile Cards */}
+                                    <div className="block md:hidden space-y-4">
                                         {institution.deliveries.map((delivery) => (
-                                            <TableRow key={delivery.id}>
-                                                <TableCell>
-                                                    {format(new Date(delivery.createdAt), "PPP")}
-                                                </TableCell>
-                                                <TableCell>{delivery.warehouse.name}</TableCell>
-                                                <TableCell>{delivery._count.items}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={delivery.status === "DELIVERED" ? "default" : "secondary"}>
-                                                        {delivery.status}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Button variant="ghost" size="sm" asChild>
-                                                        <Link href={`/dashboard/deliveries/${delivery.id}`}>
-                                                            View
-                                                        </Link>
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
+                                            <Card key={delivery.id}>
+                                                <CardContent className="p-4">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="space-y-1">
+                                                            <div className="font-medium">{format(new Date(delivery.createdAt), "PPP", { locale: es })}</div>
+                                                            <div className="text-sm text-muted-foreground">{delivery.warehouse.name}</div>
+                                                        </div>
+                                                        <Badge variant={delivery.status === "DELIVERED" ? "default" : "secondary"}>
+                                                            {getDeliveryStatusLabel(delivery.status)}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="mt-4 flex items-center justify-between text-sm">
+                                                        <div>
+                                                            <Badge variant="secondary">{delivery._count.items} artículos</Badge>
+                                                        </div>
+                                                        <Button variant="ghost" size="sm" asChild>
+                                                            <Link href={`/dashboard/deliveries/${delivery.id}`}>
+                                                                Ver
+                                                            </Link>
+                                                        </Button>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
                                         ))}
-                                    </TableBody>
-                                </Table>
+                                    </div>
+
+                                    {/* Desktop Table */}
+                                    <div className="hidden md:block overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Fecha</TableHead>
+                                                    <TableHead>Almacén</TableHead>
+                                                    <TableHead>Artículos</TableHead>
+                                                    <TableHead>Estado</TableHead>
+                                                    <TableHead>Acción</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {institution.deliveries.map((delivery) => (
+                                                    <TableRow key={delivery.id}>
+                                                        <TableCell>
+                                                            {format(new Date(delivery.createdAt), "PPP", { locale: es })}
+                                                        </TableCell>
+                                                        <TableCell>{delivery.warehouse.name}</TableCell>
+                                                        <TableCell>{delivery._count.items}</TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={delivery.status === "DELIVERED" ? "default" : "secondary"}>
+                                                                {getDeliveryStatusLabel(delivery.status)}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Button variant="ghost" size="sm" asChild>
+                                                                <Link href={`/dashboard/deliveries/${delivery.id}`}>
+                                                                    Ver
+                                                                </Link>
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </>
                             )}
                         </CardContent>
                     </Card>

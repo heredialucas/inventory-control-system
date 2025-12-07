@@ -46,15 +46,15 @@ export function SupplierForm({ supplier, trigger }: SupplierFormProps) {
             try {
                 if (supplier) {
                     await updateSupplier(supplier.id, formData);
-                    toast.success("Supplier updated successfully");
+                    toast.success("Proveedor actualizado exitosamente");
                 } else {
                     await createSupplier(formData);
-                    toast.success("Supplier created successfully");
+                    toast.success("Proveedor creado exitosamente");
                 }
                 setOpen(false);
                 router.refresh();
             } catch (error: any) {
-                toast.error(error.message || "An error occurred");
+                toast.error(error.message || "Ocurrió un error");
             }
         });
     };
@@ -62,35 +62,35 @@ export function SupplierForm({ supplier, trigger }: SupplierFormProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                {trigger || <Button>{supplier ? "Edit" : "Add Supplier"}</Button>}
+                {trigger || <Button>{supplier ? "Editar" : "Agregar Proveedor"}</Button>}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>{supplier ? "Edit Supplier" : "Add New Supplier"}</DialogTitle>
+                        <DialogTitle>{supplier ? "Editar Proveedor" : "Agregar Nuevo Proveedor"}</DialogTitle>
                         <DialogDescription>
-                            {supplier ? "Update supplier information" : "Create a new supplier"}
+                            {supplier ? "Actualizar información del proveedor" : "Crear un nuevo proveedor"}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name *</Label>
+                                <Label htmlFor="name">Nombre *</Label>
                                 <Input
                                     id="name"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="Supplier name"
+                                    placeholder="Nombre del proveedor"
                                     required
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="code">Code *</Label>
+                                <Label htmlFor="code">Código *</Label>
                                 <Input
                                     id="code"
                                     value={formData.code}
                                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                    placeholder="SUP-001"
+                                    placeholder="PROV-001"
                                     required
                                     maxLength={20}
                                 />
@@ -104,54 +104,54 @@ export function SupplierForm({ supplier, trigger }: SupplierFormProps) {
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="supplier@example.com"
+                                    placeholder="proveedor@ejemplo.com"
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="phone">Phone</Label>
+                                <Label htmlFor="phone">Teléfono</Label>
                                 <Input
                                     id="phone"
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    placeholder="+1 234 567 8900"
+                                    placeholder="+54 9 11 1234 5678"
                                 />
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="contactName">Contact Person</Label>
+                            <Label htmlFor="contactName">Persona de Contacto</Label>
                             <Input
                                 id="contactName"
                                 value={formData.contactName}
                                 onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                                placeholder="Contact name"
+                                placeholder="Nombre del contacto"
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="address">Address</Label>
+                            <Label htmlFor="address">Dirección</Label>
                             <Input
                                 id="address"
                                 value={formData.address}
                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                placeholder="123 Main St, City"
+                                placeholder="Calle 123, Ciudad"
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="notes">Notes</Label>
+                            <Label htmlFor="notes">Notas</Label>
                             <Textarea
                                 id="notes"
                                 value={formData.notes}
                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                placeholder="Additional notes..."
+                                placeholder="Notas adicionales..."
                                 rows={3}
                             />
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
+                            Cancelar
                         </Button>
                         <Button type="submit" disabled={isPending}>
-                            {isPending ? "Saving..." : supplier ? "Update" : "Create"}
+                            {isPending ? "Guardando..." : supplier ? "Actualizar" : "Crear"}
                         </Button>
                     </DialogFooter>
                 </form>

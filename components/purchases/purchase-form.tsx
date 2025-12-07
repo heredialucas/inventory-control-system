@@ -57,7 +57,7 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
 
     const handleRemoveItem = (id: string) => {
         if (items.length === 1) {
-            toast.error("Order must have at least one item");
+            toast.error("La orden debe tener al menos un artículo");
             return;
         }
         setItems(items.filter((item) => item.id !== id));
@@ -79,7 +79,7 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
         e.preventDefault();
 
         if (!formData.supplierId || !formData.warehouseId) {
-            toast.error("Please select a supplier and warehouse");
+            toast.error("Por favor selecciona un proveedor y almacén");
             return;
         }
 
@@ -88,12 +88,12 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
         );
 
         if (validItems.length === 0) {
-            toast.error("Please add at least one valid item");
+            toast.error("Por favor agrega al menos un artículo válido");
             return;
         }
 
         if (validItems.length !== items.length) {
-            toast.error("Some items are invalid (missing product or invalid quantity)");
+            toast.error("Algunos artículos son inválidos (falta producto o cantidad inválida)");
             return;
         }
 
@@ -111,10 +111,10 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                         unitPrice: Number(item.unitPrice),
                     })),
                 });
-                toast.success("Purchase order created successfully");
+                toast.success("Orden de compra creada exitosamente");
                 router.push("/dashboard/purchases");
             } catch (error: any) {
-                toast.error(error.message || "Failed to create purchase order");
+                toast.error(error.message || "Error al crear la orden de compra");
             }
         });
     };
@@ -128,24 +128,24 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-2xl font-bold">New Purchase Order</h1>
-                    <p className="text-muted-foreground text-sm">Create a new order for a supplier</p>
+                    <h1 className="text-2xl font-bold">Nueva Orden de Compra</h1>
+                    <p className="text-muted-foreground text-sm">Crear una nueva orden para un proveedor</p>
                 </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">Order Details</CardTitle>
+                        <CardTitle className="text-base">Detalles de la Orden</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="supplier">Supplier</Label>
+                            <Label htmlFor="supplier">Proveedor</Label>
                             <Select
                                 onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select supplier" />
+                                    <SelectValue placeholder="Seleccionar proveedor" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {suppliers.map((s) => (
@@ -157,12 +157,12 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="warehouse">Target Warehouse</Label>
+                            <Label htmlFor="warehouse">Almacén Destino</Label>
                             <Select
                                 onValueChange={(value) => setFormData({ ...formData, warehouseId: value })}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select warehouse" />
+                                    <SelectValue placeholder="Seleccionar almacén" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {warehouses.map((w) => (
@@ -174,7 +174,7 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="expectedDate">Expected Date</Label>
+                            <Label htmlFor="expectedDate">Fecha Esperada</Label>
                             <Input
                                 id="expectedDate"
                                 type="date"
@@ -183,10 +183,10 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="notes">Notes</Label>
+                            <Label htmlFor="notes">Notas</Label>
                             <Textarea
                                 id="notes"
-                                placeholder="Additional notes..."
+                                placeholder="Notas adicionales..."
                                 value={formData.notes}
                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                             />
@@ -196,42 +196,38 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
 
                 <Card className="md:h-fit">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base">Order Summary</CardTitle>
+                        <CardTitle className="text-base">Resumen de la Orden</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">${calculateTotal().toFixed(2)}</div>
                         <p className="text-xs text-muted-foreground">
-                            Total estimated cost including all {items.length} items
+                            Costo total estimado incluyendo todos los {items.length} artículos
                         </p>
                     </CardContent>
                     <CardFooter>
                         <Button className="w-full" type="submit" disabled={isPending}>
                             <Save className="mr-2 h-4 w-4" />
-                            {isPending ? "Creating..." : "Create Order"}
+                            {isPending ? "Creando..." : "Crear Orden"}
                         </Button>
                     </CardFooter>
                 </Card>
             </div>
 
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-base">Order Items</CardTitle>
-                    <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Item
-                    </Button>
+                <CardHeader>
+                    <CardTitle className="text-base">Artículos de la Orden</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {items.map((item, index) => (
-                        <div key={item.id} className="flex gap-4 items-end border-b pb-4 last:border-0 last:pb-0">
+                        <div key={item.id} className="flex flex-col gap-4 sm:flex-row sm:items-end border-b pb-4 last:border-0 last:pb-0">
                             <div className="flex-1 space-y-2">
-                                <Label>Product</Label>
+                                <Label>Producto</Label>
                                 <Select
                                     value={item.productId}
                                     onValueChange={(value) => handleItemChange(item.id, "productId", value)}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select product" />
+                                        <SelectValue placeholder="Seleccionar producto" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {products.map((p) => (
@@ -242,8 +238,8 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="w-24 space-y-2">
-                                <Label>Quantity</Label>
+                            <div className="w-full sm:w-24 space-y-2">
+                                <Label>Cantidad</Label>
                                 <Input
                                     type="number"
                                     min="1"
@@ -251,8 +247,8 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                                     onChange={(e) => handleItemChange(item.id, "quantity", Number(e.target.value))}
                                 />
                             </div>
-                            <div className="w-32 space-y-2">
-                                <Label>Unit Price</Label>
+                            <div className="w-full sm:w-32 space-y-2">
+                                <Label>Precio Unitario</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -261,7 +257,7 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                                     onChange={(e) => handleItemChange(item.id, "unitPrice", Number(e.target.value))}
                                 />
                             </div>
-                            <div className="w-32 space-y-2">
+                            <div className="w-full sm:w-32 space-y-2">
                                 <Label>Total</Label>
                                 <div className="h-10 flex items-center px-3 border rounded-md bg-muted/50 text-sm">
                                     ${(item.quantity * item.unitPrice).toFixed(2)}
@@ -278,6 +274,10 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                             </Button>
                         </div>
                     ))}
+                    <Button type="button" variant="outline" onClick={handleAddItem} className="w-full sm:w-auto">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Agregar Artículo
+                    </Button>
                 </CardContent>
             </Card>
         </form>

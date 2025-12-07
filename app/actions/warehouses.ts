@@ -17,8 +17,8 @@ export async function getWarehouses() {
     try {
         return await warehouseService.getWarehouses();
     } catch (error) {
-        console.error("Error getting warehouses:", error);
-        throw new Error("Failed to fetch warehouses");
+        console.error("Error obteniendo depósitos:", error);
+        throw new Error("Error al obtener depósitos");
     }
 }
 
@@ -31,8 +31,8 @@ export async function getWarehouse(id: string) {
     try {
         return await warehouseService.getWarehouse(id);
     } catch (error) {
-        console.error("Error getting warehouse:", error);
-        throw new Error("Failed to fetch warehouse");
+        console.error("Error obteniendo depósito:", error);
+        throw new Error("Error al obtener depósito");
     }
 }
 
@@ -56,7 +56,7 @@ export async function createWarehouse(data: {
         if (error.code === "P2002") {
             throw new Error("Warehouse name or code already exists");
         }
-        throw new Error("Failed to create warehouse");
+        throw new Error("Error al crear depósito");
     }
 }
 
@@ -84,7 +84,7 @@ export async function updateWarehouse(
         if (error.code === "P2002") {
             throw new Error("Warehouse name or code already exists");
         }
-        throw new Error("Failed to update warehouse");
+        throw new Error("Error al actualizar depósito");
     }
 }
 
@@ -101,7 +101,7 @@ export async function toggleWarehouseStatus(id: string) {
         return warehouse;
     } catch (error) {
         console.error("Error toggling warehouse status:", error);
-        throw new Error("Failed to update warehouse status");
+        throw new Error("Error al actualizar estado del depósito");
     }
 }
 
@@ -116,7 +116,7 @@ export async function deleteWarehouse(id: string) {
         revalidatePath("/dashboard/warehouses");
     } catch (error: any) {
         console.error("Error deleting warehouse:", error);
-        throw new Error(error.message || "Failed to delete warehouse");
+        throw new Error(error.message || "Error al eliminar depósito");
     }
 }
 
@@ -127,7 +127,7 @@ export async function getWarehouseStock(warehouseId: string) {
         return await warehouseService.getWarehouseStock(warehouseId);
     } catch (error) {
         console.error("Error getting warehouse stock:", error);
-        throw new Error("Failed to fetch warehouse stock");
+        throw new Error("Error al obtener stock del depósito");
     }
 }
 
@@ -136,7 +136,7 @@ export async function getProductStockByWarehouse(productId: string) {
         return await warehouseService.getProductStockByWarehouse(productId);
     } catch (error) {
         console.error("Error getting product stock by warehouse:", error);
-        throw new Error("Failed to fetch product stock");
+        throw new Error("Error al obtener stock del producto");
     }
 }
 
@@ -150,13 +150,13 @@ export async function getWarehouseProducts(warehouseId: string) {
                 id: p.id,
                 name: p.name,
                 sku: p.sku,
-                quantity: p.stock, // Total stock
+                quantity: p.stock, // Stock total
                 price: p.price?.toString() || "0",
             }));
         }
 
         const stockItems = await warehouseService.getWarehouseStock(warehouseId);
-        // Filter items with quantity > 0 and map to format
+        // Filtrar items con cantidad > 0 y mapear al formato
         return stockItems
             .filter(item => item.quantity > 0)
             .map(item => ({
@@ -167,8 +167,8 @@ export async function getWarehouseProducts(warehouseId: string) {
                 price: item.product.price?.toString() || "0",
             }));
     } catch (error) {
-        console.error("Error getting warehouse products:", error);
-        throw new Error("Failed to fetch warehouse products");
+        console.error("Error obteniendo productos del depósito:", error);
+        throw new Error("Error al obtener productos del depósito");
     }
 }
 
@@ -191,7 +191,7 @@ export async function getTransfers(filters?: {
         // 2. Map transfers to plain objects (serializing Decimals)
         const mappedTransfers = transfers.map(t => ({
             id: t.id,
-            type: "TRANSFER" as const, // Discriminator for UI if needed
+            type: "TRANSFER" as const, // Discriminador para UI si es necesario
             quantity: t.quantity,
             status: t.status,
             notes: t.notes,
@@ -211,7 +211,7 @@ export async function getTransfers(filters?: {
                 id: t.product.id,
                 name: t.product.name,
                 sku: t.product.sku,
-                // price: t.product.price.toString(), // If price is needed, enable this. Currently UI doesn't seem to use it.
+                // price: t.product.price.toString(), // Si se necesita precio, habilitar esto. Actualmente la UI no parece usarlo.
             },
             user: t.user,
         }));
@@ -220,24 +220,24 @@ export async function getTransfers(filters?: {
         let stockMovements: any[] = [];
 
         if (!filters?.status || filters.status === "COMPLETED") {
-            // Fetch "IN" movements that might be "Ingresos"
-            // Strategy: valid "Ingresos" usually have a warehouseId (destination) but are not created by a transfer 
-            // (though transfer completion also creates IN movements).
-            // To distinguish: Transfer completion movements have reason "Transfer from warehouse completed".
-            // We want "Transfer from Unassigned..." or similar, or just everything else?
-            // Safest: Filter OUT those with reason "Transfer from warehouse completed".
-            // Also filter by warehouseId if provided in filters.
+            // Obtener movimientos "IN" que podrían ser "Ingresos"
+            // Estrategia: los "Ingresos" válidos usualmente tienen warehouseId (destino) pero no son creados por una transferencia
+            // (aunque la finalización de transferencia también crea movimientos IN).
+            // Para distinguir: Los movimientos de finalización de transferencia tienen reason "Transfer from warehouse completed".
+            // Queremos "Transfer from Unassigned..." o similar, ¿o simplemente todo lo demás?
+            // Más seguro: Filtrar FUERA aquellos con reason "Transfer from warehouse completed".
+            // También filtrar por warehouseId si se proporciona en los filtros.
 
             const movements = await inventoryService.getStockMovements({
                 type: "IN",
                 warehouseId: filters?.warehouseId,
-                // We'll filter by reason manually since our service is simple
+                // Filtraremos por reason manualmente ya que nuestro servicio es simple
             });
 
-            // Filter out movements that come from Transfer Completion (to avoid duplicates in the UI)
-            // The reason string in `completeTransfer` is "Transfer from warehouse completed"
-            // The reason string in `cancelTransfer` is "Transfer cancelled - stock returned" -> Should this show? Maybe as a cancelled return? 
-            // Let's focus on "Ingresos" (Add Stock). 
+            // Filtrar movimientos que vienen de Finalización de Transferencia (para evitar duplicados en la UI)
+            // El string reason en `completeTransfer` es "Transfer from warehouse completed"
+            // El string reason en `cancelTransfer` es "Transfer cancelled - stock returned" -> ¿Debería mostrarse? ¿Quizás como devolución cancelada?
+            // Enfoquémonos en "Ingresos" (Agregar Stock).
             // `addStockToWarehouse` reason: data.notes || "Transfer from Unassigned/Adjustment"
 
             stockMovements = movements.filter(m =>
@@ -250,10 +250,10 @@ export async function getTransfers(filters?: {
             id: m.id,
             type: "MOVEMENT" as const,
             quantity: m.quantity,
-            status: "COMPLETED", // Movements are always done
+            status: "COMPLETED", // Los movimientos siempre están completados
             notes: m.reason,
             createdAt: m.createdAt,
-            completedAt: m.createdAt, // Same
+            completedAt: m.createdAt, // Igual
             fromWarehouse: {
                 id: "unassigned",
                 name: "Sin Asignar / Externo",
@@ -272,8 +272,8 @@ export async function getTransfers(filters?: {
             user: m.user,
         }));
 
-        // 4. Merge and sort
-        const combined = [...mappedTransfers, ...mappedMovements].sort((a, b) => { // Sort descending by date
+        // 4. Combinar y ordenar
+        const combined = [...mappedTransfers, ...mappedMovements].sort((a, b) => { // Ordenar descendente por fecha
             const dateA = new Date(a.createdAt).getTime();
             const dateB = new Date(b.createdAt).getTime();
             return dateB - dateA;
@@ -282,8 +282,8 @@ export async function getTransfers(filters?: {
         return combined;
 
     } catch (error) {
-        console.error("Error getting transfers:", error);
-        throw new Error("Failed to fetch transfers");
+        console.error("Error obteniendo transferencias:", error);
+        throw new Error("Error al obtener transferencias");
     }
 }
 
@@ -291,8 +291,8 @@ export async function getTransfer(id: string) {
     try {
         return await warehouseService.getTransfer(id);
     } catch (error) {
-        console.error("Error getting transfer:", error);
-        throw new Error("Failed to fetch transfer");
+        console.error("Error obteniendo transferencia:", error);
+        throw new Error("Error al obtener transferencia");
     }
 }
 
@@ -314,11 +314,11 @@ export async function createTransfer(data: {
         revalidatePath("/dashboard/warehouses/transfers");
         revalidatePath(`/dashboard/warehouses/${data.fromWarehouseId}`);
         revalidatePath(`/dashboard/warehouses/${data.toWarehouseId}`);
-        revalidatePath("/dashboard/warehouses"); // Update main list counts
+        revalidatePath("/dashboard/warehouses"); // Actualizar conteos de lista principal
         return transfer;
     } catch (error: any) {
         console.error("Error creating transfer:", error);
-        throw new Error(error.message || "Failed to create transfer");
+        throw new Error(error.message || "Error al crear transferencia");
     }
 }
 
@@ -334,7 +334,7 @@ export async function markTransferInTransit(transferId: string) {
         return transfer;
     } catch (error: any) {
         console.error("Error marking transfer in transit:", error);
-        throw new Error(error.message || "Failed to update transfer");
+        throw new Error(error.message || "Error al actualizar transferencia");
     }
 }
 
@@ -347,11 +347,11 @@ export async function completeTransfer(transferId: string, userId: string) {
     try {
         const transfer = await warehouseService.completeTransfer(transferId, userId);
         revalidatePath("/dashboard/warehouses/transfers");
-        revalidatePath("/dashboard/warehouses"); // Update main list counts
+        revalidatePath("/dashboard/warehouses"); // Actualizar conteos de lista principal
         return transfer;
     } catch (error: any) {
         console.error("Error completing transfer:", error);
-        throw new Error(error.message || "Failed to complete transfer");
+        throw new Error(error.message || "Error al completar transferencia");
     }
 }
 
@@ -369,7 +369,7 @@ export async function cancelTransfer(transferId: string, userId: string) {
 
     } catch (error: any) {
         console.error("Error cancelling transfer:", error);
-        throw new Error(error.message || "Failed to cancel transfer");
+        throw new Error(error.message || "Error al cancelar transferencia");
     }
 }
 
@@ -387,9 +387,9 @@ export async function addStockToWarehouse(data: {
     }
 
     try {
-        // Distinguish between NEW STOCK (Purchase) and ASSIGNMENT (Distribution)
+        // Distinguir entre STOCK NUEVO (Compra) y ASIGNACIÓN (Distribución)
 
-        // 1. Update Warehouse Stock (Always increases in target warehouse)
+        // 1. Actualizar Stock de Depósito (Siempre aumenta en el depósito destino)
         await warehouseService.updateWarehouseStock(data.warehouseId, data.productId, data.quantity);
 
         if (data.isNewStock) {
@@ -419,7 +419,7 @@ export async function addStockToWarehouse(data: {
         return { success: true };
     } catch (error: any) {
         console.error("Error adding stock:", error);
-        throw new Error(error.message || "Failed to add stock");
+        throw new Error(error.message || "Error al agregar stock");
     }
 }
 
@@ -430,7 +430,7 @@ export async function getLowStockItems(warehouseId: string) {
         return await warehouseService.getLowStockItems(warehouseId);
     } catch (error) {
         console.error("Error getting low stock items:", error);
-        throw new Error("Failed to fetch low stock items");
+        throw new Error("Error al obtener items con stock bajo");
     }
 }
 
@@ -439,6 +439,6 @@ export async function getWarehouseStats(warehouseId: string) {
         return await warehouseService.getWarehouseStats(warehouseId);
     } catch (error) {
         console.error("Error getting warehouse stats:", error);
-        throw new Error("Failed to fetch warehouse statistics");
+        throw new Error("Error al obtener estadísticas del depósito");
     }
 }

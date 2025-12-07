@@ -262,7 +262,7 @@ export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigg
                             />
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                             Cancelar
                         </Button>

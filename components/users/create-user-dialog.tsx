@@ -27,6 +27,15 @@ export function CreateUserDialog({ roles = [] }: { roles?: any[] }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    const translateRoleName = (name: string) => {
+        const translations: Record<string, string> = {
+            ADMIN: "Administrador",
+            MANAGER: "Encargado",
+            VIEWER: "Empleado"
+        };
+        return translations[name] || name;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -73,7 +82,7 @@ export function CreateUserDialog({ roles = [] }: { roles?: any[] }) {
                     Nuevo Usuario
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Crear Nuevo Usuario</DialogTitle>
@@ -83,8 +92,8 @@ export function CreateUserDialog({ roles = [] }: { roles?: any[] }) {
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         {error && <p className="text-red-500 text-sm">{error}</p>}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="email" className="text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-center gap-4">
+                            <Label htmlFor="email" className="sm:text-right">
                                 Email
                             </Label>
                             <Input
@@ -92,37 +101,37 @@ export function CreateUserDialog({ roles = [] }: { roles?: any[] }) {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="col-span-3"
+                                className="sm:col-span-3"
                                 placeholder="correo@ejemplo.com"
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="firstname" className="text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-center gap-4">
+                            <Label htmlFor="firstname" className="sm:text-right">
                                 Nombre
                             </Label>
                             <Input
                                 id="firstname"
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
-                                className="col-span-3"
+                                className="sm:col-span-3"
                                 placeholder="Juan"
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="lastname" className="text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-center gap-4">
+                            <Label htmlFor="lastname" className="sm:text-right">
                                 Apellido
                             </Label>
                             <Input
                                 id="lastname"
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
-                                className="col-span-3"
+                                className="sm:col-span-3"
                                 placeholder="Perez"
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="password" className="text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-center gap-4">
+                            <Label htmlFor="password" className="sm:text-right">
                                 Contraseña
                             </Label>
                             <Input
@@ -130,14 +139,14 @@ export function CreateUserDialog({ roles = [] }: { roles?: any[] }) {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="col-span-3"
+                                className="sm:col-span-3"
                                 placeholder="Opcional (def: 123456)"
                             />
                         </div>
 
-                        <div className="grid grid-cols-4 gap-4">
-                            <Label className="text-right pt-2">Roles</Label>
-                            <div className="col-span-3 border rounded-md p-3 h-48 overflow-y-auto space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <Label className="sm:text-right sm:pt-2">Roles</Label>
+                            <div className="sm:col-span-3 border rounded-md p-3 h-48 overflow-y-auto space-y-2">
                                 {availableRoles.length === 0 ? (
                                     <p className="text-xs text-muted-foreground">No hay roles disponibles.</p>
                                 ) : (
@@ -149,7 +158,7 @@ export function CreateUserDialog({ roles = [] }: { roles?: any[] }) {
                                                 onCheckedChange={() => toggleRole(role.id)}
                                             />
                                             <Label htmlFor={`role-${role.id}`} className="text-sm font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                <span className="font-semibold mr-1">{role.name}</span>
+                                                <span className="font-semibold mr-1">{translateRoleName(role.name)}</span>
                                             </Label>
                                         </div>
                                     ))
@@ -157,7 +166,10 @@ export function CreateUserDialog({ roles = [] }: { roles?: any[] }) {
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                            Cancelar
+                        </Button>
                         <Button type="submit" disabled={loading}>
                             {loading ? "Creando..." : "Crear Usuario"}
                         </Button>

@@ -99,7 +99,7 @@ export function InstitutionForm({ initialData, isEdit = false }: InstitutionForm
                     <CardDescription>Información básica de la institución educativa</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="code">CUE / Código</Label>
                             <Input
@@ -170,7 +170,7 @@ export function InstitutionForm({ initialData, isEdit = false }: InstitutionForm
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input

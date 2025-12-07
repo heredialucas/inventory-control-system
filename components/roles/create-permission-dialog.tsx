@@ -84,7 +84,10 @@ export function CreatePermissionDialog() {
                             />
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                            Cancelar
+                        </Button>
                         <Button type="submit" disabled={loading}>
                             {loading ? "Creando..." : "Crear Permiso"}
                         </Button>

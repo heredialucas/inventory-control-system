@@ -80,8 +80,8 @@ export const authService = {
             return;
         }
 
-        // TODO: Generate reset token and send email
-        console.log(`[MOCK] Sending password reset email to ${email}`);
+        // TODO: Generar token de restablecimiento y enviar email
+        console.log(`[MOCK] Enviando email de restablecimiento de contraseña a ${email}`);
     },
 
     async updatePassword(password: string, userId: string): Promise<void> {

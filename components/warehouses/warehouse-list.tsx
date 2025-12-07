@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -64,26 +65,26 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
         startTransition(async () => {
             try {
                 await toggleWarehouseStatus(id);
-                toast.success("Warehouse status updated");
+                toast.success("Estado del depósito actualizado");
                 router.refresh();
             } catch (error: any) {
-                toast.error(error.message || "Failed to update status");
+                toast.error(error.message || "Error al actualizar estado");
             }
         });
     };
 
     const handleDelete = (id: string, name: string) => {
-        if (!confirm(`Are you sure you want to delete warehouse "${name}"?`)) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar el depósito "${name}"?`)) {
             return;
         }
 
         startTransition(async () => {
             try {
                 await deleteWarehouse(id);
-                toast.success("Warehouse deleted successfully");
+                toast.success("Depósito eliminado exitosamente");
                 router.refresh();
             } catch (error: any) {
-                toast.error(error.message || "Failed to delete warehouse");
+                toast.error(error.message || "Error al eliminar depósito");
             }
         });
     };
@@ -92,9 +93,9 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Package className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No warehouses found</h3>
+                <h3 className="text-lg font-semibold mb-2">No se encontraron depósitos</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                    Get started by creating your first warehouse
+                    Comienza creando tu primer depósito
                 </p>
             </div>
         );
@@ -102,15 +103,16 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
 
     return (
         <>
-            <div className="rounded-md border">
+            {/* Vista de tabla para desktop */}
+            <div className="hidden md:block rounded-md border">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Code</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Address</TableHead>
-                            <TableHead>Products</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Código</TableHead>
+                            <TableHead>Nombre</TableHead>
+                            <TableHead>Dirección</TableHead>
+                            <TableHead>Productos</TableHead>
+                            <TableHead>Estado</TableHead>
                             <TableHead className="w-[70px]"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -136,7 +138,7 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                                 </TableCell>
                                 <TableCell>
                                     <Badge variant={warehouse.isActive ? "default" : "secondary"}>
-                                        {warehouse.isActive ? "Active" : "Inactive"}
+                                        {warehouse.isActive ? "Activo" : "Inactivo"}
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
@@ -144,27 +146,27 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" disabled={isPending}>
                                                 <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">Actions</span>
+                                                <span className="sr-only">Acciones</span>
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem asChild>
                                                 <Link href={`/dashboard/warehouses/${warehouse.id}`}>
                                                     <Eye className="mr-2 h-4 w-4" />
-                                                    View Details
+                                                    Ver Detalles
                                                 </Link>
                                             </DropdownMenuItem>
                                             {canManage && (
                                                 <>
                                                     <DropdownMenuItem onClick={() => setEditingWarehouse(warehouse)}>
                                                         <Edit className="mr-2 h-4 w-4" />
-                                                        Edit
+                                                        Editar
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleToggleStatus(warehouse.id)}>
                                                         <Power className="mr-2 h-4 w-4" />
-                                                        {warehouse.isActive ? "Deactivate" : "Activate"}
+                                                        {warehouse.isActive ? "Desactivar" : "Activar"}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
@@ -172,7 +174,7 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                                                         onClick={() => handleDelete(warehouse.id, warehouse.name)}
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
+                                                        Eliminar
                                                     </DropdownMenuItem>
                                                 </>
                                             )}
@@ -183,6 +185,84 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                         ))}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Vista de cards para móviles */}
+            <div className="md:hidden space-y-4">
+                {warehouses.map((warehouse) => (
+                    <Card key={warehouse.id}>
+                        <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <h4 className="font-medium">{warehouse.name}</h4>
+                                    <p className="text-sm text-muted-foreground font-mono">
+                                        Código: {warehouse.code}
+                                    </p>
+                                    {warehouse.description && (
+                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                            {warehouse.description}
+                                        </p>
+                                    )}
+                                </div>
+                                <Badge variant={warehouse.isActive ? "default" : "secondary"}>
+                                    {warehouse.isActive ? "Activo" : "Inactivo"}
+                                </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                                <div>
+                                    <p className="text-muted-foreground">Dirección</p>
+                                    <p className="mt-1">{warehouse.address || "-"}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Productos</p>
+                                    <Badge variant="secondary" className="mt-1">{warehouse._count.stockItems}</Badge>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end pt-3 border-t">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" disabled={isPending}>
+                                            <MoreHorizontal className="h-4 w-4 mr-1" />
+                                            Acciones
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/dashboard/warehouses/${warehouse.id}`}>
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                Ver Detalles
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        {canManage && (
+                                            <>
+                                                <DropdownMenuItem onClick={() => setEditingWarehouse(warehouse)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Editar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleToggleStatus(warehouse.id)}>
+                                                    <Power className="mr-2 h-4 w-4" />
+                                                    {warehouse.isActive ? "Desactivar" : "Activar"}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className="text-destructive"
+                                                    onClick={() => handleDelete(warehouse.id, warehouse.name)}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Eliminar
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
 
             {/* Edit Dialog */}

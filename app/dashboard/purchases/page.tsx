@@ -16,10 +16,28 @@ import {
 import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
+
+const getPurchaseOrderStatusLabel = (status: string) => {
+    switch (status) {
+        case "DRAFT":
+            return "Borrador";
+        case "PENDING":
+            return "Pendiente";
+        case "RECEIVED":
+            return "Recibida";
+        case "PARTIAL":
+            return "Parcial";
+        case "CANCELLED":
+            return "Cancelada";
+        default:
+            return status;
+    }
+};
 
 export const metadata = {
-    title: "Purchase Orders | Inventory Control",
-    description: "Manage purchase orders and receiving",
+    title: "Órdenes de Compra | Control de Inventario",
+    description: "Gestionar órdenes de compra y recepción",
 };
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -45,30 +63,32 @@ export default async function PurchasesPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Purchase Orders</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Órdenes de Compra</h1>
                     <p className="text-muted-foreground">
-                        Manage purchase orders and inventory receiving
+                        Gestionar órdenes de compra y recepción de inventario
                     </p>
                 </div>
                 {canManage && (
                     <Button asChild>
                         <Link href="/dashboard/purchases/new">
                             <ShoppingCart className="mr-2 h-4 w-4" />
-                            New Purchase Order
+                            Nueva Orden de Compra
                         </Link>
                     </Button>
                 )}
             </div>
 
             <Tabs defaultValue="all" className="w-full">
-                <TabsList>
-                    <TabsTrigger value="all">All ({allOrders.length})</TabsTrigger>
-                    <TabsTrigger value="draft">Draft ({draftOrders.length})</TabsTrigger>
-                    <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
-                    <TabsTrigger value="received">Received ({receivedOrders.length})</TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto">
+                    <TabsList className="inline-flex w-max">
+                        <TabsTrigger value="all">Todas ({allOrders.length})</TabsTrigger>
+                        <TabsTrigger value="draft">Borrador ({draftOrders.length})</TabsTrigger>
+                        <TabsTrigger value="pending">Pendiente ({pendingOrders.length})</TabsTrigger>
+                        <TabsTrigger value="received">Recibidas ({receivedOrders.length})</TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="all" className="mt-6">
                     <PurchaseOrderTable orders={allOrders} />
@@ -93,9 +113,9 @@ function PurchaseOrderTable({ orders }: { orders: any[] }) {
             <Card>
                 <CardContent className="py-12 text-center">
                     <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No purchase orders found</h3>
+                    <h3 className="text-lg font-semibold mb-2">No se encontraron órdenes de compra</h3>
                     <p className="text-sm text-muted-foreground">
-                        Create a purchase order to start receiving inventory
+                        Crea una orden de compra para comenzar a recibir inventario
                     </p>
                 </CardContent>
             </Card>
@@ -103,59 +123,107 @@ function PurchaseOrderTable({ orders }: { orders: any[] }) {
     }
 
     return (
-        <div className="rounded-md border">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Order Number</TableHead>
-                        <TableHead>Supplier</TableHead>
-                        <TableHead>Warehouse</TableHead>
-                        <TableHead>Items</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {orders.map((order) => (
-                        <TableRow key={order.id}>
-                            <TableCell className="font-mono font-medium">
-                                <Link
-                                    href={`/dashboard/purchases/${order.id}`}
-                                    className="hover:underline"
-                                >
-                                    {order.orderNumber}
-                                </Link>
-                            </TableCell>
-                            <TableCell>
-                                <Link
-                                    href={`/dashboard/suppliers/${order.supplier.id}`}
-                                    className="hover:underline"
-                                >
-                                    {order.supplier.name}
-                                </Link>
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                                {order.warehouse.name}
-                            </TableCell>
-                            <TableCell>
-                                <Badge variant="secondary">{order._count.items}</Badge>
-                            </TableCell>
-                            <TableCell className="font-medium">
-                                ${Number(order.totalAmount).toFixed(2)}
-                            </TableCell>
-                            <TableCell>
+        <>
+            {/* Mobile Cards */}
+            <div className="block md:hidden space-y-4">
+                {orders.map((order) => (
+                    <Card key={order.id}>
+                        <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                                <div className="space-y-1">
+                                    <Link
+                                        href={`/dashboard/purchases/${order.id}`}
+                                        className="font-mono font-medium text-lg hover:underline"
+                                    >
+                                        {order.orderNumber}
+                                    </Link>
+                                    <div className="text-sm text-muted-foreground">
+                                        <Link
+                                            href={`/dashboard/suppliers/${order.supplier.id}`}
+                                            className="hover:underline"
+                                        >
+                                            {order.supplier.name}
+                                        </Link>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                        {order.warehouse.name}
+                                    </div>
+                                </div>
                                 <Badge variant={statusColors[order.status]}>
-                                    {order.status}
+                                    {getPurchaseOrderStatusLabel(order.status)}
                                 </Badge>
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                                {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
-                            </TableCell>
+                            </div>
+                            <div className="mt-4 flex items-center justify-between text-sm">
+                                <div>
+                                    <Badge variant="secondary">{order._count.items} artículos</Badge>
+                                </div>
+                                <div className="font-medium">
+                                    ${Number(order.totalAmount).toFixed(2)}
+                                </div>
+                            </div>
+                            <div className="mt-2 text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true, locale: es })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-md border overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Número de Orden</TableHead>
+                            <TableHead>Proveedor</TableHead>
+                            <TableHead>Almacén</TableHead>
+                            <TableHead>Artículos</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead>Creado</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
+                    </TableHeader>
+                    <TableBody>
+                        {orders.map((order) => (
+                            <TableRow key={order.id}>
+                                <TableCell className="font-mono font-medium">
+                                    <Link
+                                        href={`/dashboard/purchases/${order.id}`}
+                                        className="hover:underline"
+                                    >
+                                        {order.orderNumber}
+                                    </Link>
+                                </TableCell>
+                                <TableCell>
+                                    <Link
+                                        href={`/dashboard/suppliers/${order.supplier.id}`}
+                                        className="hover:underline"
+                                    >
+                                        {order.supplier.name}
+                                    </Link>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                    {order.warehouse.name}
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant="secondary">{order._count.items}</Badge>
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                    ${Number(order.totalAmount).toFixed(2)}
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant={statusColors[order.status]}>
+                                        {getPurchaseOrderStatusLabel(order.status)}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                    {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true, locale: es })}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </>
     );
 }

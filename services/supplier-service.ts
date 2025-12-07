@@ -94,7 +94,7 @@ export const supplierService = {
             select: { isActive: true },
         });
 
-        if (!supplier) throw new Error("Supplier not found");
+        if (!supplier) throw new Error("Proveedor no encontrado");
 
         return await prisma.supplier.update({
             where: { id },
@@ -112,7 +112,7 @@ export const supplierService = {
 
         if (ordersCount > 0) {
             throw new Error(
-                "Cannot delete supplier with existing purchase orders"
+                "No se puede eliminar proveedor con órdenes de compra existentes"
             );
         }
 

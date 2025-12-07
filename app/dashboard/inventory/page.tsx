@@ -31,7 +31,7 @@ export default async function InventoryPage() {
     const canEdit = hasPermission(user, "inventory.manage");
     const canDelete = hasPermission(user, "inventory.manage");
 
-    // Fetch warehouses for stock assignment action
+    // Obtener depósitos para la acción de asignación de stock
     const warehouses = await getWarehouses();
 
     return (
@@ -50,7 +50,7 @@ export default async function InventoryPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>SKU</TableHead>
+                            <TableHead>Código</TableHead>
                             <TableHead>Producto</TableHead>
                             <TableHead>Categoría</TableHead>
                             <TableHead>Stock</TableHead>
@@ -114,7 +114,7 @@ export default async function InventoryPage() {
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h3 className="font-semibold">{product.name}</h3>
-                                    <div className="text-xs text-muted-foreground font-mono mt-1">{product.sku}</div>
+                                    <div className="text-xs text-muted-foreground font-mono mt-1">Código: {product.sku}</div>
                                 </div>
                                 <div className="text-right">
                                     <div className="font-bold">${Number(product.price).toFixed(2)}</div>

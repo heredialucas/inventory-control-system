@@ -20,22 +20,22 @@ export async function createProductAction(formData: FormData) {
         return { error: "No tienes permisos para realizar esta acción" };
     }
 
-    const sku = formData.get("sku") as string; // Keep sku for the service call
+    const sku = formData.get("sku") as string; // Mantener sku para la llamada al servicio
     const name = formData.get("name") as string;
-    // const description = formData.get("description") as string; // This line was not in original createProductAction
-    const price = parseFloat(formData.get("price") as string) || 0; // Default to 0 if empty
+    // const description = formData.get("description") as string; // Esta línea no estaba en createProductAction original
+    const price = parseFloat(formData.get("price") as string) || 0; // Por defecto 0 si está vacío
     const minStock = parseInt(formData.get("minStock") as string) || 0;
     const categoryId = formData.get("categoryId") as string;
 
-    // Initial Stock Logic
+    // Lógica de Stock Inicial
     const initialStock = parseInt(formData.get("initialStock") as string) || 0;
-    const initialWarehouseId = formData.get("initialWarehouseId") as string; // Changed from warehouseId
+    const initialWarehouseId = formData.get("initialWarehouseId") as string; // Cambiado de warehouseId
 
-    if (!name || isNaN(price) || isNaN(minStock)) { // Changed validation
+    if (!name || isNaN(price) || isNaN(minStock)) { // Validación cambiada
         return { error: "Datos inválidos" };
     }
 
-    // Validation: Initial stock is mandatory and must be positive
+    // Validación: El stock inicial es obligatorio y debe ser positivo
     if (initialStock <= 0) {
         return { error: "El stock inicial debe ser mayor a 0" };
     }
@@ -88,28 +88,28 @@ export async function updateProductAction(id: string, formData: FormData) {
 
         const newStock = parseInt(formData.get("stock") as string);
         if (!isNaN(newStock)) {
-            // Check current stock to see if we need an adjustment
-            // We need to fetch the product again or trust the change?
-            // Safer to fetch current stock to calculate difference correctly.
+            // Verificar stock actual para ver si necesitamos un ajuste
+            // ¿Necesitamos obtener el producto nuevamente o confiar en el cambio?
+            // Más seguro obtener el stock actual para calcular la diferencia correctamente.
             const product = await inventoryService.getProduct(id);
             if (product && product.stock !== newStock) {
                 const diff = newStock - product.stock;
-                // If diff > 0, we add (IN/ADJUSTMENT)
-                // If diff < 0, we subtract (OUT/ADJUSTMENT)
-                // registerMovement logic: IN adds, OUT subtracts. ADJUSTMENT allows signed logic if we implemented it, 
-                // but our implementation checks type.
+                // Si diff > 0, agregamos (IN/ADJUSTMENT)
+                // Si diff < 0, restamos (OUT/ADJUSTMENT)
+                // Lógica de registerMovement: IN suma, OUT resta. ADJUSTMENT permite lógica con signo si la implementamos,
+                // pero nuestra implementación verifica el tipo.
 
-                // Let's use "ADJUSTMENT" type but we need to handle the sign logic in service or pass correct params.
-                // Service logic for ADJUSTMENT: newStock += quantity.
-                // So if diff is negative, we pass negative quantity? Or does it expect absolute?
-                // Our recent service text said:
+                // Usemos tipo "ADJUSTMENT" pero necesitamos manejar la lógica del signo en el servicio o pasar parámetros correctos.
+                // Lógica del servicio para ADJUSTMENT: newStock += quantity.
+                // Entonces si diff es negativo, ¿pasamos quantity negativa? ¿O espera absoluto?
+                // Nuestro texto reciente del servicio dijo:
                 // if (type === "ADJUSTMENT") { newStock += quantity; }
-                // So we can pass the signed difference directly with type ADJUSTMENT.
+                // Así que podemos pasar la diferencia con signo directamente con tipo ADJUSTMENT.
 
                 await inventoryService.registerMovement({
                     productId: id,
                     type: "ADJUSTMENT",
-                    quantity: diff, // Signed integer
+                    quantity: diff, // Entero con signo
                     userId: user.id,
                     reason: "Corrección manual desde Edición de Producto",
                 });

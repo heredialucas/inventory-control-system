@@ -249,7 +249,7 @@ export function DeliveryForm({ schools, warehouses, userId }: DeliveryFormProps)
                             </div>
                         ) : (
                             <>
-                                <div className="flex gap-4 items-end">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                                     <div className="flex-1 space-y-2">
                                         <Label>Producto</Label>
                                         <Select
@@ -275,7 +275,7 @@ export function DeliveryForm({ schools, warehouses, userId }: DeliveryFormProps)
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="w-24 space-y-2">
+                                    <div className="w-full sm:w-24 space-y-2">
                                         <Label>Cantidad</Label>
                                         <Input
                                             type="number"
@@ -308,44 +308,80 @@ export function DeliveryForm({ schools, warehouses, userId }: DeliveryFormProps)
                         )}
 
                         <div className="mt-6 border rounded-md">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Producto</TableHead>
-                                        <TableHead className="text-right">Cant.</TableHead>
-                                        <TableHead className="w-[50px]"></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {items.length === 0 ? (
+                            {/* Mobile Cards */}
+                            <div className="block md:hidden p-4 space-y-4">
+                                {items.length === 0 ? (
+                                    <p className="text-center py-8 text-muted-foreground">
+                                        No hay ítems agregados
+                                    </p>
+                                ) : (
+                                    items.map(item => (
+                                        <Card key={item.productId}>
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="space-y-1">
+                                                        <div className="font-medium">{item.productName}</div>
+                                                        <div className="text-xs text-muted-foreground font-mono">{item.sku}</div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-medium">Cant: {item.quantity}</span>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            type="button"
+                                                            onClick={() => handleRemoveItem(item.productId)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Desktop Table */}
+                            <div className="hidden md:block">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                                                No hay ítems agregados
-                                            </TableCell>
+                                            <TableHead>Producto</TableHead>
+                                            <TableHead className="text-right">Cant.</TableHead>
+                                            <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
-                                    ) : (
-                                        items.map(item => (
-                                            <TableRow key={item.productId}>
-                                                <TableCell>
-                                                    <div className="font-medium">{item.productName}</div>
-                                                    <div className="text-xs text-muted-foreground font-mono">{item.sku}</div>
-                                                </TableCell>
-                                                <TableCell className="text-right">{item.quantity}</TableCell>
-                                                <TableCell>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        type="button"
-                                                        onClick={() => handleRemoveItem(item.productId)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {items.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                                                    No hay ítems agregados
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
+                                        ) : (
+                                            items.map(item => (
+                                                <TableRow key={item.productId}>
+                                                    <TableCell>
+                                                        <div className="font-medium">{item.productName}</div>
+                                                        <div className="text-xs text-muted-foreground font-mono">{item.sku}</div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">{item.quantity}</TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            type="button"
+                                                            onClick={() => handleRemoveItem(item.productId)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     </CardContent>
                     <CardFooter className="bg-muted/50 pt-6">

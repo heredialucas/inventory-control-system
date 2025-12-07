@@ -60,7 +60,7 @@ export function CreateRoleDialog({ permissions = [] }: { permissions?: any[] }) 
                     Nuevo Rol
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Crear Nuevo Rol</DialogTitle>
@@ -70,43 +70,55 @@ export function CreateRoleDialog({ permissions = [] }: { permissions?: any[] }) 
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         {error && <p className="text-red-500 text-sm">{error}</p>}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-center gap-4">
+                            <Label htmlFor="name" className="sm:text-right">
                                 Nombre
                             </Label>
                             <Input
                                 id="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="col-span-3"
+                                className="sm:col-span-3"
                                 placeholder="Ej. Vendedor"
                                 required
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="description" className="text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-center gap-4">
+                            <Label htmlFor="description" className="sm:text-right">
                                 Descripción
                             </Label>
                             <Input
                                 id="description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                className="col-span-3"
+                                className="sm:col-span-3"
                                 placeholder="Descripción del rol"
                             />
                         </div>
 
-                        <div className="grid grid-cols-4 gap-4">
-                            <Label className="text-right pt-2">Permisos</Label>
-                            <div className="col-span-3 border rounded-md p-3 h-64 overflow-y-auto space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <Label className="sm:text-right sm:pt-2">Permisos</Label>
+                            <div className="sm:col-span-3 border rounded-md p-3 h-64 overflow-y-auto space-y-4">
                                 {permissions.length === 0 ? (
                                     <p className="text-xs text-muted-foreground">No hay permisos disponibles.</p>
                                 ) : (
                                     // Group permissions by prefix (inventory, sales, etc)
                                     Object.entries(permissions.reduce<Record<string, any[]>>((acc, perm) => {
                                         const prefix = perm.action.split('.')[0];
-                                        if (!acc[prefix]) acc[prefix] = [];
-                                        acc[prefix].push(perm);
+                                        const groupTranslations: Record<string, string> = {
+                                            inventory: "Inventario",
+                                            warehouses: "Almacenes",
+                                            transfers: "Transferencias",
+                                            purchases: "Compras",
+                                            deliveries: "Entregas",
+                                            suppliers: "Proveedores",
+                                            institutions: "Instituciones",
+                                            reports: "Reportes",
+                                            users: "Usuarios"
+                                        };
+                                        const groupName = groupTranslations[prefix] || prefix;
+                                        if (!acc[groupName]) acc[groupName] = [];
+                                        acc[groupName].push(perm);
                                         return acc;
                                     }, {})).map(([prefix, perms]) => (
                                         <div key={prefix}>
@@ -133,7 +145,10 @@ export function CreateRoleDialog({ permissions = [] }: { permissions?: any[] }) 
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                            Cancelar
+                        </Button>
                         <Button type="submit" disabled={loading}>
                             {loading ? "Creando..." : "Crear Rol"}
                         </Button>

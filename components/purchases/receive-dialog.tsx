@@ -152,12 +152,12 @@ export function ReceiveDialog({ order, userId, onSuccess }: ReceiveDialogProps) 
                         })}
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
+                            Cancelar
                         </Button>
                         <Button type="submit" disabled={isPending}>
-                            {isPending ? "Processing..." : "Confirm Receipt"}
+                            {isPending ? "Procesando..." : "Confirmar Recepción"}
                         </Button>
                     </DialogFooter>
                 </form>

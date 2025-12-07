@@ -94,7 +94,7 @@ export const institutionService = {
             select: { isActive: true },
         });
 
-        if (!institution) throw new Error("Institution not found");
+        if (!institution) throw new Error("Institución no encontrada");
 
         return await prisma.institution.update({
             where: { id },
@@ -111,7 +111,7 @@ export const institutionService = {
         });
 
         if (deliveriesCount > 0) {
-            throw new Error("Cannot delete institution with existing deliveries");
+            throw new Error("No se puede eliminar institución con entregas existentes");
         }
 
         return await prisma.institution.delete({

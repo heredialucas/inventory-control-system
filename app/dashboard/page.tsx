@@ -13,10 +13,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 export const metadata = {
-    title: "Dashboard | Inventory Control",
-    description: "Overview of inventory system",
+    title: "Panel de Control | Control de Inventario",
+    description: "Vista general del sistema de inventario",
 };
 
 export default async function DashboardPage() {
@@ -24,12 +25,31 @@ export default async function DashboardPage() {
     const lowStockProducts = await getLowStockProducts();
     const recentActivity = await getRecentActivity(5);
 
+    const getStatusVariant = (status: string) => {
+        switch (status) {
+            case "CANCELADO":
+                return "destructive";
+            case "ENTREGADO":
+            case "COMPLETADO":
+            case "APROBADO":
+                return "default";
+            case "PENDIENTE":
+            case "BORRADOR":
+                return "secondary";
+            case "CONFIRMADO":
+            case "EN_TRANSITO":
+                return "outline";
+            default:
+                return "outline";
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Panel de Control</h1>
                 <p className="text-muted-foreground">
-                    Overview of your inventory system
+                    Vista general de tu sistema de inventario
                 </p>
             </div>
 
@@ -37,52 +57,52 @@ export default async function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                        <CardTitle className="text-sm font-medium">Productos Totales</CardTitle>
                         <Package className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.totalProducts}</div>
                         <Link href="/dashboard/products" className="text-xs text-muted-foreground hover:underline">
-                            View all products
+                            Ver todos los productos
                         </Link>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Warehouses</CardTitle>
+                        <CardTitle className="text-sm font-medium">Almacenes</CardTitle>
                         <Warehouse className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.totalWarehouses}</div>
                         <Link href="/dashboard/warehouses" className="text-xs text-muted-foreground hover:underline">
-                            View warehouses
+                            Ver almacenes
                         </Link>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Suppliers</CardTitle>
+                        <CardTitle className="text-sm font-medium">Proveedores</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.totalSuppliers}</div>
                         <Link href="/dashboard/suppliers" className="text-xs text-muted-foreground hover:underline">
-                            View suppliers
+                            Ver proveedores
                         </Link>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Institutions</CardTitle>
+                        <CardTitle className="text-sm font-medium">Instituciones</CardTitle>
                         <Building2 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.totalInstitutions}</div>
                         <Link href="/dashboard/institutions" className="text-xs text-muted-foreground hover:underline">
-                            View institutions
+                            Ver instituciones
                         </Link>
                     </CardContent>
                 </Card>
@@ -92,39 +112,39 @@ export default async function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Transfers</CardTitle>
+                        <CardTitle className="text-sm font-medium">Transferencias Pendientes</CardTitle>
                         <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.pendingTransfers}</div>
                         <p className="text-xs text-muted-foreground">
-                            Awaiting completion
+                            Esperando completarse
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Purchases</CardTitle>
+                        <CardTitle className="text-sm font-medium">Compras Pendientes</CardTitle>
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.pendingPurchases}</div>
                         <p className="text-xs text-muted-foreground">
-                            Awaiting receipt
+                            Esperando recepción
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Deliveries</CardTitle>
+                        <CardTitle className="text-sm font-medium">Entregas Pendientes</CardTitle>
                         <ArrowDownRight className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.pendingDeliveries}</div>
                         <p className="text-xs text-muted-foreground">
-                            Awaiting delivery
+                            Esperando entrega
                         </p>
                     </CardContent>
                 </Card>
@@ -136,16 +156,16 @@ export default async function DashboardPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                            Low Stock Alerts
+                            Alertas de Stock Bajo
                         </CardTitle>
                         <CardDescription>
-                            Products that need attention
+                            Productos que necesitan atención
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {lowStockProducts.length === 0 ? (
                             <p className="text-sm text-muted-foreground text-center py-4">
-                                All products have adequate stock
+                                Todos los productos tienen stock adecuado
                             </p>
                         ) : (
                             <div className="space-y-3">
@@ -157,14 +177,14 @@ export default async function DashboardPage() {
                                         </div>
                                         <div className="text-right">
                                             <Badge variant={product.status === "out_of_stock" ? "destructive" : "secondary"}>
-                                                {product.currentStock} units
+                                                {product.currentStock} unidades
                                             </Badge>
                                         </div>
                                     </div>
                                 ))}
                                 {lowStockProducts.length > 5 && (
                                     <Link href="/dashboard/reports" className="text-sm text-blue-600 hover:underline block text-center pt-2">
-                                        View all {lowStockProducts.length} low stock products
+                                        Ver todos los {lowStockProducts.length} productos con stock bajo
                                     </Link>
                                 )}
                             </div>
@@ -174,29 +194,50 @@ export default async function DashboardPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Recent Activity</CardTitle>
+                        <CardTitle>Actividad Reciente</CardTitle>
                         <CardDescription>
-                            Latest system events
+                            Últimos eventos del sistema
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {recentActivity.length === 0 ? (
                             <p className="text-sm text-muted-foreground text-center py-4">
-                                No recent activity
+                                Sin actividad reciente
                             </p>
                         ) : (
                             <div className="space-y-3">
                                 {recentActivity.map((activity, index) => (
-                                    <div key={index} className="flex items-start gap-3">
-                                        <Badge variant="outline" className="mt-0.5">
-                                            {activity.type}
-                                        </Badge>
+                                    <div key={index} className="flex items-center justify-between">
                                         <div className="flex-1 space-y-1">
-                                            <p className="text-sm">{activity.description}</p>
+                                            {activity.type === "movimiento" ? (
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant={activity.description.startsWith("ENTRADA") ? "default" : "destructive"}>
+                                                        {activity.description.split(" ")[0]}
+                                                    </Badge>
+                                                    <p className="text-sm">{activity.description.split(": ")[1]}</p>
+                                                </div>
+                                            ) : activity.description.includes(" - ") ? (
+                                                (() => {
+                                                    const [desc, status] = activity.description.split(" - ");
+                                                    return (
+                                                        <div className="space-y-1">
+                                                            <p className="text-sm">{desc}</p>
+                                                            <Badge variant={getStatusVariant(status)} className="w-fit">
+                                                                {status}
+                                                            </Badge>
+                                                        </div>
+                                                    );
+                                                })()
+                                            ) : (
+                                                <p className="text-sm">{activity.description}</p>
+                                            )}
                                             <p className="text-xs text-muted-foreground">
-                                                {formatDistanceToNow(new Date(activity.date), { addSuffix: true })}
+                                                {formatDistanceToNow(new Date(activity.date), { addSuffix: true, locale: es })}
                                             </p>
                                         </div>
+                                        <Badge variant="outline" className="ml-2 shrink-0">
+                                            {activity.type}
+                                        </Badge>
                                     </div>
                                 ))}
                             </div>
@@ -208,32 +249,32 @@ export default async function DashboardPage() {
             {/* Quick Links */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
+                    <CardTitle>Acciones Rápidas</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-2 md:grid-cols-4">
                     <Link
                         href="/dashboard/products/new"
                         className="text-sm hover:bg-accent p-3 rounded-md border transition-colors"
                     >
-                        + Add Product
+                        + Agregar Producto
                     </Link>
                     <Link
                         href="/dashboard/purchases"
                         className="text-sm hover:bg-accent p-3 rounded-md border transition-colors"
                     >
-                        + New Purchase Order
+                        + Nueva Orden de Compra
                     </Link>
                     <Link
                         href="/dashboard/deliveries"
                         className="text-sm hover:bg-accent p-3 rounded-md border transition-colors"
                     >
-                        + New Delivery
+                        + Nueva Entrega
                     </Link>
                     <Link
                         href="/dashboard/reports"
                         className="text-sm hover:bg-accent p-3 rounded-md border transition-colors"
                     >
-                        📊 View Reports
+                        📊 Ver Reportes
                     </Link>
                 </CardContent>
             </Card>

@@ -18,38 +18,38 @@ async function main() {
 
     const permissions = [
         // Inventory & Products
-        { action: "inventory.manage", description: "Create, edit, and delete products" },
-        { action: "inventory.view", description: "View products and stock levels" },
+        { action: "inventory.manage", description: "Crear, editar y eliminar productos" },
+        { action: "inventory.view", description: "Ver productos y niveles de stock" },
 
         // Warehouses
-        { action: "warehouses.manage", description: "Create, edit, and delete warehouses" },
-        { action: "warehouses.view", description: "View warehouses and their stock" },
+        { action: "warehouses.manage", description: "Crear, editar y eliminar almacenes" },
+        { action: "warehouses.view", description: "Ver almacenes y su stock" },
 
         // Transfers
-        { action: "transfers.manage", description: "Create, complete, and cancel warehouse transfers" },
-        { action: "transfers.view", description: "View warehouse transfers" },
+        { action: "transfers.manage", description: "Crear, completar y cancelar transferencias entre almacenes" },
+        { action: "transfers.view", description: "Ver transferencias entre almacenes" },
 
         // Purchases
-        { action: "purchases.manage", description: "Create, edit, receive, and cancel purchase orders" },
-        { action: "purchases.view", description: "View purchase orders" },
+        { action: "purchases.manage", description: "Crear, editar, recibir y cancelar órdenes de compra" },
+        { action: "purchases.view", description: "Ver órdenes de compra" },
 
         // Deliveries
-        { action: "deliveries.manage", description: "Create, confirm, deliver, and cancel deliveries" },
-        { action: "deliveries.view", description: "View deliveries" },
+        { action: "deliveries.manage", description: "Crear, confirmar, entregar y cancelar entregas" },
+        { action: "deliveries.view", description: "Ver entregas" },
 
         // Suppliers
-        { action: "suppliers.manage", description: "Create, edit, and delete suppliers" },
-        { action: "suppliers.view", description: "View suppliers" },
+        { action: "suppliers.manage", description: "Crear, editar y eliminar proveedores" },
+        { action: "suppliers.view", description: "Ver proveedores" },
 
         // Institutions
-        { action: "institutions.manage", description: "Create, edit, and delete institutions" },
-        { action: "institutions.view", description: "View institutions" },
+        { action: "institutions.manage", description: "Crear, editar y eliminar instituciones" },
+        { action: "institutions.view", description: "Ver instituciones" },
 
         // Reports & Analytics
-        { action: "reports.view", description: "View all reports and analytics" },
+        { action: "reports.view", description: "Ver todos los reportes y análisis" },
 
         // Users & Roles (Admin)
-        { action: "users.manage", description: "Manage users, roles, and permissions" },
+        { action: "users.manage", description: "Gestionar usuarios, roles y permisos" },
     ];
 
     for (const perm of permissions) {
@@ -74,13 +74,13 @@ async function main() {
     const managerRole = await prisma.role.upsert({
         where: { name: "MANAGER" },
         update: {},
-        create: { name: "MANAGER", description: "Gestor con permisos de gestión en todos los módulos" },
+        create: { name: "MANAGER", description: "Encargado con permisos de gestión en todos los módulos" },
     });
 
     const viewerRole = await prisma.role.upsert({
         where: { name: "VIEWER" },
         update: {},
-        create: { name: "VIEWER", description: "Visualizador con permisos de solo lectura" },
+        create: { name: "VIEWER", description: "Empleado con permisos de solo lectura" },
     });
 
     console.log("✅ Seeded 3 roles");

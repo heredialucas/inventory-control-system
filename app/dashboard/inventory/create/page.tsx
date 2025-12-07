@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 export default async function CreateProductPage() {
     const user = await getCurrentUser();
     if (!user || !hasPermission(user, "inventory.create")) {
-        redirect("/dashboard/inventory"); // Or error page
+        redirect("/dashboard/inventory"); // O página de error
     }
 
     const [categories, warehouses] = await Promise.all([

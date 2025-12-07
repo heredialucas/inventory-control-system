@@ -15,6 +15,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditUserDialog } from "@/components/users/edit-user-dialog";
 
 export function UserList({ users, roles }: { users: any[], roles?: any[] }) {
+    const translateRoleName = (name: string) => {
+        const translations: Record<string, string> = {
+            ADMIN: "Administrador",
+            MANAGER: "Encargado",
+            VIEWER: "Empleado"
+        };
+        return translations[name] || name;
+    };
     if (users.length === 0) {
         return (
             <div className="text-center p-8 border rounded-lg text-muted-foreground bg-card">
@@ -63,7 +71,7 @@ export function UserList({ users, roles }: { users: any[], roles?: any[] }) {
                                 {user.userRoles?.length > 0 ? (
                                     user.userRoles.map((ur: any) => (
                                         <Badge key={ur.role.id} variant="secondary" className="text-xs">
-                                            {ur.role.name}
+                                            {translateRoleName(ur.role.name)}
                                         </Badge>
                                     ))
                                 ) : (
@@ -95,6 +103,14 @@ export function UserList({ users, roles }: { users: any[], roles?: any[] }) {
 }
 
 function UserRow({ user, roles }: { user: any, roles: any[] }) {
+    const translateRoleName = (name: string) => {
+        const translations: Record<string, string> = {
+            ADMIN: "Administrador",
+            MANAGER: "Encargado",
+            VIEWER: "Empleado"
+        };
+        return translations[name] || name;
+    };
     return (
         <TableRow>
             <TableCell className="font-medium">{user.email}</TableCell>
@@ -109,7 +125,7 @@ function UserRow({ user, roles }: { user: any, roles: any[] }) {
                     {user.userRoles?.length > 0 ? (
                         user.userRoles.map((ur: any) => (
                             <Badge key={ur.role.id} variant="secondary" className="text-xs">
-                                {ur.role.name}
+                                {translateRoleName(ur.role.name)}
                             </Badge>
                         ))
                     ) : (

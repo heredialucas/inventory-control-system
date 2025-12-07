@@ -95,7 +95,7 @@ export const traceabilityService = {
                 orderBy: { createdAt: "desc" },
             }),
 
-            // Warehouse transfers
+            // Transferencias de depósito
             prisma.warehouseTransfer.findMany({
                 where: { productId },
                 include: {
@@ -175,7 +175,7 @@ export const traceabilityService = {
             ...movements.map((m) => ({
                 type: "movement" as const,
                 date: m.createdAt,
-                description: `${m.type} movement: ${m.quantity} units`,
+                description: `Movimiento ${m.type}: ${m.quantity} unidades`,
                 warehouse: m.warehouse?.name,
                 user: m.user.email,
                 reason: m.reason,
@@ -185,30 +185,30 @@ export const traceabilityService = {
             ...transfers.map((t) => ({
                 type: "transfer" as const,
                 date: t.createdAt,
-                description: `Transfer: ${t.quantity} units from ${t.fromWarehouse.name} to ${t.toWarehouse.name}`,
+                description: `Transferencia: ${t.quantity} unidades de ${t.fromWarehouse.name} a ${t.toWarehouse.name}`,
                 warehouse: null,
                 user: null,
-                reason: `Transfer status: ${t.status}`,
+                reason: `Estado de transferencia: ${t.status}`,
                 quantity: t.quantity,
                 movementType: null,
             })),
             ...purchaseItems.map((p) => ({
                 type: "purchase" as const,
                 date: p.purchaseOrder.createdAt,
-                description: `Purchase from ${p.purchaseOrder.supplier.name}: ${p.quantity} units`,
+                description: `Compra de ${p.purchaseOrder.supplier.name}: ${p.quantity} unidades`,
                 warehouse: p.purchaseOrder.warehouse.name,
                 user: null,
-                reason: `Order ${p.purchaseOrder.orderNumber}`,
+                reason: `Orden ${p.purchaseOrder.orderNumber}`,
                 quantity: p.quantity,
                 movementType: "IN" as const,
             })),
             ...deliveryItems.map((d) => ({
                 type: "delivery" as const,
                 date: d.delivery.createdAt,
-                description: `Delivery to ${d.delivery.institution.name}: ${d.quantity} units`,
+                description: `Entrega a ${d.delivery.institution.name}: ${d.quantity} unidades`,
                 warehouse: d.delivery.warehouse.name,
                 user: null,
-                reason: `Delivery ${d.delivery.deliveryNumber}`,
+                reason: `Entrega ${d.delivery.deliveryNumber}`,
                 quantity: d.quantity,
                 movementType: "OUT" as const,
             })),
@@ -323,31 +323,31 @@ export const traceabilityService = {
             ...movements.map((m) => ({
                 type: "movement" as const,
                 date: m.createdAt,
-                description: `${m.type}: ${m.product.name} (${m.quantity} units)`,
+                description: `${m.type}: ${m.product.name} (${m.quantity} unidades)`,
                 user: m.user.email,
             })),
             ...transfersFrom.map((t) => ({
                 type: "transfer_out" as const,
                 date: t.createdAt,
-                description: `Transfer to ${t.toWarehouse.name}: ${t.product.name} (${t.quantity} units)`,
+                description: `Transferencia a ${t.toWarehouse.name}: ${t.product.name} (${t.quantity} unidades)`,
                 user: null,
             })),
             ...transfersTo.map((t) => ({
                 type: "transfer_in" as const,
                 date: t.createdAt,
-                description: `Transfer from ${t.fromWarehouse.name}: ${t.product.name} (${t.quantity} units)`,
+                description: `Transferencia desde ${t.fromWarehouse.name}: ${t.product.name} (${t.quantity} unidades)`,
                 user: null,
             })),
             ...purchases.map((p) => ({
                 type: "purchase" as const,
                 date: p.createdAt,
-                description: `Purchase from ${p.supplier.name}: ${p.orderNumber}`,
+                description: `Compra de ${p.supplier.name}: ${p.orderNumber}`,
                 user: null,
             })),
             ...deliveries.map((d) => ({
                 type: "delivery" as const,
                 date: d.createdAt,
-                description: `Delivery to ${d.institution.name}: ${d.deliveryNumber}`,
+                description: `Entrega a ${d.institution.name}: ${d.deliveryNumber}`,
                 user: null,
             })),
         ]
@@ -424,22 +424,22 @@ export const traceabilityService = {
             ...movements.map((m) => ({
                 type: "movement" as const,
                 date: m.createdAt,
-                description: `${m.type} movement: ${m.product.name} at ${m.warehouse?.name || "N/A"}`,
+                description: `${m.type === "IN" ? "Entrada" : "Salida"}: ${m.product.name} en ${m.warehouse?.name || "N/A"}`,
             })),
             ...transfers.map((t) => ({
                 type: "transfer" as const,
                 date: t.createdAt,
-                description: `Created transfer: ${t.product.name} (${t.quantity} units)`,
+                description: `Transferencia creada: ${t.product.name} (${t.quantity} unidades)`,
             })),
             ...purchases.map((p) => ({
                 type: "purchase" as const,
                 date: p.createdAt,
-                description: `Created purchase order from ${p.supplier.name}`,
+                description: `Orden de compra creada de ${p.supplier.name}`,
             })),
             ...deliveries.map((d) => ({
                 type: "delivery" as const,
                 date: d.createdAt,
-                description: `Created delivery to ${d.institution.name}`,
+                description: `Entrega creada a ${d.institution.name}`,
             })),
         ]
             .sort((a, b) => b.date.getTime() - a.date.getTime())

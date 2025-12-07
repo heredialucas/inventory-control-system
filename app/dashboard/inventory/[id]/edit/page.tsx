@@ -21,7 +21,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         return <div>Producto no encontrado</div>;
     }
 
-    // Serialize Decimal to string for client component
+    // Serializar Decimal a string para el componente del cliente
     const serializedProduct = {
         ...product,
         price: product.price.toString(),

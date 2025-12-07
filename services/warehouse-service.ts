@@ -2,10 +2,10 @@ import prisma from "@/lib/prisma";
 import { Prisma, TransferStatus } from "@prisma/client";
 
 export const warehouseService = {
-    // ==================== WAREHOUSE CRUD ====================
+    // ==================== CRUD DE DEPÓSITOS ====================
 
     /**
-     * Get all warehouses with stock summary
+     * Obtener todos los depósitos con resumen de stock
      */
     async getWarehouses() {
         return await prisma.warehouse.findMany({
@@ -23,7 +23,7 @@ export const warehouseService = {
     },
 
     /**
-     * Get a single warehouse with detailed information
+     * Obtener un depósito individual con información detallada
      */
     async getWarehouse(id: string) {
         return await prisma.warehouse.findUnique({
@@ -95,7 +95,7 @@ export const warehouseService = {
             select: { isActive: true },
         });
 
-        if (!warehouse) throw new Error("Warehouse not found");
+        if (!warehouse) throw new Error("Depósito no encontrado");
 
         return await prisma.warehouse.update({
             where: { id },
@@ -107,14 +107,14 @@ export const warehouseService = {
      * Delete warehouse (only if empty)
      */
     async deleteWarehouse(id: string) {
-        // Check if warehouse has stock
+        // Verificar si el depósito tiene stock
         const stockCount = await prisma.warehouseStock.count({
             where: { warehouseId: id, quantity: { gt: 0 } },
         });
 
         if (stockCount > 0) {
             throw new Error(
-                "Cannot delete warehouse with existing stock. Transfer or remove stock first."
+                "No se puede eliminar depósito con stock existente. Transfiera o remueva el stock primero."
             );
         }
 
@@ -200,7 +200,7 @@ export const warehouseService = {
     ) {
         const client = tx || prisma;
 
-        // Get or create the warehouse stock entry
+        // Obtener o crear la entrada de stock del depósito
         const stockEntry = await client.warehouseStock.upsert({
             where: {
                 warehouseId_productId: {
@@ -220,9 +220,9 @@ export const warehouseService = {
             },
         });
 
-        // Ensure stock doesn't go negative
+        // Asegurar que el stock no sea negativo
         if (stockEntry.quantity + quantityChange < 0) {
-            throw new Error("Insufficient stock in warehouse");
+            throw new Error("Stock insuficiente en depósito");
         }
 
         return stockEntry;
@@ -328,17 +328,17 @@ export const warehouseService = {
     }) {
         const { fromWarehouseId, toWarehouseId, productId, quantity, userId, notes } = data;
 
-        // Validation
+        // Validación
         if (fromWarehouseId === toWarehouseId) {
-            throw new Error("Source and destination warehouses must be different");
+            throw new Error("Los depósitos de origen y destino deben ser diferentes");
         }
 
         if (quantity <= 0) {
-            throw new Error("Quantity must be greater than 0");
+            throw new Error("La cantidad debe ser mayor a 0");
         }
 
         return await prisma.$transaction(async (tx) => {
-            // Check stock availability in source warehouse
+            // Verificar disponibilidad de stock en depósito origen
             const sourceStock = await tx.warehouseStock.findUnique({
                 where: {
                     warehouseId_productId: {
@@ -349,10 +349,10 @@ export const warehouseService = {
             });
 
             if (!sourceStock || sourceStock.quantity < quantity) {
-                throw new Error("Insufficient stock in source warehouse");
+                throw new Error("Stock insuficiente en depósito origen");
             }
 
-            // Deduct stock from source warehouse
+            // Deducir stock del depósito origen
             await tx.warehouseStock.update({
                 where: {
                     warehouseId_productId: {
@@ -367,7 +367,7 @@ export const warehouseService = {
                 },
             });
 
-            // Create stock movement for source (OUT)
+            // Crear movimiento de stock para origen (OUT)
             await tx.stockMovement.create({
                 data: {
                     productId,
@@ -375,12 +375,12 @@ export const warehouseService = {
                     type: "OUT",
                     quantity,
                     userId,
-                    reason: `Transfer to warehouse (Transfer pending)`,
+                    reason: `Transferencia a depósito (Transferencia pendiente)`,
                 },
             });
 
 
-            // Create transfer record
+            // Crear registro de transferencia
             return await tx.warehouseTransfer.create({
                 data: {
                     fromWarehouseId,
@@ -408,9 +408,9 @@ export const warehouseService = {
             where: { id: transferId },
         });
 
-        if (!transfer) throw new Error("Transfer not found");
+        if (!transfer) throw new Error("Transferencia no encontrada");
         if (transfer.status !== "PENDING") {
-            throw new Error("Only pending transfers can be marked as in transit");
+            throw new Error("Solo las transferencias pendientes pueden marcarse como en tránsito");
         }
 
         return await prisma.warehouseTransfer.update({
@@ -429,15 +429,15 @@ export const warehouseService = {
                 where: { id: transferId },
             });
 
-            if (!transfer) throw new Error("Transfer not found");
+            if (!transfer) throw new Error("Transferencia no encontrada");
             if (transfer.status === "COMPLETED") {
-                throw new Error("Transfer already completed");
+                throw new Error("La transferencia ya está completada");
             }
             if (transfer.status === "CANCELLED") {
-                throw new Error("Cannot complete cancelled transfer");
+                throw new Error("No se puede completar una transferencia cancelada");
             }
 
-            // Add stock to destination warehouse
+            // Agregar stock al depósito destino
             await tx.warehouseStock.upsert({
                 where: {
                     warehouseId_productId: {
@@ -457,7 +457,7 @@ export const warehouseService = {
                 },
             });
 
-            // Create stock movement for destination (IN)
+            // Crear movimiento de stock para destino (IN)
             await tx.stockMovement.create({
                 data: {
                     productId: transfer.productId,
@@ -465,13 +465,13 @@ export const warehouseService = {
                     type: "IN",
                     quantity: transfer.quantity,
                     userId,
-                    reason: `Transfer from warehouse completed`,
+                    reason: `Transferencia desde depósito completada`,
                 },
             });
 
 
 
-            // Mark transfer as completed
+            // Marcar transferencia como completada
             return await tx.warehouseTransfer.update({
                 where: { id: transferId },
                 data: {
@@ -492,15 +492,15 @@ export const warehouseService = {
                 where: { id: transferId },
             });
 
-            if (!transfer) throw new Error("Transfer not found");
+            if (!transfer) throw new Error("Transferencia no encontrada");
             if (transfer.status === "COMPLETED") {
-                throw new Error("Cannot cancel completed transfer");
+                throw new Error("No se puede cancelar una transferencia completada");
             }
             if (transfer.status === "CANCELLED") {
-                throw new Error("Transfer already cancelled");
+                throw new Error("La transferencia ya está cancelada");
             }
 
-            // Return stock to source warehouse
+            // Devolver stock al depósito origen
             await tx.warehouseStock.update({
                 where: {
                     warehouseId_productId: {
@@ -515,7 +515,7 @@ export const warehouseService = {
                 },
             });
 
-            // Create stock movement for return (IN)
+            // Crear movimiento de stock para devolución (IN)
             await tx.stockMovement.create({
                 data: {
                     productId: transfer.productId,
@@ -523,13 +523,13 @@ export const warehouseService = {
                     type: "IN",
                     quantity: transfer.quantity,
                     userId,
-                    reason: `Transfer cancelled - stock returned`,
+                    reason: `Transferencia cancelada - stock devuelto`,
                 },
             });
 
 
 
-            // Mark transfer as cancelled
+            // Marcar transferencia como cancelada
             return await tx.warehouseTransfer.update({
                 where: { id: transferId },
                 data: {

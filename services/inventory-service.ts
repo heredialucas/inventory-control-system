@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 
 export const inventoryService = {
-    // Categories
+    // Categorías
     async getCategories() {
         return await prisma.category.findMany({
             orderBy: { name: "asc" },
@@ -19,7 +19,7 @@ export const inventoryService = {
         });
     },
 
-    // Products
+    // Productos
     async getProducts() {
         return await prisma.product.findMany({
             include: {
@@ -59,7 +59,7 @@ export const inventoryService = {
         return await prisma.product.create({
             data: {
                 ...data,
-                stock: 0, // Initial stock is 0, use movement to add stock
+                stock: 0, // El stock inicial es 0, usar movimiento para agregar stock
             },
         });
     },
@@ -78,7 +78,7 @@ export const inventoryService = {
         const { initialStock, warehouseId, userId, ...productData } = data;
 
         return await prisma.$transaction(async (tx) => {
-            // 1. Create product with total stock
+            // 1. Crear producto con stock total
             const product = await tx.product.create({
                 data: {
                     ...productData,
@@ -86,9 +86,9 @@ export const inventoryService = {
                 },
             });
 
-            // 2. If there's initial stock, create warehouse entry and movement
+            // 2. Si hay stock inicial, crear entrada de depósito y movimiento
             if (initialStock && initialStock > 0 && warehouseId) {
-                // Create entry in WarehouseStock
+                // Crear entrada en WarehouseStock
                 await tx.warehouseStock.create({
                     data: {
                         warehouseId,
@@ -97,7 +97,7 @@ export const inventoryService = {
                     },
                 });
 
-                // Create stock movement (IN)
+                // Crear movimiento de stock (IN)
                 await tx.stockMovement.create({
                     data: {
                         productId: product.id,
@@ -127,10 +127,10 @@ export const inventoryService = {
         });
     },
 
-    // Stock Movements
+    // Movimientos de Stock
     async registerMovement(data: {
         productId: string;
-        warehouseId?: string; // Made optional to support legacy calls if any, or strictly optional
+        warehouseId?: string; // Opcional para llamadas heredadas si las hay
         type: "IN" | "OUT" | "ADJUSTMENT";
         quantity: number;
         userId: string;
@@ -149,35 +149,35 @@ export const inventoryService = {
                 if (product.stock < quantity) throw new Error("Stock insuficiente");
                 newStock -= quantity;
             } else if (type === "ADJUSTMENT") {
-                // For adjustment, quantity is the relative change or absolute? 
-                // Let's assume quantity is the CHANGE. explicit +/- needed? or we trust 'quantity' sign?
-                // Usually adjustment handles direct set or diff. 
-                // Let's treat 'ADJUSTMENT' as "Add/Subtract" similar to others but with different label?
-                // Or maybe adjustment overrides stock?
-                // Standard safer approach: ADJUSTMENT is just another type of move where you specify diff.
-                // Let's implement logic: if ADJUSTMENT, just add quantity (signed). 
-                // BUT `quantity` is Int usually positive. 
-                // Let's simplify: IN adds, OUT subtracts. ADJUSTMENT: User sets new stock?
-                // Re-reading requirements: "sistema de inventario".
-                // Let's stick to IN/OUT for now. If ADJUSTMENT needed, we'll decide how it works. 
-                // Probably best to just use IN/OUT for all moves. keeping ADJUSTMENT as a label.
+                // Para ajuste, ¿la cantidad es el cambio relativo o absoluto?
+                // Asumamos que quantity es el CAMBIO. ¿se necesita +/- explícito? ¿o confiamos en el signo de 'quantity'?
+                // Usualmente el ajuste maneja establecer directamente o diferencia.
+                // Tratemos 'ADJUSTMENT' como "Sumar/Restar" similar a otros pero con etiqueta diferente.
+                // ¿O quizás el ajuste sobrescribe el stock?
+                // Enfoque más seguro estándar: ADJUSTMENT es solo otro tipo de movimiento donde especificas la diferencia.
+                // Implementemos lógica: si ADJUSTMENT, solo agregar quantity (con signo).
+                // PERO `quantity` es Int usualmente positivo.
+                // Simplifiquemos: IN suma, OUT resta. ADJUSTMENT: ¿Usuario establece nuevo stock?
+                // Releyendo requerimientos: "sistema de inventario".
+                // Mantengamos IN/OUT por ahora. Si se necesita ADJUSTMENT, decidiremos cómo funciona.
+                // Probablemente mejor usar IN/OUT para todos los movimientos. Manteniendo ADJUSTMENT como etiqueta.
 
-                // Let's assume ADJUSTMENT means "Set to specific value" OR "Correction".
-                // If "Set to value", we calculate diff.
-                // I will implement "ADJUSTMENT" as a correction that can be positive or negative?
-                // Since `quantity` in schema is Int, it can be negative. 
-                // But usually we store absolute quantity and Type determines sign.
+                // Asumamos ADJUSTMENT significa "Establecer a valor específico" O "Corrección".
+                // Si "Establecer a valor", calculamos diferencia.
+                // Implementaré "ADJUSTMENT" como corrección que puede ser positiva o negativa.
+                // Dado que `quantity` en esquema es Int, puede ser negativo.
+                // Pero usualmente almacenamos cantidad absoluta y Type determina el signo.
 
-                // Let's forbid ADJUSTMENT for now or treat as IN/OUT logic depending on context?
-                // I'll stick to: IN (+), OUT (-). ADJUSTMENT will be treated as IN if >0, OUT if <0? 
-                // No, let's just allow IN/OUT.
+                // ¿Prohibamos ADJUSTMENT por ahora o tratemos como lógica IN/OUT dependiendo del contexto?
+                // Me mantengo en: IN (+), OUT (-). ADJUSTMENT será tratado como IN si >0, OUT si <0.
+                // No, permitamos solo IN/OUT.
 
-                // Wait, schema has enum MovementType { IN, OUT, ADJUSTMENT }.
-                // Let's say ADJUSTMENT adds quantity (signed).
-                // But checking previous schema: `quantity Int`.
+                // Espera, esquema tiene enum MovementType { IN, OUT, ADJUSTMENT }.
+                // Digamos ADJUSTMENT suma quantity (con signo).
+                // Pero revisando esquema anterior: `quantity Int`.
 
                 if (type === "ADJUSTMENT") {
-                    newStock += quantity; // Allow negative quantity for adjustment?
+                    newStock += quantity; // ¿Permitir quantity negativa para ajuste?
                 }
             }
 
@@ -257,24 +257,24 @@ export const inventoryService = {
 
     async deleteProduct(id: string) {
         return await prisma.$transaction(async (tx) => {
-            // 1. Delete Warehouse Stock
+            // 1. Eliminar Stock de Depósito
             await tx.warehouseStock.deleteMany({
                 where: { productId: id }
             });
 
-            // 2. Delete Stock Movements
+            // 2. Eliminar Movimientos de Stock
             await tx.stockMovement.deleteMany({
                 where: { productId: id }
             });
 
-            // 3. Delete Transfers 
-            // We need to decide if we want to keep transfer history with null product or delete them.
-            // Usually for a hard delete of product ("removing from system"), we delete everything.
+            // 3. Eliminar Transferencias
+            // Necesitamos decidir si queremos mantener el historial de transferencias con producto nulo o eliminarlas.
+            // Usualmente para una eliminación completa de producto ("remover del sistema"), eliminamos todo.
             await tx.warehouseTransfer.deleteMany({
                 where: { productId: id }
             });
 
-            // 4. Finally delete the Product
+            // 4. Finalmente eliminar el Producto
             return await tx.product.delete({
                 where: { id }
             });

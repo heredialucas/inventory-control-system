@@ -19,6 +19,15 @@ export function UserProfileView({ user }: { user: any }) {
         )
     );
 
+    const translateRoleName = (name: string) => {
+        const translations: Record<string, string> = {
+            ADMIN: "Administrador",
+            MANAGER: "Encargado",
+            VIEWER: "Empleado"
+        };
+        return translations[name] || name;
+    };
+
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
             <div className="space-y-1">
@@ -62,7 +71,7 @@ export function UserProfileView({ user }: { user: any }) {
                         {user.userRoles && user.userRoles.length > 0 ? (
                             user.userRoles.map((ur: any) => (
                                 <Badge key={ur.role.id} variant="default" className="text-md py-1">
-                                    {ur.role.name}
+                                    {translateRoleName(ur.role.name)}
                                 </Badge>
                             ))
                         ) : (
@@ -73,7 +82,7 @@ export function UserProfileView({ user }: { user: any }) {
                         <div className="mt-4 space-y-2">
                             {user.userRoles.map((ur: any) => (
                                 <div key={ur.role.id} className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-                                    <span className="font-semibold text-foreground">{ur.role.name}:</span> {ur.role.description}
+                                    <span className="font-semibold text-foreground">{translateRoleName(ur.role.name)}:</span> {ur.role.description}
                                 </div>
                             ))}
                         </div>

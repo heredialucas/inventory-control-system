@@ -32,7 +32,7 @@ export function AdminUsersView({ users, roles, permissions }: AdminUsersViewProp
                 </TabsList>
 
                 <TabsContent value="users" className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="space-y-1">
                             <h4 className="text-sm font-semibold">Usuarios Registrados</h4>
                             <p className="text-xs text-muted-foreground">Administra el acceso y roles de los otros usuarios.</p>
@@ -43,7 +43,7 @@ export function AdminUsersView({ users, roles, permissions }: AdminUsersViewProp
                 </TabsContent>
 
                 <TabsContent value="roles" className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="space-y-1">
                             <h4 className="text-sm font-semibold">Roles del Sistema</h4>
                             <p className="text-xs text-muted-foreground">Define roles y asigna sus permisos.</p>
@@ -54,7 +54,7 @@ export function AdminUsersView({ users, roles, permissions }: AdminUsersViewProp
                 </TabsContent>
 
                 <TabsContent value="permissions" className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="space-y-1">
                             <h4 className="text-sm font-semibold">Permisos del Sistema</h4>
                             <p className="text-xs text-muted-foreground">Listado de permisos disponibles (Solo lectura).</p>

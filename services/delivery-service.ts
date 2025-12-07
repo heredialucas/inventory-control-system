@@ -92,7 +92,7 @@ export const deliveryService = {
 
         // Generate delivery number
         const count = await prisma.delivery.count();
-        const deliveryNumber = `DLV-${String(count + 1).padStart(6, "0")}`;
+        const deliveryNumber = `ENT-${String(count + 1).padStart(6, "0")}`;
 
         return await prisma.delivery.create({
             data: {
@@ -140,9 +140,9 @@ export const deliveryService = {
             where: { id },
         });
 
-        if (!delivery) throw new Error("Delivery not found");
+        if (!delivery) throw new Error("Entrega no encontrada");
         if (delivery.status !== "DRAFT") {
-            throw new Error("Only draft deliveries can be confirmed");
+            throw new Error("Solo se pueden confirmar entregas en borrador");
         }
 
         return await prisma.delivery.update({
@@ -163,9 +163,9 @@ export const deliveryService = {
                 },
             });
 
-            if (!delivery) throw new Error("Delivery not found");
+            if (!delivery) throw new Error("Entrega no encontrada");
             if (delivery.status === "DELIVERED" || delivery.status === "CANCELLED") {
-                throw new Error(`Cannot mark ${delivery.status.toLowerCase()} delivery as delivered`);
+                throw new Error(`No se puede marcar una entrega ${delivery.status.toLowerCase()} como entregada`);
             }
 
             // Update stock for each item
@@ -181,7 +181,7 @@ export const deliveryService = {
                 });
 
                 if (!warehouseStock || warehouseStock.quantity < item.quantity) {
-                    throw new Error(`Insufficient stock for product ${item.productId}`);
+                    throw new Error(`Stock insuficiente para el producto ${item.productId}`);
                 }
 
                 await tx.warehouseStock.update({
@@ -216,7 +216,7 @@ export const deliveryService = {
                         type: "OUT",
                         quantity: item.quantity,
                         userId,
-                        reason: `Delivery ${delivery.deliveryNumber} to institution`,
+                        reason: `Entrega ${delivery.deliveryNumber} a institución`,
                     },
                 });
             }
@@ -247,9 +247,9 @@ export const deliveryService = {
             where: { id },
         });
 
-        if (!delivery) throw new Error("Delivery not found");
+        if (!delivery) throw new Error("Entrega no encontrada");
         if (delivery.status === "DELIVERED") {
-            throw new Error("Cannot cancel delivered delivery");
+            throw new Error("No se puede cancelar una entrega ya entregada");
         }
 
         return await prisma.delivery.update({

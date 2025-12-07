@@ -15,6 +15,24 @@ import {
 import { ArrowLeft, Building2, MapPin, Calendar, CheckCircle, XCircle, Send } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
+
+const getPurchaseOrderStatusLabel = (status: string) => {
+    switch (status) {
+        case "DRAFT":
+            return "Borrador";
+        case "PENDING":
+            return "Pendiente";
+        case "RECEIVED":
+            return "Recibida";
+        case "PARTIAL":
+            return "Parcial";
+        case "CANCELLED":
+            return "Cancelada";
+        default:
+            return status;
+    }
+};
 import { ReceiveDialog } from "@/components/purchases/receive-dialog";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -68,7 +86,7 @@ export default async function PurchaseOrderDetailPage({
                                 order.status === "CANCELLED" ? "destructive" :
                                     "default"
                         }>
-                            {order.status}
+                            {getPurchaseOrderStatusLabel(order.status)}
                         </Badge>
                     </div>
                 </div>
@@ -78,13 +96,13 @@ export default async function PurchaseOrderDetailPage({
                             <form action={cancelOrder}>
                                 <Button variant="destructive" size="sm">
                                     <XCircle className="mr-2 h-4 w-4" />
-                                    Cancel
+                                    Cancelar
                                 </Button>
                             </form>
                             <form action={submitOrder}>
                                 <Button size="sm">
                                     <Send className="mr-2 h-4 w-4" />
-                                    Submit Order
+                                    Enviar Orden
                                 </Button>
                             </form>
                         </>
@@ -94,7 +112,7 @@ export default async function PurchaseOrderDetailPage({
                     )}
                     {!isDraft && !isCancelled && !isReceivable && order.status !== "RECEIVED" && (
                         <form action={cancelOrder}>
-                            <Button variant="destructive" size="sm">Cancel Order</Button>
+                            <Button variant="destructive" size="sm">Cancelar Orden</Button>
                         </form>
                     )}
                 </div>
@@ -103,7 +121,7 @@ export default async function PurchaseOrderDetailPage({
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm font-medium">Supplier</CardTitle>
+                        <CardTitle className="text-sm font-medium">Proveedor</CardTitle>
                     </CardHeader>
                     <CardContent className="flex items-start gap-4">
                         <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -118,7 +136,7 @@ export default async function PurchaseOrderDetailPage({
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm font-medium">Delivery To</CardTitle>
+                        <CardTitle className="text-sm font-medium">Entregar A</CardTitle>
                     </CardHeader>
                     <CardContent className="flex items-start gap-4">
                         <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -131,18 +149,18 @@ export default async function PurchaseOrderDetailPage({
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm font-medium">Order Info</CardTitle>
+                        <CardTitle className="text-sm font-medium">Información de la Orden</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-1">
                         <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Expected:</span>
-                            <span>{order.expectedDate ? format(new Date(order.expectedDate), "PPP") : "Not set"}</span>
+                            <span className="text-muted-foreground">Esperada:</span>
+                            <span>{order.expectedDate ? format(new Date(order.expectedDate), "PPP", { locale: es }) : "No establecida"}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Created:</span>
-                            <span>{format(new Date(order.createdAt), "PPP")}</span>
+                            <span className="text-muted-foreground">Creada:</span>
+                            <span>{format(new Date(order.createdAt), "PPP", { locale: es })}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                             <span className="text-muted-foreground">Total:</span>
@@ -154,17 +172,58 @@ export default async function PurchaseOrderDetailPage({
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Order Items</CardTitle>
+                    <CardTitle>Artículos de la Orden</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
+                    {/* Mobile Cards */}
+                    <div className="block md:hidden space-y-4">
+                        {order.items.map((item) => (
+                            <Card key={item.id}>
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between">
+                                        <div className="space-y-1">
+                                            <div className="font-medium">{item.product.name}</div>
+                                            <div className="font-mono text-xs text-muted-foreground">{item.product.sku}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-medium">${(item.quantity * Number(item.unitPrice)).toFixed(2)}</div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span className="text-muted-foreground">Cantidad:</span>
+                                            <span className="ml-2">{item.quantity}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">Recibida:</span>
+                                            <span className={`ml-2 ${
+                                                item.receivedQty === item.quantity ? "text-green-600 font-medium" :
+                                                item.receivedQty > 0 ? "text-orange-600 font-medium" :
+                                                "text-muted-foreground"
+                                            }`}>
+                                                {item.receivedQty}
+                                            </span>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <span className="text-muted-foreground">Precio Unitario:</span>
+                                            <span className="ml-2">${Number(item.unitPrice).toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+
+                    {/* Desktop Table */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Product</TableHead>
+                                <TableHead>Producto</TableHead>
                                 <TableHead>SKU</TableHead>
-                                <TableHead className="text-right">Quantity</TableHead>
-                                <TableHead className="text-right">Received</TableHead>
-                                <TableHead className="text-right">Unit Price</TableHead>
+                                <TableHead className="text-right">Cantidad</TableHead>
+                                <TableHead className="text-right">Recibida</TableHead>
+                                <TableHead className="text-right">Precio Unitario</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -191,13 +250,14 @@ export default async function PurchaseOrderDetailPage({
                             ))}
                         </TableBody>
                     </Table>
+                    </div>
                 </CardContent>
             </Card>
 
             {order.notes && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm font-medium">Notes</CardTitle>
+                        <CardTitle className="text-sm font-medium">Notas</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{order.notes}</p>

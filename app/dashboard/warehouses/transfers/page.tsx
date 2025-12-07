@@ -8,8 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight } from "lucide-react";
 
 export const metadata = {
-    title: "Warehouse Transfers | Inventory Control",
-    description: "Manage stock transfers between warehouses",
+    title: "Transferencias de Depósitos | Control de Inventario",
+    description: "Gestionar transferencias de stock entre depósitos",
 };
 
 export default async function WarehouseTransfersPage() {
@@ -29,42 +29,50 @@ export default async function WarehouseTransfersPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Warehouse Transfers</h1>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex-1 min-w-0">
+                    <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Transferencias de Depósitos</h1>
                     <p className="text-muted-foreground">
-                        Manage stock movements between warehouse locations
+                        Gestionar movimientos de stock entre ubicaciones de depósitos
                     </p>
                 </div>
                 {canManage && (
-                    <TransferForm
-                        warehouses={warehouses}
-                        userId={user!.id}
-                        trigger={
-                            <Button>
-                                <ArrowRight className="mr-2 h-4 w-4" />
-                                New Transfer
-                            </Button>
-                        }
-                    />
+                    <div className="flex justify-end">
+                        <TransferForm
+                            warehouses={warehouses}
+                            userId={user!.id}
+                            trigger={
+                                <Button>
+                                    <ArrowRight className="mr-2 h-4 w-4" />
+                                    Nueva Transferencia
+                                </Button>
+                            }
+                        />
+                    </div>
                 )}
             </div>
 
             <Tabs defaultValue="all" className="w-full">
-                <TabsList>
-                    <TabsTrigger value="all">
-                        All ({allTransfers.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="pending">
-                        Pending ({pendingTransfers.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="in-transit">
-                        In Transit ({inTransitTransfers.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="completed">
-                        Completed ({completedTransfers.length})
-                    </TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto">
+                    <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-max min-w-full sm:w-auto">
+                        <TabsTrigger value="all" className="whitespace-nowrap">
+                            <span className="hidden sm:inline">Todas ({allTransfers.length})</span>
+                            <span className="sm:hidden">Todas ({allTransfers.length})</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="pending" className="whitespace-nowrap">
+                            <span className="hidden sm:inline">Pendientes ({pendingTransfers.length})</span>
+                            <span className="sm:hidden">Pendientes ({pendingTransfers.length})</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="in-transit" className="whitespace-nowrap">
+                            <span className="hidden sm:inline">En Tránsito ({inTransitTransfers.length})</span>
+                            <span className="sm:hidden">Tránsito ({inTransitTransfers.length})</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="completed" className="whitespace-nowrap">
+                            <span className="hidden sm:inline">Completadas ({completedTransfers.length})</span>
+                            <span className="sm:hidden">Completadas ({completedTransfers.length})</span>
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="all" className="mt-6">
                     <TransferList transfers={allTransfers} userId={user!.id} />

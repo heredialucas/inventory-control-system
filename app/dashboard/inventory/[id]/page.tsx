@@ -29,7 +29,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
                 </div>
                 <h1 className="text-3xl font-bold">{product.name}</h1>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="font-mono bg-muted px-2 py-0.5 rounded">SKU: {product.sku}</span>
+                    <span className="font-mono bg-muted px-2 py-0.5 rounded">Código: {product.sku}</span>
                     <span>Categoría: {product.category?.name || "Sin categoría"}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-2">

@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Package } from "lucide-react";
 
 export const metadata = {
-    title: "Warehouses | Inventory Control",
-    description: "Manage warehouse locations and inventory distribution",
+    title: "Depósitos | Control de Inventario",
+    description: "Gestionar ubicaciones de depósitos y distribución de inventario",
 };
 
 export default async function WarehousesPage() {
@@ -25,9 +25,9 @@ export default async function WarehousesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Warehouses</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Depósitos</h1>
                     <p className="text-muted-foreground">
-                        Manage warehouse locations and inventory distribution
+                        Gestionar ubicaciones de depósitos y distribución de inventario
                     </p>
                 </div>
                 {canManage && (
@@ -35,7 +35,7 @@ export default async function WarehousesPage() {
                         trigger={
                             <Button>
                                 <Package className="mr-2 h-4 w-4" />
-                                Add Warehouse
+                                Agregar Depósito
                             </Button>
                         }
                     />

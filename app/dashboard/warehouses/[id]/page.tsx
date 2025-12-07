@@ -43,32 +43,32 @@ export default async function WarehouseDetailPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
                 <Link href="/dashboard/warehouses">
                     <Button variant="ghost" size="icon">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold tracking-tight">{warehouse.name}</h1>
+                        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{warehouse.name}</h1>
                         <Badge variant={warehouse.isActive ? "default" : "secondary"}>
-                            {warehouse.isActive ? "Active" : "Inactive"}
+                            {warehouse.isActive ? "Activo" : "Inactivo"}
                         </Badge>
                     </div>
                     <p className="text-muted-foreground font-mono text-sm mt-1">
                         {warehouse.code}
                     </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
                     <TransferForm
                         warehouses={warehouses}
                         userId={user!.id}
                         defaultFromWarehouseId={warehouse.id}
                         trigger={
-                            <Button variant="outline">
+                            <Button variant="outline" className="w-full sm:w-auto">
                                 <ArrowRight className="mr-2 h-4 w-4" />
-                                Transfer Stock
+                                Transferir Stock
                             </Button>
                         }
                     />
@@ -80,12 +80,12 @@ export default async function WarehouseDetailPage({
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm font-medium">Information</CardTitle>
+                        <CardTitle className="text-sm font-medium">Información</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
                         {warehouse.description && (
                             <div>
-                                <p className="text-sm text-muted-foreground">Description</p>
+                                <p className="text-sm text-muted-foreground">Descripción</p>
                                 <p className="text-sm">{warehouse.description}</p>
                             </div>
                         )}
@@ -93,7 +93,7 @@ export default async function WarehouseDetailPage({
                             <div className="flex items-start gap-2">
                                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Address</p>
+                                    <p className="text-sm text-muted-foreground">Dirección</p>
                                     <p className="text-sm">{warehouse.address}</p>
                                 </div>
                             </div>
@@ -103,21 +103,21 @@ export default async function WarehouseDetailPage({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-sm font-medium">Statistics</CardTitle>
+                        <CardTitle className="text-sm font-medium">Estadísticas</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Products</span>
+                            <span className="text-sm text-muted-foreground">Productos</span>
                             <span className="text-2xl font-bold">{totalProducts}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Total Quantity</span>
+                            <span className="text-sm text-muted-foreground">Cantidad Total</span>
                             <span className="text-2xl font-bold">{totalQuantity}</span>
                         </div>
                         {lowStockItems.length > 0 && (
                             <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
                                 <AlertTriangle className="h-4 w-4" />
-                                <span className="text-sm">{lowStockItems.length} low stock items</span>
+                                <span className="text-sm">{lowStockItems.length} productos con stock bajo</span>
                             </div>
                         )}
                     </CardContent>
@@ -127,72 +127,121 @@ export default async function WarehouseDetailPage({
             {/* Stock Table */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Inventory</CardTitle>
+                    <CardTitle>Inventario</CardTitle>
                     <CardDescription>
-                        Current stock levels for this warehouse
+                        Niveles de stock actuales para este depósito
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {stock.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
                             <Package className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">No stock in this warehouse</h3>
+                            <h3 className="text-lg font-semibold mb-2">No hay stock en este depósito</h3>
                             <p className="text-sm text-muted-foreground">
-                                Transfer products to this warehouse to get started
+                                Transfiere productos a este depósito para comenzar
                             </p>
                         </div>
                     ) : (
-                        <div className="rounded-md border">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>SKU</TableHead>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead>Category</TableHead>
-                                        <TableHead>Quantity</TableHead>
-                                        <TableHead>Min Stock</TableHead>
-                                        <TableHead>Status</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {stock.map((item) => {
-                                        const isLowStock = item.quantity <= item.product.minStock;
-                                        const isOutOfStock = item.quantity === 0;
+                        <>
+                            {/* Vista de tabla para desktop */}
+                            <div className="hidden md:block rounded-md border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Código</TableHead>
+                                            <TableHead>Producto</TableHead>
+                                            <TableHead>Categoría</TableHead>
+                                            <TableHead>Cantidad</TableHead>
+                                            <TableHead>Stock Mínimo</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {stock.map((item) => {
+                                            const isLowStock = item.quantity <= item.product.minStock;
+                                            const isOutOfStock = item.quantity === 0;
 
-                                        return (
-                                            <TableRow key={item.id}>
-                                                <TableCell className="font-mono text-sm">
-                                                    {item.product.sku}
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    {item.product.name}
-                                                </TableCell>
-                                                <TableCell className="text-muted-foreground">
-                                                    {item.product.category?.name || "-"}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="secondary">{item.quantity}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-muted-foreground">
-                                                    {item.product.minStock}
-                                                </TableCell>
-                                                <TableCell>
+                                            return (
+                                                <TableRow key={item.id}>
+                                                    <TableCell className="font-mono text-sm">
+                                                        {item.product.sku}
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">
+                                                        {item.product.name}
+                                                    </TableCell>
+                                                    <TableCell className="text-muted-foreground">
+                                                        {item.product.category?.name || "-"}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="secondary">{item.quantity}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-muted-foreground">
+                                                        {item.product.minStock}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {isOutOfStock ? (
+                                                            <Badge variant="destructive">Sin Stock</Badge>
+                                                        ) : isLowStock ? (
+                                                            <Badge variant="outline" className="border-orange-500 text-orange-600">
+                                                                Stock Bajo
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline">En Stock</Badge>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            {/* Vista de cards para móviles */}
+                            <div className="md:hidden space-y-4">
+                                {stock.map((item) => {
+                                    const isLowStock = item.quantity <= item.product.minStock;
+                                    const isOutOfStock = item.quantity === 0;
+
+                                    return (
+                                        <Card key={item.id}>
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div>
+                                                        <h4 className="font-medium">{item.product.name}</h4>
+                                                        <p className="text-sm text-muted-foreground font-mono">
+                                                            Código: {item.product.sku}
+                                                        </p>
+                                                    </div>
                                                     {isOutOfStock ? (
-                                                        <Badge variant="destructive">Out of Stock</Badge>
+                                                        <Badge variant="destructive">Sin Stock</Badge>
                                                     ) : isLowStock ? (
                                                         <Badge variant="outline" className="border-orange-500 text-orange-600">
-                                                            Low Stock
+                                                            Stock Bajo
                                                         </Badge>
                                                     ) : (
-                                                        <Badge variant="outline">In Stock</Badge>
+                                                        <Badge variant="outline">En Stock</Badge>
                                                     )}
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                                    <div>
+                                                        <p className="text-muted-foreground">Categoría</p>
+                                                        <p>{item.product.category?.name || "-"}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-muted-foreground">Cantidad</p>
+                                                        <Badge variant="secondary" className="mt-1">{item.quantity}</Badge>
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        <p className="text-muted-foreground">Stock Mínimo</p>
+                                                        <p>{item.product.minStock}</p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        </>
                     )}
                 </CardContent>
             </Card>

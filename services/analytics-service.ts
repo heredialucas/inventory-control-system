@@ -1,5 +1,22 @@
 import prisma from "@/lib/prisma";
 
+const statusTranslations: Record<string, string> = {
+    CANCELLED: "CANCELADO",
+    DELIVERED: "ENTREGADO",
+    PENDING: "PENDIENTE",
+    CONFIRMED: "CONFIRMADO",
+    DRAFT: "BORRADOR",
+    IN_TRANSIT: "EN_TRANSITO",
+    COMPLETED: "COMPLETADO",
+    APPROVED: "APROBADO",
+    REJECTED: "RECHAZADO",
+    // Add more as needed
+};
+
+function translateStatus(status: string): string {
+    return statusTranslations[status] || status;
+}
+
 export const analyticsService = {
     /**
      * Get dashboard overview statistics
@@ -46,7 +63,7 @@ export const analyticsService = {
                 },
             }),
 
-            // Pending transfers
+            // Transferencias pendientes
             prisma.warehouseTransfer.count({
                 where: {
                     status: {
@@ -102,7 +119,7 @@ export const analyticsService = {
     },
 
     /**
-     * Get stock report by category
+     * Obtener reporte de stock por categoría
      */
     async getStockByCategory() {
         const categories = await prisma.category.findMany({
@@ -341,26 +358,26 @@ export const analyticsService = {
         // Combine and sort all activities
         const activities = [
             ...movements.map((m) => ({
-                type: "movement" as const,
-                description: `${m.type} movement: ${m.product.name} (${m.quantity})`,
+                type: "movimiento" as const,
+                description: `${m.type === "IN" ? "ENTRADA" : "SALIDA"} movimiento: ${m.product.name} (${m.quantity})`,
                 date: m.createdAt,
                 user: m.user.email,
             })),
             ...transfers.map((t) => ({
-                type: "transfer" as const,
-                description: `Transfer: ${t.product.name} (${t.quantity}) - ${t.status}`,
+                type: "transferencia" as const,
+                description: `Transferencia: ${t.product.name} (${t.quantity}) - ${translateStatus(t.status)}`,
                 date: t.createdAt,
                 user: null,
             })),
             ...purchases.map((p) => ({
-                type: "purchase" as const,
-                description: `Purchase from ${p.supplier.name} - ${p.status}`,
+                type: "compra" as const,
+                description: `Compra de ${p.supplier.name} - ${translateStatus(p.status)}`,
                 date: p.createdAt,
                 user: null,
             })),
             ...deliveries.map((d) => ({
-                type: "delivery" as const,
-                description: `Delivery to ${d.institution.name} - ${d.status}`,
+                type: "entrega" as const,
+                description: `Entrega a ${d.institution.name} - ${translateStatus(d.status)}`,
                 date: d.createdAt,
                 user: null,
             })),

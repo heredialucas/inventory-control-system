@@ -107,7 +107,7 @@ export const purchaseService = {
 
         // Generate order number
         const count = await prisma.purchaseOrder.count();
-        const orderNumber = `PO-${String(count + 1).padStart(6, "0")}`;
+        const orderNumber = `OC-${String(count + 1).padStart(6, "0")}`;
 
         return await prisma.purchaseOrder.create({
             data: {
@@ -168,22 +168,22 @@ export const purchaseService = {
                 },
             });
 
-            if (!order) throw new Error("Purchase order not found");
+            if (!order) throw new Error("Orden de compra no encontrada");
             if (order.status === "RECEIVED" || order.status === "CANCELLED") {
-                throw new Error(`Cannot receive ${order.status.toLowerCase()} order`);
+                throw new Error(`No se puede recibir orden ${order.status.toLowerCase()}`);
             }
 
             // Process each received item
             for (const received of receivedItems) {
                 const orderItem = order.items.find((item) => item.id === received.itemId);
                 if (!orderItem) {
-                    throw new Error(`Order item ${received.itemId} not found`);
+                    throw new Error(`Artículo de orden ${received.itemId} no encontrado`);
                 }
 
                 const remainingQty = orderItem.quantity - orderItem.receivedQty;
                 if (received.quantity > remainingQty) {
                     throw new Error(
-                        `Cannot receive ${received.quantity} units. Only ${remainingQty} remaining.`
+                        `No se pueden recibir ${received.quantity} unidades. Solo quedan ${remainingQty}.`
                     );
                 }
 
@@ -235,7 +235,7 @@ export const purchaseService = {
                         type: "IN",
                         quantity: received.quantity,
                         userId,
-                        reason: `Purchase order ${order.orderNumber} received`,
+                        reason: `Orden de compra ${order.orderNumber} recibida`,
                     },
                 });
             }
@@ -288,12 +288,12 @@ export const purchaseService = {
             },
         });
 
-        if (!order) throw new Error("Purchase order not found");
+        if (!order) throw new Error("Orden de compra no encontrada");
         if (order.status === "RECEIVED") {
-            throw new Error("Cannot cancel received order");
+            throw new Error("No se puede cancelar orden ya recibida");
         }
         if (order.items.some((item) => item.receivedQty > 0)) {
-            throw new Error("Cannot cancel order with received items");
+            throw new Error("No se puede cancelar orden con artículos recibidos");
         }
 
         return await prisma.purchaseOrder.update({
@@ -310,9 +310,9 @@ export const purchaseService = {
             where: { id },
         });
 
-        if (!order) throw new Error("Purchase order not found");
+        if (!order) throw new Error("Orden de compra no encontrada");
         if (order.status !== "DRAFT") {
-            throw new Error("Only draft orders can be submitted");
+            throw new Error("Solo se pueden enviar órdenes en borrador");
         }
 
         return await prisma.purchaseOrder.update({
