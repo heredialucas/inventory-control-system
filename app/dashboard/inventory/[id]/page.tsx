@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export const dynamic = 'force-static';
-
 export default async function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const user = await getCurrentUser();

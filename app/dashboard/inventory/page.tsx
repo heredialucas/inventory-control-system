@@ -15,8 +15,6 @@ import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { ProductActions } from "@/components/inventory/product-actions";
 import { Badge } from "@/components/ui/badge";
 
-export const dynamic = 'force-static';
-
 export default async function InventoryPage() {
     const user = await getCurrentUser();
 
