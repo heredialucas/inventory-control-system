@@ -4,6 +4,8 @@ import { getWarehouses } from "@/app/actions/warehouses";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
+export const dynamic = 'force-static';
+
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const user = await getCurrentUser();
