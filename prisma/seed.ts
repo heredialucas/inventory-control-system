@@ -4,6 +4,7 @@ config({ path: ".env" });
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 
 const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
@@ -21,13 +22,17 @@ async function main() {
         { action: "inventory.manage", description: "Crear, editar y eliminar productos" },
         { action: "inventory.view", description: "Ver productos y niveles de stock" },
 
+        // Categories
+        { action: "categories.manage", description: "Crear, editar y eliminar categorías" },
+        { action: "categories.view", description: "Ver categorías" },
+
         // Warehouses
         { action: "warehouses.manage", description: "Crear, editar y eliminar almacenes" },
         { action: "warehouses.view", description: "Ver almacenes y su stock" },
 
-        // Transfers
-        { action: "transfers.manage", description: "Crear, completar y cancelar transferencias entre almacenes" },
-        { action: "transfers.view", description: "Ver transferencias entre almacenes" },
+        // Movements (Transfers)
+        { action: "movements.manage", description: "Crear, completar y cancelar transferencias entre almacenes" },
+        { action: "movements.view", description: "Ver transferencias entre almacenes" },
 
         // Purchases
         { action: "purchases.manage", description: "Crear, editar, recibir y cancelar órdenes de compra" },
@@ -50,6 +55,7 @@ async function main() {
 
         // Users & Roles (Admin)
         { action: "users.manage", description: "Gestionar usuarios, roles y permisos" },
+        { action: "users.view", description: "Ver usuarios" },
     ];
 
     for (const perm of permissions) {
@@ -83,7 +89,13 @@ async function main() {
         create: { name: "VIEWER", description: "Empleado con permisos de solo lectura" },
     });
 
-    console.log("✅ Seeded 3 roles");
+    const encargadoRole = await prisma.role.upsert({
+        where: { name: "ENCARGADO" },
+        update: {},
+        create: { name: "ENCARGADO", description: "Encargado con permisos de vista limitada para usuarios, inventario y entregas" },
+    });
+
+    console.log("✅ Seeded 4 roles");
 
     // ==================== ASSIGN PERMISSIONS TO ROLES ====================
     console.log("🔗 Assigning permissions to roles...");
@@ -143,6 +155,26 @@ async function main() {
         });
     }
 
+    // ENCARGADO gets specific view permissions
+    const encargadoPermissions = allPermissions.filter(p =>
+        p.action === "users.view" || p.action === "inventory.view" || p.action === "deliveries.view"
+    );
+    for (const p of encargadoPermissions) {
+        await prisma.rolePermission.upsert({
+            where: {
+                roleId_permissionId: {
+                    roleId: encargadoRole.id,
+                    permissionId: p.id
+                }
+            },
+            update: {},
+            create: {
+                roleId: encargadoRole.id,
+                permissionId: p.id
+            }
+        });
+    }
+
     console.log("✅ Assigned permissions to roles");
 
     // ==================== CREATE DEFAULT WAREHOUSE ====================
@@ -189,6 +221,76 @@ async function main() {
     }
 
     console.log(`✅ Migrated ${migratedCount} products to default warehouse`);
+
+    // ==================== CREATE ADMIN USER ====================
+    console.log("👤 Creating admin user...");
+
+    const hashedPassword = await bcrypt.hash("admin123", 10);
+
+    const adminUser = await prisma.user.upsert({
+        where: { email: "admin@gmail.com" },
+        update: {},
+        create: {
+            email: "admin@gmail.com",
+            username: "admin",
+            password: hashedPassword,
+            firstName: "Admin",
+            lastName: "User",
+            isActive: true,
+        },
+    });
+
+    // Assign admin role to the user
+    await prisma.userRole.upsert({
+        where: {
+            userId_roleId: {
+                userId: adminUser.id,
+                roleId: adminRole.id,
+            },
+        },
+        update: {},
+        create: {
+            userId: adminUser.id,
+            roleId: adminRole.id,
+        },
+    });
+
+    console.log(`✅ Admin user created: ${adminUser.email}`);
+
+    // ==================== CREATE ENCARGADO USER ====================
+    console.log("👤 Creating encargado user...");
+
+    const encargadoHashedPassword = await bcrypt.hash("encargado123", 10);
+
+    const encargadoUser = await prisma.user.upsert({
+        where: { email: "encargado@gmail.com" },
+        update: {},
+        create: {
+            email: "encargado@gmail.com",
+            username: "encargado",
+            password: encargadoHashedPassword,
+            firstName: "Encargado",
+            lastName: "User",
+            isActive: true,
+        },
+    });
+
+    // Assign encargado role to the user
+    await prisma.userRole.upsert({
+        where: {
+            userId_roleId: {
+                userId: encargadoUser.id,
+                roleId: encargadoRole.id,
+            },
+        },
+        update: {},
+        create: {
+            userId: encargadoUser.id,
+            roleId: encargadoRole.id,
+        },
+    });
+
+    console.log(`✅ Encargado user created: ${encargadoUser.email}`);
 
     console.log("✅ Database seeding completed!");
 }

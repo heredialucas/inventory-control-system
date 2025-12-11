@@ -25,8 +25,8 @@ export const metadata = {
 export default async function MovementsPage() {
     const user = await getCurrentUser();
 
-    // Check basic view permission for movements/inventory
-    if (!user || !hasPermission(user, "inventory.view")) {
+    // Check basic view permission for movements
+    if (!user || !hasPermission(user, "movements.view")) {
         return <UnauthorizedAccess action="ver" resource="movimientos de stock" />;
     }
 

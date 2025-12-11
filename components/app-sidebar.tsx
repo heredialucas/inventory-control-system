@@ -17,71 +17,111 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const sidebarItems = [
+interface SidebarItem {
+    title: string;
+    href: string;
+    icon: any;
+    permission?: string;
+    requiresAdmin?: boolean; // Para items que solo el admin puede ver
+}
+
+const sidebarItems: SidebarItem[] = [
     {
         title: "Dashboard",
         href: "/dashboard",
         icon: LayoutDashboard,
+        requiresAdmin: true, // Solo admin puede ver el dashboard
     },
     {
         title: "Usuarios",
         href: "/dashboard/users",
         icon: Users,
+        permission: "users.view",
     },
     {
         title: "Inventario",
         href: "/dashboard/inventory",
         icon: Package,
-    },
-    {
-        title: "Depósitos",
-        href: "/dashboard/warehouses",
-        icon: Warehouse,
+        permission: "inventory.view",
     },
     {
         title: "Categorías",
         href: "/dashboard/categories",
         icon: Layers,
+        permission: "categories.view",
+    },
+    {
+        title: "Depósitos",
+        href: "/dashboard/warehouses",
+        icon: Warehouse,
+        permission: "warehouses.view",
     },
     {
         title: "Transferencias",
         href: "/dashboard/warehouses/transfers",
         icon: ArrowRightLeft,
+        permission: "warehouses.view",
     },
     {
         title: "Proveedores",
         href: "/dashboard/suppliers",
         icon: Users,
+        permission: "suppliers.view",
     },
     {
         title: "Compras",
         href: "/dashboard/purchases",
         icon: ShoppingCart,
+        permission: "purchases.view",
     },
     {
         title: "Instituciones",
         href: "/dashboard/institutions",
         icon: Building2,
+        permission: "institutions.view",
     },
     {
         title: "Entregas",
         href: "/dashboard/deliveries",
         icon: Truck,
+        permission: "deliveries.view",
     },
     {
         title: "Reportes",
         href: "/dashboard/reports",
         icon: BarChart3,
+        permission: "reports.view",
     },
     {
         title: "Movimientos",
         href: "/dashboard/movements",
         icon: Activity,
+        permission: "movements.view",
     },
 ];
 
-export function AppSidebar({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
+export function AppSidebar({ 
+    className, 
+    onNavigate,
+    userPermissions = [],
+    isAdmin = false,
+}: { 
+    className?: string; 
+    onNavigate?: () => void;
+    userPermissions?: string[];
+    isAdmin?: boolean;
+}) {
     const pathname = usePathname();
+
+    // Filtrar items según permisos del usuario
+    const filteredItems = sidebarItems.filter(item => {
+        // Si requiere ser admin, verificar que lo sea
+        if (item.requiresAdmin) return isAdmin;
+        // Si no requiere permiso, mostrarlo
+        if (!item.permission) return true;
+        // Si requiere permiso, verificar que el usuario lo tenga
+        return userPermissions.includes(item.permission);
+    });
 
     return (
         <aside className={cn("w-64 bg-card flex flex-col", className)}>
@@ -89,7 +129,7 @@ export function AppSidebar({ className, onNavigate }: { className?: string; onNa
                 <h2 className="font-bold text-xl tracking-tight">Gestión</h2>
             </div>
             <nav className="flex-1 p-4 space-y-2">
-                {sidebarItems.map((item) => {
+                {filteredItems.map((item) => {
                     // Exact match for dashboard home
                     if (item.href === "/dashboard") {
                         const isActive = pathname === "/dashboard";

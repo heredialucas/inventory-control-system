@@ -80,8 +80,8 @@ export function EditUserDialog({ user, roles }: EditUserDialogProps) {
         );
     }
 
-    // Allow assigning any role in Edit mode
-    const availableRoles = roles;
+    // No permitir asignar rol ADMIN al editar usuarios
+    const availableRoles = roles.filter(role => role.name !== "ADMIN");
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

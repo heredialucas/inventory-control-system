@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { AppSidebar } from "@/components/app-sidebar";
 
-export function MobileNav() {
+export function MobileNav({ 
+    userPermissions = [],
+    isAdmin = false,
+}: { 
+    userPermissions?: string[];
+    isAdmin?: boolean;
+}) {
     const [open, setOpen] = useState(false);
 
     return (
@@ -24,7 +30,12 @@ export function MobileNav() {
                         <SheetTitle>Menú de navegación</SheetTitle>
                         <SheetDescription>Navegación principal del dashboard</SheetDescription>
                     </VisuallyHidden>
-                    <AppSidebar className="h-full border-none" onNavigate={() => setOpen(false)} />
+                    <AppSidebar 
+                        className="h-full border-none" 
+                        onNavigate={() => setOpen(false)}
+                        userPermissions={userPermissions}
+                        isAdmin={isAdmin}
+                    />
                 </SheetContent>
             </Sheet>
             <div className="font-bold truncate">Gestión</div>

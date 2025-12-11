@@ -12,7 +12,7 @@ export async function getDeliveries(filters?: {
 }) {
     const user = await getCurrentUser();
     if (!user || !hasPermission(user, "deliveries.view")) {
-        throw new Error("No tienes permisos para ver entregas");
+        return [];
     }
 
     try {

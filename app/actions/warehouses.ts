@@ -11,7 +11,7 @@ import { TransferStatus } from "@prisma/client";
 export async function getWarehouses() {
     const user = await getCurrentUser();
     if (!user || !hasPermission(user, "warehouses.view")) {
-        throw new Error("No tienes permisos para ver depósitos");
+        return [];
     }
 
     try {

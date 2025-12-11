@@ -14,6 +14,8 @@ import {
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const metadata = {
     title: "Panel de Control | Control de Inventario",
@@ -21,6 +23,16 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
+    const user = await getCurrentUser();
+
+    // Solo usuarios con rol ADMIN pueden ver el dashboard
+    // Los demás usuarios serán redirigidos a su perfil
+    const isAdmin = user?.userRoles?.some((ur: any) => ur.role.name === "ADMIN");
+    
+    if (!user || !isAdmin) {
+        redirect("/dashboard/users");
+    }
+
     const stats = await getDashboardStats();
     const lowStockProducts = await getLowStockProducts();
     const recentActivity = await getRecentActivity(5);

@@ -1,7 +1,7 @@
 import { CategoryForm } from "@/components/categories/category-form";
 import { inventoryService } from "@/services/inventory-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +18,12 @@ import {
 export default async function CategoriesPage() {
     const user = await getCurrentUser();
 
-    if (!user || !hasPermission(user, "inventory.view")) {
-        redirect("/dashboard");
+    if (!user || !hasPermission(user, "categories.view")) {
+        return <UnauthorizedAccess action="ver" resource="categorías" />;
     }
 
     const categories = await inventoryService.getCategories();
-    const canManage = hasPermission(user, "inventory.manage");
+    const canManage = hasPermission(user, "categories.manage");
 
     return (
         <div className="flex flex-col gap-6">
