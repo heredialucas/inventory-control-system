@@ -42,10 +42,9 @@ export default async function CategoriesPage() {
                     <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                         <Package className="h-12 w-12 text-muted-foreground mb-4" />
                         <h3 className="text-lg font-semibold mb-2">No hay categorías registradas</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
+                        <p className="text-sm text-muted-foreground">
                             Comienza creando tu primera categoría
                         </p>
-                        {canManage && <CategoryForm />}
                     </CardContent>
                 </Card>
             ) : (

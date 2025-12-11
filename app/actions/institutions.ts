@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 export async function getInstitutions() {
     const user = await getCurrentUser();
     if (!user || !hasPermission(user, "institutions.view")) {
-        throw new Error("No tienes permisos para ver instituciones");
+        return [];
     }
 
     try {
