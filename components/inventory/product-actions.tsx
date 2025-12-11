@@ -55,7 +55,16 @@ export function ProductActions({
     const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
 
-    if (!canEdit && !canDelete) return null;
+    // Si no hay permisos de editar/eliminar, mostrar solo botón de ver
+    if (!canEdit && !canDelete) {
+        return (
+            <Button variant="ghost" size="sm" asChild>
+                <Link href={`/dashboard/inventory/${productId}`}>
+                    Ver
+                </Link>
+            </Button>
+        );
+    }
 
     const handleDelete = async () => {
         setIsDeleting(true);

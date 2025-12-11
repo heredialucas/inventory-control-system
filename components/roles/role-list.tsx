@@ -13,7 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { EditRoleDialog } from "./edit-role-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function RoleList({ roles, permissions }: { roles: any[], permissions: any[] }) {
+interface RoleListProps {
+    roles: any[];
+    permissions: any[];
+    canManage?: boolean;
+}
+
+export function RoleList({ roles, permissions, canManage = false }: RoleListProps) {
     const translateRoleName = (name: string) => {
         const translations: Record<string, string> = {
             ADMIN: "Administrador",
@@ -41,7 +47,7 @@ export function RoleList({ roles, permissions }: { roles: any[], permissions: an
                             <TableHead>Descripción</TableHead>
                             <TableHead>Permisos</TableHead>
                             <TableHead className="text-right">Usuarios</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
+                            {canManage && <TableHead className="text-right">Acciones</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -66,17 +72,19 @@ export function RoleList({ roles, permissions }: { roles: any[], permissions: an
                                         <span className="text-xs">{role._count.users}</span>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-right flex items-center justify-end gap-2">
-                                    <EditRoleDialog role={role} permissions={permissions} />
-                                    <form action={async () => {
-                                        "use server";
-                                        await deleteRoleAction(role.id);
-                                    }}>
-                                        <Button variant="ghost" size="icon" type="submit" disabled={role.name === "ADMIN"}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </form>
-                                </TableCell>
+                                {canManage && (
+                                    <TableCell className="text-right flex items-center justify-end gap-2">
+                                        <EditRoleDialog role={role} permissions={permissions} />
+                                        <form action={async () => {
+                                            "use server";
+                                            await deleteRoleAction(role.id);
+                                        }}>
+                                            <Button variant="ghost" size="icon" type="submit" disabled={role.name === "ADMIN"}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </form>
+                                    </TableCell>
+                                )}
                             </TableRow>
                         ))}
                     </TableBody>
@@ -105,17 +113,19 @@ export function RoleList({ roles, permissions }: { roles: any[], permissions: an
                                     <span className="text-muted-foreground text-xs">Sin permisos</span>
                                 )}
                             </div>
-                            <div className="flex items-center justify-end gap-2">
-                                <EditRoleDialog role={role} permissions={permissions} />
-                                <form action={async () => {
-                                    "use server";
-                                    await deleteRoleAction(role.id);
-                                }}>
-                                    <Button variant="ghost" size="icon" type="submit" disabled={role.name === "ADMIN"}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </form>
-                            </div>
+                            {canManage && (
+                                <div className="flex items-center justify-end gap-2">
+                                    <EditRoleDialog role={role} permissions={permissions} />
+                                    <form action={async () => {
+                                        "use server";
+                                        await deleteRoleAction(role.id);
+                                    }}>
+                                        <Button variant="ghost" size="icon" type="submit" disabled={role.name === "ADMIN"}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </form>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 ))}

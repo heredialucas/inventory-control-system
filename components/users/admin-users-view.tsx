@@ -11,15 +11,18 @@ interface AdminUsersViewProps {
     users: any[];
     roles: any[];
     permissions: any[];
+    canManage?: boolean;
 }
 
-export function AdminUsersView({ users, roles, permissions }: AdminUsersViewProps) {
+export function AdminUsersView({ users, roles, permissions, canManage = false }: AdminUsersViewProps) {
     return (
         <div className="space-y-6">
             <div>
                 <h3 className="text-lg font-medium">Gestión de Usuarios y Accesos</h3>
                 <p className="text-sm text-muted-foreground">
-                    Panel de administración de usuarios (Vista de Administrador).
+                    {canManage
+                        ? "Panel de administración de usuarios (Vista de Administrador)."
+                        : "Panel de usuarios (Solo lectura)."}
                 </p>
             </div>
             <Separator />
@@ -35,22 +38,30 @@ export function AdminUsersView({ users, roles, permissions }: AdminUsersViewProp
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="space-y-1">
                             <h4 className="text-sm font-semibold">Usuarios Registrados</h4>
-                            <p className="text-xs text-muted-foreground">Administra el acceso y roles de los otros usuarios.</p>
+                            <p className="text-xs text-muted-foreground">
+                                {canManage
+                                    ? "Administra el acceso y roles de los otros usuarios."
+                                    : "Lista de usuarios del sistema."}
+                            </p>
                         </div>
-                        <CreateUserDialog roles={roles || []} />
+                        {canManage && <CreateUserDialog roles={roles || []} />}
                     </div>
-                    <UserList users={users || []} roles={roles || []} />
+                    <UserList users={users || []} roles={roles || []} canManage={canManage} />
                 </TabsContent>
 
                 <TabsContent value="roles" className="space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="space-y-1">
                             <h4 className="text-sm font-semibold">Roles del Sistema</h4>
-                            <p className="text-xs text-muted-foreground">Define roles y asigna sus permisos.</p>
+                            <p className="text-xs text-muted-foreground">
+                                {canManage
+                                    ? "Define roles y asigna sus permisos."
+                                    : "Lista de roles del sistema."}
+                            </p>
                         </div>
-                        <CreateRoleDialog permissions={permissions || []} />
+                        {canManage && <CreateRoleDialog permissions={permissions || []} />}
                     </div>
-                    <RoleList roles={roles || []} permissions={permissions || []} />
+                    <RoleList roles={roles || []} permissions={permissions || []} canManage={canManage} />
                 </TabsContent>
 
                 <TabsContent value="permissions" className="space-y-4">

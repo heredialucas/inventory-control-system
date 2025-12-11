@@ -25,6 +25,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     const serializedProduct = {
         ...product,
         price: product.price.toString(),
+        purchaseDate: product.purchaseDate ? product.purchaseDate.toISOString().split('T')[0] : null,
+        purchaseAmount: product.purchaseAmount ? product.purchaseAmount.toString() : null,
     };
 
     return (

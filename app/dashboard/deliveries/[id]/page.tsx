@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getDelivery, markAsDelivered, cancelDelivery } from "@/app/actions/deliveries";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -49,6 +49,7 @@ export default async function DeliveryDetailPage({
     const isDraft = delivery.status === "DRAFT";
     const isDelivered = delivery.status === "DELIVERED";
     const isCancelled = delivery.status === "CANCELLED";
+    const canManage = hasPermission(user, "deliveries.manage");
 
     return (
         <div className="space-y-6">
@@ -74,7 +75,7 @@ export default async function DeliveryDetailPage({
                     </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    {isDraft && (
+                    {canManage && isDraft && (
                         <>
                             <form action={handleCancel}>
                                 <Button variant="outline" type="submit">

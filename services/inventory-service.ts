@@ -69,11 +69,19 @@ export const inventoryService = {
         name: string;
         description?: string;
         price: number;
+        unit?: string;
         categoryId?: string;
         minStock?: number;
         initialStock?: number;
         warehouseId?: string;
         userId: string;
+        // Nuevos campos de compra
+        purchaseCode?: string;
+        purchaseDate?: Date;
+        purchaseAmount?: number;
+        supplierId?: string;
+        destination?: string;
+        receiptImageUrl?: string;
     }) {
         const { initialStock, warehouseId, userId, ...productData } = data;
 

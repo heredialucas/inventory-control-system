@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -32,23 +33,37 @@ interface Warehouse {
     name: string;
 }
 
+interface Supplier {
+    id: string;
+    name: string;
+    code: string;
+}
+
 interface Product {
     id: string;
     sku: string;
     name: string;
-    price: number | string; // Decimal serializado
+    price: number | string;
     stock: number;
     minStock: number;
     categoryId: string | null;
+    purchaseCode?: string | null;
+    purchaseDate?: string | null;
+    purchaseAmount?: number | string | null;
+    supplierId?: string | null;
+    destination?: string | null;
+    receiptImageUrl?: string | null;
+    unit?: string | null;
 }
 
 interface ProductFormProps {
     categories: Category[];
     warehouses: Warehouse[];
+    suppliers?: Supplier[];
     initialData?: Product | null;
 }
 
-export function ProductForm({ categories, warehouses, initialData }: ProductFormProps) {
+export function ProductForm({ categories, warehouses, suppliers = [], initialData }: ProductFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -80,92 +95,216 @@ export function ProductForm({ categories, warehouses, initialData }: ProductForm
             </CardHeader>
             <CardContent>
                 <form action={handleSubmit} className="space-y-6">
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="sku">Código</Label>
-                            <Input id="sku" name="sku" placeholder="PROD-001" defaultValue={initialData?.sku} required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Nombre</Label>
-                            <Input id="name" name="name" placeholder="Cemento Portland" defaultValue={initialData?.name} required />
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="price">Precio (Opcional)</Label>
-                            <Input
-                                id="price"
-                                name="price"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                defaultValue={initialData?.price ? Number(initialData.price) : ""}
-                                placeholder="0.00"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="minStock">Stock Mínimo (Opcional)</Label>
-                            <Input
-                                id="minStock"
-                                name="minStock"
-                                type="number"
-                                min="0"
-                                defaultValue={initialData?.minStock || ""}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="categoryId">Categoría</Label>
-                        <Select name="categoryId" defaultValue={initialData?.categoryId || undefined}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar categoría" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {categories.map(c => (
-                                    <SelectItem key={c.id} value={c.id}>
-                                        {c.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-
-                    {!initialData && (
+                    {/* Datos de Compra */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-medium text-muted-foreground">Datos de Compra</h3>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="initialStock">
-                                    Stock Inicial *
-                                </Label>
+                                <Label htmlFor="purchaseCode">Código de Expediente</Label>
                                 <Input
-                                    id="initialStock"
-                                    name="initialStock"
-                                    type="number"
-                                    min="1"
-                                    placeholder="1"
-                                    required
+                                    id="purchaseCode"
+                                    name="purchaseCode"
+                                    placeholder="2018/224/25"
+                                    defaultValue={initialData?.purchaseCode || ""}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="initialWarehouseId">
-                                    Depósito Inicial *
-                                </Label>
-                                <Select name="initialWarehouseId" required>
-                                    <SelectTrigger id="initialWarehouseId">
-                                        <SelectValue placeholder="Seleccionar depósito" />
+                                <Label htmlFor="purchaseDate">Fecha de Compra</Label>
+                                <Input
+                                    id="purchaseDate"
+                                    name="purchaseDate"
+                                    type="date"
+                                    defaultValue={initialData?.purchaseDate ? new Date(initialData.purchaseDate).toISOString().split('T')[0] : ""}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="supplierId">Proveedor</Label>
+                                <Select name="supplierId" defaultValue={initialData?.supplierId || undefined}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar proveedor" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {warehouses.map((w) => (
-                                            <SelectItem key={w.id} value={w.id}>
-                                                {w.code} - {w.name}
+                                        {suppliers.map(s => (
+                                            <SelectItem key={s.id} value={s.id}>
+                                                {s.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="purchaseAmount">Monto Total</Label>
+                                <Input
+                                    id="purchaseAmount"
+                                    name="purchaseAmount"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="259033.98"
+                                    defaultValue={initialData?.purchaseAmount ? Number(initialData.purchaseAmount) : ""}
+                                />
+                            </div>
                         </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="destination">Destino / Responsable</Label>
+                                <Input
+                                    id="destination"
+                                    name="destination"
+                                    placeholder="Automotores - Luis Caro"
+                                    defaultValue={initialData?.destination || ""}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="receiptImageUrl">Imagen del Comprobante</Label>
+                                <Input
+                                    id="receiptImageUrl"
+                                    name="receiptImageUrl"
+                                    type="file"
+                                    accept="image/*"
+                                    className="cursor-pointer"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Sube una imagen del comprobante de compra (JPG, PNG, etc.)
+                                </p>
+                                {initialData?.receiptImageUrl && (
+                                    <div className="mt-2">
+                                        <p className="text-xs text-muted-foreground mb-1">Imagen actual:</p>
+                                        <img
+                                            src={initialData.receiptImageUrl}
+                                            alt="Comprobante actual"
+                                            className="max-w-xs max-h-32 rounded border object-cover"
+                                        />
+                                        <input type="hidden" name="existingReceiptImageUrl" value={initialData.receiptImageUrl} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Datos del Producto */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-medium text-muted-foreground">Datos del Producto</h3>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="sku">Código *</Label>
+                                <Input id="sku" name="sku" placeholder="PROD-001" defaultValue={initialData?.sku} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Nombre *</Label>
+                                <Input id="name" name="name" placeholder="Cemento Portland" defaultValue={initialData?.name} required />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="price">Precio (Opcional)</Label>
+                                <Input
+                                    id="price"
+                                    name="price"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    defaultValue={initialData?.price ? Number(initialData.price) : ""}
+                                    placeholder="0.00"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="unit">Unidad de Medida</Label>
+                                <Select name="unit" defaultValue={initialData?.unit || "U"}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar unidad" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="U">Unidad (U)</SelectItem>
+                                        <SelectItem value="Kg">Kilogramo (Kg)</SelectItem>
+                                        <SelectItem value="L">Litro (L)</SelectItem>
+                                        <SelectItem value="m">Metro (m)</SelectItem>
+                                        <SelectItem value="m²">Metro cuadrado (m²)</SelectItem>
+                                        <SelectItem value="m³">Metro cúbico (m³)</SelectItem>
+                                        <SelectItem value="Caja">Caja</SelectItem>
+                                        <SelectItem value="Bolsa">Bolsa</SelectItem>
+                                        <SelectItem value="Rollo">Rollo</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="minStock">Stock Mínimo (Opcional)</Label>
+                                <Input
+                                    id="minStock"
+                                    name="minStock"
+                                    type="number"
+                                    min="0"
+                                    defaultValue={initialData?.minStock || ""}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="categoryId">Categoría</Label>
+                            <Select name="categoryId" defaultValue={initialData?.categoryId || undefined}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar categoría" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map(c => (
+                                        <SelectItem key={c.id} value={c.id}>
+                                            {c.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {!initialData && (
+                        <>
+                            <Separator />
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-medium text-muted-foreground">Stock Inicial</h3>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="initialStock">
+                                            Cantidad *
+                                        </Label>
+                                        <Input
+                                            id="initialStock"
+                                            name="initialStock"
+                                            type="number"
+                                            min="1"
+                                            placeholder="1"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="initialWarehouseId">
+                                            Depósito *
+                                        </Label>
+                                        <Select name="initialWarehouseId" required>
+                                            <SelectTrigger id="initialWarehouseId">
+                                                <SelectValue placeholder="Seleccionar depósito" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {warehouses.map((w) => (
+                                                    <SelectItem key={w.id} value={w.id}>
+                                                        {w.code} - {w.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
                     )}
 
                     {error && <p className="text-sm text-red-500">{error}</p>}

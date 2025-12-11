@@ -75,19 +75,19 @@ export default async function WarehouseTransfersPage() {
                 </div>
 
                 <TabsContent value="all" className="mt-6">
-                    <TransferList transfers={allTransfers} userId={user!.id} />
+                    <TransferList transfers={allTransfers} userId={user!.id} canManage={canManage} />
                 </TabsContent>
 
                 <TabsContent value="pending" className="mt-6">
-                    <TransferList transfers={pendingTransfers} userId={user!.id} />
+                    <TransferList transfers={pendingTransfers} userId={user!.id} canManage={canManage} />
                 </TabsContent>
 
                 <TabsContent value="in-transit" className="mt-6">
-                    <TransferList transfers={inTransitTransfers} userId={user!.id} />
+                    <TransferList transfers={inTransitTransfers} userId={user!.id} canManage={canManage} />
                 </TabsContent>
 
                 <TabsContent value="completed" className="mt-6">
-                    <TransferList transfers={completedTransfers} userId={user!.id} />
+                    <TransferList transfers={completedTransfers} userId={user!.id} canManage={canManage} />
                 </TabsContent>
             </Tabs>
         </div>

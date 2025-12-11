@@ -46,9 +46,10 @@ type SupplierWithCounts = {
 
 interface SupplierListProps {
     suppliers: SupplierWithCounts[];
+    canManage?: boolean;
 }
 
-export function SupplierList({ suppliers }: SupplierListProps) {
+export function SupplierList({ suppliers, canManage = false }: SupplierListProps) {
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
     const [editingSupplier, setEditingSupplier] = useState<SupplierWithCounts | null>(null);
@@ -131,22 +132,26 @@ export function SupplierList({ suppliers }: SupplierListProps) {
                                                 Ver Detalles
                                             </Link>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Editar
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleToggleStatus(supplier.id)}>
-                                            <Power className="mr-2 h-4 w-4" />
-                                            {supplier.isActive ? "Desactivar" : "Activar"}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            className="text-destructive"
-                                            onClick={() => handleDelete(supplier.id, supplier.name)}
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Eliminar
-                                        </DropdownMenuItem>
+                                        {canManage && (
+                                            <>
+                                                <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Editar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleToggleStatus(supplier.id)}>
+                                                    <Power className="mr-2 h-4 w-4" />
+                                                    {supplier.isActive ? "Desactivar" : "Activar"}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className="text-destructive"
+                                                    onClick={() => handleDelete(supplier.id, supplier.name)}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Eliminar
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
@@ -158,77 +163,81 @@ export function SupplierList({ suppliers }: SupplierListProps) {
             {/* Vista desktop - Tabla */}
             <div className="hidden md:block">
                 <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Código</TableHead>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Contacto</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Pedidos</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="w-[70px]"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {suppliers.map((supplier) => (
-                            <TableRow key={supplier.id}>
-                                <TableCell className="font-mono font-semibold">{supplier.code}</TableCell>
-                                <TableCell className="font-medium">{supplier.name}</TableCell>
-                                <TableCell className="text-sm text-muted-foreground">
-                                    {supplier.contactName || "-"}
-                                </TableCell>
-                                <TableCell className="text-sm text-muted-foreground">
-                                    {supplier.email || "-"}
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="secondary">{supplier._count.purchaseOrders}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={supplier.isActive ? "default" : "secondary"}>
-                                        {supplier.isActive ? "Activo" : "Inactivo"}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" disabled={isPending}>
-                                                <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">Acciones</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem asChild>
-                                                <Link href={`/dashboard/suppliers/${supplier.id}`}>
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Ver Detalles
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Editar
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleToggleStatus(supplier.id)}>
-                                                <Power className="mr-2 h-4 w-4" />
-                                                {supplier.isActive ? "Desactivar" : "Activar"}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                className="text-destructive"
-                                                onClick={() => handleDelete(supplier.id, supplier.name)}
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Eliminar
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Código</TableHead>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead>Contacto</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Pedidos</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead className="w-[70px]"></TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {suppliers.map((supplier) => (
+                                <TableRow key={supplier.id}>
+                                    <TableCell className="font-mono font-semibold">{supplier.code}</TableCell>
+                                    <TableCell className="font-medium">{supplier.name}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {supplier.contactName || "-"}
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {supplier.email || "-"}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary">{supplier._count.purchaseOrders}</Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={supplier.isActive ? "default" : "secondary"}>
+                                            {supplier.isActive ? "Activo" : "Inactivo"}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" disabled={isPending}>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Acciones</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/dashboard/suppliers/${supplier.id}`}>
+                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        Ver Detalles
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                {canManage && (
+                                                    <>
+                                                        <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
+                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            Editar
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleToggleStatus(supplier.id)}>
+                                                            <Power className="mr-2 h-4 w-4" />
+                                                            {supplier.isActive ? "Desactivar" : "Activar"}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            className="text-destructive"
+                                                            onClick={() => handleDelete(supplier.id, supplier.name)}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Eliminar
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
             </div>
 

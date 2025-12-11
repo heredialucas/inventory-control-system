@@ -61,6 +61,7 @@ type TransferWithRelations = {
 interface TransferListProps {
     transfers: TransferWithRelations[];
     userId: string;
+    canManage?: boolean;
 }
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -92,7 +93,7 @@ const getStatusLabel = (status: string) => {
     }
 };
 
-export function TransferList({ transfers, userId }: TransferListProps) {
+export function TransferList({ transfers, userId, canManage = false }: TransferListProps) {
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
@@ -230,7 +231,7 @@ export function TransferList({ transfers, userId }: TransferListProps) {
                                                         <Check className="mr-2 h-4 w-4" />
                                                         Ingreso Completado
                                                     </DropdownMenuItem>
-                                                ) : (
+                                                ) : canManage ? (
                                                     <>
                                                         {transfer.status === "PENDING" && (
                                                             <>
@@ -272,6 +273,8 @@ export function TransferList({ transfers, userId }: TransferListProps) {
                                                             <DropdownMenuItem disabled>No hay acciones disponibles</DropdownMenuItem>
                                                         )}
                                                     </>
+                                                ) : (
+                                                    <DropdownMenuItem disabled>Solo lectura</DropdownMenuItem>
                                                 )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -366,7 +369,7 @@ export function TransferList({ transfers, userId }: TransferListProps) {
                                                     <Check className="mr-2 h-4 w-4" />
                                                     Ingreso Completado
                                                 </DropdownMenuItem>
-                                            ) : (
+                                            ) : canManage ? (
                                                 <>
                                                     {transfer.status === "PENDING" && (
                                                         <>
@@ -408,6 +411,8 @@ export function TransferList({ transfers, userId }: TransferListProps) {
                                                         <DropdownMenuItem disabled>No hay acciones disponibles</DropdownMenuItem>
                                                     )}
                                                 </>
+                                            ) : (
+                                                <DropdownMenuItem disabled>Solo lectura</DropdownMenuItem>
                                             )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>

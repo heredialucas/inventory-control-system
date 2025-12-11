@@ -14,7 +14,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { EditUserDialog } from "@/components/users/edit-user-dialog";
 
-export function UserList({ users, roles }: { users: any[], roles?: any[] }) {
+interface UserListProps {
+    users: any[];
+    roles?: any[];
+    canManage?: boolean;
+}
+
+export function UserList({ users, roles, canManage = false }: UserListProps) {
     const translateRoleName = (name: string) => {
         const translations: Record<string, string> = {
             ADMIN: "Administrador",
@@ -42,12 +48,12 @@ export function UserList({ users, roles }: { users: any[], roles?: any[] }) {
                             <TableHead>Nombre</TableHead>
                             <TableHead>Roles</TableHead>
                             <TableHead>Fecha Creación</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
+                            {canManage && <TableHead className="text-right">Acciones</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {users.map((user) => (
-                            <UserRow key={user.id} user={user} roles={roles || []} />
+                            <UserRow key={user.id} user={user} roles={roles || []} canManage={canManage} />
                         ))}
                     </TableBody>
                 </Table>
@@ -82,17 +88,19 @@ export function UserList({ users, roles }: { users: any[], roles?: any[] }) {
                                 <span className="text-xs text-muted-foreground">
                                     {new Date(user.createdAt).toLocaleDateString()}
                                 </span>
-                                <div className="flex items-center gap-2">
-                                    <EditUserDialog user={user} roles={roles || []} />
-                                    <form action={async () => {
-                                        "use server";
-                                        await deleteUserAction(user.id);
-                                    }}>
-                                        <Button variant="ghost" size="icon" type="submit">
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </form>
-                                </div>
+                                {canManage && (
+                                    <div className="flex items-center gap-2">
+                                        <EditUserDialog user={user} roles={roles || []} />
+                                        <form action={async () => {
+                                            "use server";
+                                            await deleteUserAction(user.id);
+                                        }}>
+                                            <Button variant="ghost" size="icon" type="submit">
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </form>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -102,7 +110,13 @@ export function UserList({ users, roles }: { users: any[], roles?: any[] }) {
     );
 }
 
-function UserRow({ user, roles }: { user: any, roles: any[] }) {
+interface UserRowProps {
+    user: any;
+    roles: any[];
+    canManage?: boolean;
+}
+
+function UserRow({ user, roles, canManage = false }: UserRowProps) {
     const translateRoleName = (name: string) => {
         const translations: Record<string, string> = {
             ADMIN: "Administrador",
@@ -136,17 +150,19 @@ function UserRow({ user, roles }: { user: any, roles: any[] }) {
             <TableCell className="text-xs text-muted-foreground">
                 {new Date(user.createdAt).toLocaleDateString()}
             </TableCell>
-            <TableCell className="text-right flex items-center justify-end gap-2">
-                <EditUserDialog user={user} roles={roles} />
-                <form action={async () => {
-                    "use server";
-                    await deleteUserAction(user.id);
-                }}>
-                    <Button variant="ghost" size="icon" type="submit">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                </form>
-            </TableCell>
+            {canManage && (
+                <TableCell className="text-right flex items-center justify-end gap-2">
+                    <EditUserDialog user={user} roles={roles} />
+                    <form action={async () => {
+                        "use server";
+                        await deleteUserAction(user.id);
+                    }}>
+                        <Button variant="ghost" size="icon" type="submit">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </form>
+                </TableCell>
+            )}
         </TableRow>
     );
 }

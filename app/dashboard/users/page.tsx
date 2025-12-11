@@ -1,6 +1,6 @@
 import { getRolesAction, getPermissionsAction } from "@/app/actions/roles";
 import { getUsersAction } from "@/app/actions/users";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { AdminUsersView } from "@/components/users/admin-users-view";
 import { UserProfileView } from "@/components/users/user-profile-view";
 
@@ -23,6 +23,7 @@ export default async function UsersPage() {
     ]);
 
     const isAdmin = currentUser.userRoles.some((ur: any) => ur.role.name === "ADMIN");
+    const canManage = hasPermission(currentUser, "users.manage");
 
     if (isAdmin) {
         // Filter out current user from the list so they don't see themselves
@@ -33,6 +34,7 @@ export default async function UsersPage() {
                 users={filteredUsers}
                 roles={roles || []}
                 permissions={permissions || []}
+                canManage={canManage}
             />
         );
     }

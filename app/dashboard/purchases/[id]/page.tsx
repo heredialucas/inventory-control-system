@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPurchaseOrder, submitPurchaseOrder, cancelPurchaseOrder } from "@/app/actions/purchases";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Building2, MapPin, Calendar, CheckCircle, XCircle, Send } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, Calendar, XCircle, Send } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -69,6 +69,7 @@ export default async function PurchaseOrderDetailPage({
     const isDraft = order.status === "DRAFT";
     const isReceivable = order.status === "PENDING" || order.status === "PARTIAL";
     const isCancelled = order.status === "CANCELLED";
+    const canManage = hasPermission(user, "purchases.manage");
 
     return (
         <div className="space-y-6">
@@ -91,7 +92,7 @@ export default async function PurchaseOrderDetailPage({
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    {isDraft && (
+                    {canManage && isDraft && (
                         <>
                             <form action={cancelOrder}>
                                 <Button variant="destructive" size="sm">
@@ -107,10 +108,10 @@ export default async function PurchaseOrderDetailPage({
                             </form>
                         </>
                     )}
-                    {isReceivable && (
+                    {canManage && isReceivable && (
                         <ReceiveDialog order={JSON.parse(JSON.stringify(order))} userId={user.id} />
                     )}
-                    {!isDraft && !isCancelled && !isReceivable && order.status !== "RECEIVED" && (
+                    {canManage && !isDraft && !isCancelled && !isReceivable && order.status !== "RECEIVED" && (
                         <form action={cancelOrder}>
                             <Button variant="destructive" size="sm">Cancelar Orden</Button>
                         </form>
@@ -196,11 +197,10 @@ export default async function PurchaseOrderDetailPage({
                                         </div>
                                         <div>
                                             <span className="text-muted-foreground">Recibida:</span>
-                                            <span className={`ml-2 ${
-                                                item.receivedQty === item.quantity ? "text-green-600 font-medium" :
+                                            <span className={`ml-2 ${item.receivedQty === item.quantity ? "text-green-600 font-medium" :
                                                 item.receivedQty > 0 ? "text-orange-600 font-medium" :
-                                                "text-muted-foreground"
-                                            }`}>
+                                                    "text-muted-foreground"
+                                                }`}>
                                                 {item.receivedQty}
                                             </span>
                                         </div>
@@ -217,39 +217,39 @@ export default async function PurchaseOrderDetailPage({
                     {/* Desktop Table */}
                     <div className="hidden md:block overflow-x-auto">
                         <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Producto</TableHead>
-                                <TableHead>SKU</TableHead>
-                                <TableHead className="text-right">Cantidad</TableHead>
-                                <TableHead className="text-right">Recibida</TableHead>
-                                <TableHead className="text-right">Precio Unitario</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {order.items.map((item) => (
-                                <TableRow key={item.id}>
-                                    <TableCell className="font-medium">{item.product.name}</TableCell>
-                                    <TableCell className="font-mono text-xs">{item.product.sku}</TableCell>
-                                    <TableCell className="text-right">{item.quantity}</TableCell>
-                                    <TableCell className="text-right">
-                                        <span className={
-                                            item.receivedQty === item.quantity ? "text-green-600 font-medium" :
-                                                item.receivedQty > 0 ? "text-orange-600 font-medium" :
-                                                    "text-muted-foreground"
-                                        }>
-                                            {item.receivedQty}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-right">${Number(item.unitPrice).toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-medium">
-                                        ${(item.quantity * Number(item.unitPrice)).toFixed(2)}
-                                    </TableCell>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Producto</TableHead>
+                                    <TableHead>SKU</TableHead>
+                                    <TableHead className="text-right">Cantidad</TableHead>
+                                    <TableHead className="text-right">Recibida</TableHead>
+                                    <TableHead className="text-right">Precio Unitario</TableHead>
+                                    <TableHead className="text-right">Total</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {order.items.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium">{item.product.name}</TableCell>
+                                        <TableCell className="font-mono text-xs">{item.product.sku}</TableCell>
+                                        <TableCell className="text-right">{item.quantity}</TableCell>
+                                        <TableCell className="text-right">
+                                            <span className={
+                                                item.receivedQty === item.quantity ? "text-green-600 font-medium" :
+                                                    item.receivedQty > 0 ? "text-orange-600 font-medium" :
+                                                        "text-muted-foreground"
+                                            }>
+                                                {item.receivedQty}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-right">${Number(item.unitPrice).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-medium">
+                                            ${(item.quantity * Number(item.unitPrice)).toFixed(2)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </div>
                 </CardContent>
             </Card>

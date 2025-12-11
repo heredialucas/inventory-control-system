@@ -44,7 +44,7 @@ export default async function SuppliersPage() {
                 )}
             </div>
 
-            <SupplierList suppliers={suppliers} />
+            <SupplierList suppliers={suppliers} canManage={canManage} />
         </div>
     );
 }

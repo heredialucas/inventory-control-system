@@ -171,6 +171,7 @@ model Supplier {
   isActive    Boolean @default(true)
 
   purchaseOrders PurchaseOrder[]
+  products       Product[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -317,11 +318,23 @@ model Product {
   name        String
   description String?
   price       Decimal @db.Decimal(10, 2)
+  unit        String  @default("U") // Unidad de medida (U, Kg, L, m, etc.)
   stock       Int     @default(0)
   minStock    Int     @default(0)
 
+  // Datos de compra/recepción
+  purchaseCode    String?   // Código/ID de Compra (ej: 2018/224/25)
+  purchaseDate    DateTime? // Fecha de compra
+  purchaseAmount  Decimal?  @db.Decimal(10, 2) // Monto total de la compra
+  destination     String?   // Destino/Responsable (ej: "Automotores - Luis Caro")
+  receiptImageUrl String?   // URL de la imagen del comprobante
+
   categoryId String?   @db.Uuid
   category   Category? @relation(fields: [categoryId], references: [id])
+
+  // Relación opcional con proveedor
+  supplierId String?   @db.Uuid
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
 
   movements          StockMovement[]
   warehouseStock     WarehouseStock[]

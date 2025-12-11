@@ -16,22 +16,31 @@ export async function getProducts() {
 
 export async function createProductAction(formData: FormData) {
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "inventory.create")) {
+    if (!user || !hasPermission(user, "inventory.manage")) {
         return { error: "No tienes permisos para realizar esta acción" };
     }
 
-    const sku = formData.get("sku") as string; // Mantener sku para la llamada al servicio
+    const sku = formData.get("sku") as string;
     const name = formData.get("name") as string;
-    // const description = formData.get("description") as string; // Esta línea no estaba en createProductAction original
-    const price = parseFloat(formData.get("price") as string) || 0; // Por defecto 0 si está vacío
+    const price = parseFloat(formData.get("price") as string) || 0;
     const minStock = parseInt(formData.get("minStock") as string) || 0;
     const categoryId = formData.get("categoryId") as string;
 
     // Lógica de Stock Inicial
     const initialStock = parseInt(formData.get("initialStock") as string) || 0;
-    const initialWarehouseId = formData.get("initialWarehouseId") as string; // Cambiado de warehouseId
+    const initialWarehouseId = formData.get("initialWarehouseId") as string;
 
-    if (!name || isNaN(price) || isNaN(minStock)) { // Validación cambiada
+    // Nuevos campos de compra
+    const purchaseCode = formData.get("purchaseCode") as string || undefined;
+    const purchaseDateStr = formData.get("purchaseDate") as string;
+    const purchaseDate = purchaseDateStr ? new Date(purchaseDateStr) : undefined;
+    const purchaseAmount = parseFloat(formData.get("purchaseAmount") as string) || undefined;
+    const supplierId = formData.get("supplierId") as string || undefined;
+    const destination = formData.get("destination") as string || undefined;
+    const receiptImageUrl = formData.get("receiptImageUrl") as string || undefined;
+    const unit = formData.get("unit") as string || "U";
+
+    if (!name || isNaN(price) || isNaN(minStock)) {
         return { error: "Datos inválidos" };
     }
 
@@ -48,11 +57,19 @@ export async function createProductAction(formData: FormData) {
             sku,
             name,
             price,
+            unit,
             minStock,
             categoryId: categoryId || undefined,
             initialStock,
             warehouseId: initialWarehouseId || undefined,
             userId: user.id,
+            // Nuevos campos
+            purchaseCode,
+            purchaseDate,
+            purchaseAmount,
+            supplierId,
+            destination,
+            receiptImageUrl,
         });
     } catch (error) {
         console.error("Error creating product:", error);

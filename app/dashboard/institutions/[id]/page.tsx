@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getInstitution, toggleInstitutionStatus, deleteInstitution } from "@/app/actions/institutions";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { InstitutionForm } from "@/components/institutions/institution-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Power, History, Settings } from "lucide-react";
+import { Trash2, Power } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -50,6 +50,8 @@ export default async function InstitutionDetailPage({
 
     if (!user) redirect("/login");
 
+    const canManage = hasPermission(user, "institutions.manage");
+
     async function toggleStatus() {
         "use server";
         await toggleInstitutionStatus(id);
@@ -79,22 +81,24 @@ export default async function InstitutionDetailPage({
                         </Badge>
                     </div>
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                    <form action={toggleStatus}>
-                        <Button variant="outline" size="sm">
-                            <Power className="mr-2 h-4 w-4" />
-                            {institution.isActive ? "Desactivar" : "Activar"}
-                        </Button>
-                    </form>
-                    {institution._count.deliveries === 0 && (
-                        <form action={removeInstitution}>
-                            <Button variant="destructive" size="sm">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Eliminar
+                {canManage && (
+                    <div className="flex gap-2 flex-wrap">
+                        <form action={toggleStatus}>
+                            <Button variant="outline" size="sm">
+                                <Power className="mr-2 h-4 w-4" />
+                                {institution.isActive ? "Desactivar" : "Activar"}
                             </Button>
                         </form>
-                    )}
-                </div>
+                        {institution._count.deliveries === 0 && (
+                            <form action={removeInstitution}>
+                                <Button variant="destructive" size="sm">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Eliminar
+                                </Button>
+                            </form>
+                        )}
+                    </div>
+                )}
             </div>
 
             <Tabs defaultValue="details" className="w-full">
@@ -104,7 +108,49 @@ export default async function InstitutionDetailPage({
                 </TabsList>
 
                 <TabsContent value="details" className="mt-6">
-                    <InstitutionForm initialData={institution} isEdit />
+                    {canManage ? (
+                        <InstitutionForm initialData={institution} isEdit />
+                    ) : (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Información de la Institución</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Nombre</p>
+                                        <p className="font-medium">{institution.name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Código</p>
+                                        <p className="font-medium">{institution.code}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Tipo</p>
+                                        <p className="font-medium">{institution.type || "-"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Contacto</p>
+                                        <p className="font-medium">{institution.contactName || "-"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Email</p>
+                                        <p className="font-medium">{institution.email || "-"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Teléfono</p>
+                                        <p className="font-medium">{institution.phone || "-"}</p>
+                                    </div>
+                                </div>
+                                {institution.address && (
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Dirección</p>
+                                        <p className="font-medium">{institution.address}</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="history" className="mt-6">

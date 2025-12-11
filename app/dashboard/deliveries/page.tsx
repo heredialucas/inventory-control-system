@@ -111,14 +111,9 @@ function DeliveryTable({ deliveries }: { deliveries: any[] }) {
                 <CardContent className="py-12 text-center">
                     <Truck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No se encontraron entregas</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                        Crea una entrega para comenzar a distribuir productos
+                    <p className="text-sm text-muted-foreground">
+                        Las entregas aparecerán aquí una vez que sean creadas
                     </p>
-                    <Button asChild>
-                        <Link href="/dashboard/deliveries/new">
-                            Crear Entrega
-                        </Link>
-                    </Button>
                 </CardContent>
             </Card>
         );
