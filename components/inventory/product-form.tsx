@@ -168,19 +168,25 @@ export function ProductForm({ categories, warehouses, suppliers = [], initialDat
                                     accept="image/*"
                                     className="cursor-pointer"
                                 />
-                                <p className="text-xs text-muted-foreground">
-                                    Sube una imagen del comprobante de compra (JPG, PNG, etc.)
-                                </p>
-                                {initialData?.receiptImageUrl && (
+                                {initialData?.receiptImageUrl ? (
                                     <div className="mt-2">
-                                        <p className="text-xs text-muted-foreground mb-1">Imagen actual:</p>
-                                        <img
-                                            src={initialData.receiptImageUrl}
-                                            alt="Comprobante actual"
-                                            className="max-w-xs max-h-32 rounded border object-cover"
-                                        />
+                                        <p className="text-xs text-muted-foreground mb-2">Imagen actual:</p>
+                                        <div className="relative inline-block">
+                                            <img
+                                                src={initialData.receiptImageUrl}
+                                                alt="Comprobante actual"
+                                                className="max-w-xs max-h-32 rounded border object-cover"
+                                            />
+                                        </div>
                                         <input type="hidden" name="existingReceiptImageUrl" value={initialData.receiptImageUrl} />
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Selecciona una nueva imagen para reemplazar la actual
+                                        </p>
                                     </div>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground">
+                                        Sube una imagen del comprobante de compra (JPG, PNG, etc.)
+                                    </p>
                                 )}
                             </div>
                         </div>

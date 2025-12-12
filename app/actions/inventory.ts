@@ -5,6 +5,37 @@ import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+/**
+ * Extrae el publicId de una URL de Cloudinary
+ */
+function extractPublicIdFromCloudinaryUrl(url: string): string | null {
+    try {
+        const urlParts = url.split('/upload/');
+        if (urlParts.length < 2) return null;
+        
+        const pathAfterUpload = urlParts[1];
+        const pathSegments = pathAfterUpload.split('/');
+        
+        // Buscar el inicio de la carpeta (después de versión o transformaciones)
+        const folderIndex = pathSegments.findIndex(
+            seg => seg === 'inventory-control' || (!seg.startsWith('v') && !seg.includes(','))
+        );
+        
+        if (folderIndex === -1) return null;
+        
+        // Tomar desde la carpeta hasta el final
+        const relevantSegments = pathSegments.slice(folderIndex);
+        const fileName = relevantSegments[relevantSegments.length - 1];
+        const fileNameWithoutExt = fileName.split('.')[0];
+        relevantSegments[relevantSegments.length - 1] = fileNameWithoutExt;
+        
+        return relevantSegments.join('/');
+    } catch (error) {
+        console.error('Error extracting publicId:', error);
+        return null;
+    }
+}
+
 export async function getProducts() {
     const products = await inventoryService.getProducts();
     return products.map((p) => ({
@@ -113,13 +144,75 @@ export async function updateProductAction(id: string, formData: FormData) {
     const price = parseFloat(formData.get("price") as string) || 0;
     const minStock = parseInt(formData.get("minStock") as string) || 0;
     const categoryId = formData.get("categoryId") as string;
+    const unit = formData.get("unit") as string || "U";
+
+    // Campos de compra
+    const purchaseCode = formData.get("purchaseCode") as string || undefined;
+    const purchaseDateStr = formData.get("purchaseDate") as string;
+    const purchaseDate = purchaseDateStr ? new Date(purchaseDateStr) : undefined;
+    const purchaseAmount = parseFloat(formData.get("purchaseAmount") as string) || undefined;
+    const supplierId = formData.get("supplierId") as string || undefined;
+    const destination = formData.get("destination") as string || undefined;
+
+    // Manejar imagen
+    const receiptImageFile = formData.get("receiptImageUrl") as File | null;
+    const existingImageUrl = formData.get("existingReceiptImageUrl") as string || undefined;
+    let receiptImageUrl: string | undefined = existingImageUrl;
 
     try {
+        // Si hay un nuevo archivo de imagen, procesarlo
+        if (receiptImageFile && receiptImageFile.size > 0) {
+            const arrayBuffer = await receiptImageFile.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const base64 = buffer.toString('base64');
+            const dataUrl = `data:${receiptImageFile.type};base64,${base64}`;
+            
+            // Importar dinámicamente la función de upload/update
+            const { uploadImage, updateImage } = await import('./cloudinary');
+            
+            // Si existe una imagen previa, intentar actualizarla
+            if (existingImageUrl) {
+                const oldPublicId = extractPublicIdFromCloudinaryUrl(existingImageUrl);
+                
+                if (oldPublicId) {
+                    const updateResult = await updateImage(dataUrl, oldPublicId, 'products');
+                    if (updateResult.success && updateResult.url) {
+                        receiptImageUrl = updateResult.url;
+                    } else {
+                        // Si falla la actualización, intentar subir como nueva
+                        const uploadResult = await uploadImage(dataUrl, 'products');
+                        if (uploadResult.success && uploadResult.url) {
+                            receiptImageUrl = uploadResult.url;
+                        }
+                    }
+                } else {
+                    // No pudimos extraer el publicId, subir como nueva
+                    const uploadResult = await uploadImage(dataUrl, 'products');
+                    if (uploadResult.success && uploadResult.url) {
+                        receiptImageUrl = uploadResult.url;
+                    }
+                }
+            } else {
+                // No hay imagen previa, subir como nueva
+                const uploadResult = await uploadImage(dataUrl, 'products');
+                if (uploadResult.success && uploadResult.url) {
+                    receiptImageUrl = uploadResult.url;
+                }
+            }
+        }
+
         await inventoryService.updateProduct(id, {
             name,
             price: isNaN(price) ? undefined : price,
             minStock: isNaN(minStock) ? undefined : minStock,
             categoryId: categoryId || undefined,
+            unit,
+            purchaseCode,
+            purchaseDate,
+            purchaseAmount,
+            supplierId,
+            destination,
+            receiptImageUrl,
         });
 
         const newStock = parseInt(formData.get("stock") as string);

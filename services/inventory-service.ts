@@ -143,6 +143,13 @@ export const inventoryService = {
         price?: number;
         categoryId?: string;
         minStock?: number;
+        unit?: string;
+        purchaseCode?: string;
+        purchaseDate?: Date;
+        purchaseAmount?: number;
+        supplierId?: string;
+        destination?: string;
+        receiptImageUrl?: string;
     }) {
         return await prisma.product.update({
             where: { id },
