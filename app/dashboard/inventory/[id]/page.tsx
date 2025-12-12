@@ -66,6 +66,82 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
                         </div>
                     </div>
 
+                    {/* Información de Compra */}
+                    {(product.purchaseCode || product.purchaseDate || product.purchaseAmount || product.supplier || product.destination || product.receiptImageUrl) && (
+                        <div className="border rounded-lg p-6 bg-card">
+                            <h3 className="font-semibold mb-4">Información de Compra</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Columna izquierda - Primera mitad de campos */}
+                                <div className="space-y-4">
+                                    {product.purchaseCode && (
+                                        <div>
+                                            <div className="text-sm text-muted-foreground">Código de Compra</div>
+                                            <div className="font-medium font-mono">{product.purchaseCode}</div>
+                                        </div>
+                                    )}
+                                    {product.purchaseDate && (
+                                        <div>
+                                            <div className="text-sm text-muted-foreground">Fecha de Compra</div>
+                                            <div className="font-medium">
+                                                {new Date(product.purchaseDate).toLocaleDateString("es-ES", { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {product.purchaseAmount && (
+                                        <div>
+                                            <div className="text-sm text-muted-foreground">Monto de Compra</div>
+                                            <div className="font-medium text-lg">${Number(product.purchaseAmount).toFixed(2)}</div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Columna central - Comprobante */}
+                                {product.receiptImageUrl && (
+                                    <div className="md:row-span-2">
+                                        <div className="text-sm text-muted-foreground mb-2">Comprobante</div>
+                                        <div className="relative group">
+                                            <img
+                                                src={product.receiptImageUrl}
+                                                alt="Comprobante de compra"
+                                                className="w-full h-auto rounded-lg border shadow-sm object-contain max-h-96 bg-muted/20"
+                                            />
+                                            <a
+                                                href={product.receiptImageUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
+                                            >
+                                                <span className="text-white font-medium text-sm px-4 py-2 bg-black/50 rounded">
+                                                    Ver en tamaño completo
+                                                </span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Columna derecha - Segunda mitad de campos */}
+                                <div className="space-y-4">
+                                    {product.supplier && (
+                                        <div>
+                                            <div className="text-sm text-muted-foreground">Proveedor</div>
+                                            <div className="font-medium">{product.supplier.name}</div>
+                                        </div>
+                                    )}
+                                    {product.destination && (
+                                        <div>
+                                            <div className="text-sm text-muted-foreground">Destino/Responsable</div>
+                                            <div className="font-medium">{product.destination}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="border rounded-lg overflow-hidden">
                         <div className="bg-muted/50 p-4 border-b font-semibold">Historial de Movimientos</div>
                         <div className="divide-y">

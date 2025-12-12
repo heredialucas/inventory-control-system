@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function getInstitutions() {
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "institutions.view")) {
+    if (!user) {
         return [];
     }
 

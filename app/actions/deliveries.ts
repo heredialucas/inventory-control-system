@@ -16,7 +16,9 @@ export async function getDeliveries(filters?: {
     }
 
     try {
-        return await deliveryService.getDeliveries(filters);
+        const deliveries = await deliveryService.getDeliveries(filters);
+        // No serialization needed here as getDeliveries doesn't include product details
+        return deliveries;
     } catch (error) {
         console.error("Error getting deliveries:", error);
         throw new Error("Failed to fetch deliveries");
@@ -25,7 +27,20 @@ export async function getDeliveries(filters?: {
 
 export async function getDelivery(id: string) {
     try {
-        return await deliveryService.getDelivery(id);
+        const delivery = await deliveryService.getDelivery(id);
+        if (!delivery) return null;
+        
+        // Serialize Decimal fields
+        return {
+            ...delivery,
+            items: delivery.items.map(item => ({
+                ...item,
+                product: {
+                    ...item.product,
+                    price: item.product.price?.toString() || "0",
+                },
+            })),
+        };
     } catch (error) {
         console.error("Error getting delivery:", error);
         throw new Error("Failed to fetch delivery");
@@ -52,7 +67,18 @@ export async function createDelivery(data: {
     try {
         const delivery = await deliveryService.createDelivery(data);
         revalidatePath("/dashboard/deliveries");
-        return delivery;
+        
+        // Serialize Decimal fields to avoid "Only plain objects can be passed to Client Components" error
+        return {
+            ...delivery,
+            items: delivery.items.map(item => ({
+                ...item,
+                product: {
+                    ...item.product,
+                    price: item.product.price?.toString() || "0",
+                },
+            })),
+        };
     } catch (error: any) {
         console.error("Error creating delivery:", error);
         throw new Error(error.message || "Failed to create delivery");
@@ -69,6 +95,8 @@ export async function confirmDelivery(id: string) {
         const delivery = await deliveryService.confirmDelivery(id);
         revalidatePath("/dashboard/deliveries");
         revalidatePath(`/dashboard/deliveries/${id}`);
+        
+        // Serialize response if needed (confirmDelivery may not include items)
         return delivery;
     } catch (error: any) {
         console.error("Error confirming delivery:", error);
@@ -86,6 +114,8 @@ export async function markAsDelivered(deliveryId: string, userId: string) {
         const delivery = await deliveryService.markAsDelivered(deliveryId, userId);
         revalidatePath("/dashboard/deliveries");
         revalidatePath(`/dashboard/deliveries/${deliveryId}`);
+        
+        // Serialize response if needed
         return delivery;
     } catch (error: any) {
         console.error("Error marking delivery as delivered:", error);
@@ -98,6 +128,8 @@ export async function cancelDelivery(id: string) {
         const delivery = await deliveryService.cancelDelivery(id);
         revalidatePath("/dashboard/deliveries");
         revalidatePath(`/dashboard/deliveries/${id}`);
+        
+        // Serialize response if needed
         return delivery;
     } catch (error: any) {
         console.error("Error cancelling delivery:", error);

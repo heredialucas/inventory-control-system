@@ -10,7 +10,7 @@ import { TransferStatus } from "@prisma/client";
 
 export async function getWarehouses() {
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "warehouses.view")) {
+    if (!user) {
         return [];
     }
 
@@ -152,11 +152,13 @@ export async function getWarehouseProducts(warehouseId: string) {
                 sku: p.sku,
                 quantity: p.stock, // Stock total
                 price: p.price?.toString() || "0",
+                unit: p.unit,
+                categoryId: p.categoryId,
             }));
         }
 
         const stockItems = await warehouseService.getWarehouseStock(warehouseId);
-        // Filtrar items con cantidad > 0 y mapear al formato
+        // Filtrar items con cantidad > 0 y mapear al formato serializable (sin Decimals)
         return stockItems
             .filter(item => item.quantity > 0)
             .map(item => ({
@@ -165,6 +167,12 @@ export async function getWarehouseProducts(warehouseId: string) {
                 sku: item.product.sku,
                 quantity: item.quantity,
                 price: item.product.price?.toString() || "0",
+                unit: item.product.unit,
+                categoryId: item.product.categoryId,
+                category: item.product.category ? {
+                    id: item.product.category.id,
+                    name: item.product.category.name,
+                } : null,
             }));
     } catch (error) {
         console.error("Error obteniendo productos del depósito:", error);

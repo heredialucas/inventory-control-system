@@ -37,8 +37,11 @@ export async function createProductAction(formData: FormData) {
     const purchaseAmount = parseFloat(formData.get("purchaseAmount") as string) || undefined;
     const supplierId = formData.get("supplierId") as string || undefined;
     const destination = formData.get("destination") as string || undefined;
-    const receiptImageUrl = formData.get("receiptImageUrl") as string || undefined;
     const unit = formData.get("unit") as string || "U";
+
+    // Manejar archivo de imagen - es un File object, no una string
+    const receiptImageFile = formData.get("receiptImageUrl") as File | null;
+    let receiptImageUrl: string | undefined = undefined;
 
     if (!name || isNaN(price) || isNaN(minStock)) {
         return { error: "Datos inválidos" };
@@ -53,6 +56,22 @@ export async function createProductAction(formData: FormData) {
     }
 
     try {
+        // Si hay un archivo de imagen, convertirlo a base64 y subirlo
+        if (receiptImageFile && receiptImageFile.size > 0) {
+            const arrayBuffer = await receiptImageFile.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const base64 = buffer.toString('base64');
+            const dataUrl = `data:${receiptImageFile.type};base64,${base64}`;
+            
+            // Importar dinámicamente la función de upload
+            const { uploadImage } = await import('./cloudinary');
+            const uploadResult = await uploadImage(dataUrl, 'products');
+            
+            if (uploadResult.success && uploadResult.url) {
+                receiptImageUrl = uploadResult.url;
+            }
+        }
+
         await inventoryService.createProductWithInitialStock({
             sku,
             name,

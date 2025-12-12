@@ -34,6 +34,7 @@ export const inventoryService = {
             where: { id },
             include: {
                 category: true,
+                supplier: true,
                 movements: {
                     orderBy: { createdAt: "desc" },
                     take: 10,
@@ -75,7 +76,6 @@ export const inventoryService = {
         initialStock?: number;
         warehouseId?: string;
         userId: string;
-        // Nuevos campos de compra
         purchaseCode?: string;
         purchaseDate?: Date;
         purchaseAmount?: number;
@@ -83,15 +83,30 @@ export const inventoryService = {
         destination?: string;
         receiptImageUrl?: string;
     }) {
-        const { initialStock, warehouseId, userId, ...productData } = data;
+        const { initialStock, warehouseId, userId, ...restData } = data;
+
+        // Construir datos del producto de forma profesional y type-safe
+        const productData = {
+            sku: restData.sku,
+            name: restData.name,
+            price: restData.price,
+            stock: initialStock || 0,
+            unit: restData.unit || "U",
+            minStock: restData.minStock || 0,
+            ...(restData.description && { description: restData.description }),
+            ...(restData.categoryId && { categoryId: restData.categoryId }),
+            ...(restData.purchaseCode && { purchaseCode: restData.purchaseCode }),
+            ...(restData.purchaseDate && { purchaseDate: restData.purchaseDate }),
+            ...(restData.purchaseAmount !== undefined && { purchaseAmount: restData.purchaseAmount }),
+            ...(restData.supplierId && { supplierId: restData.supplierId }),
+            ...(restData.destination && { destination: restData.destination }),
+            ...(restData.receiptImageUrl && { receiptImageUrl: restData.receiptImageUrl }),
+        };
 
         return await prisma.$transaction(async (tx) => {
             // 1. Crear producto con stock total
             const product = await tx.product.create({
-                data: {
-                    ...productData,
-                    stock: initialStock || 0,
-                },
+                data: productData,
             });
 
             // 2. Si hay stock inicial, crear entrada de depósito y movimiento
