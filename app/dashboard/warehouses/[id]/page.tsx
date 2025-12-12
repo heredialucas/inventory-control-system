@@ -3,7 +3,7 @@ import { getWarehouse, getWarehouseStock } from "@/app/actions/warehouses";
 import { WarehouseForm } from "@/components/warehouses/warehouse-form";
 import { TransferForm } from "@/components/warehouses/transfer-form";
 import { getWarehouses } from "@/app/actions/warehouses";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +34,8 @@ export default async function WarehouseDetailPage({
     const user = await getCurrentUser();
     const stock = warehouse.stockItems || [];
 
+    const canManage = hasPermission(user!, "warehouses.manage");
+
     const lowStockItems = stock.filter(
         (item) => item.quantity <= item.product.minStock
     );
@@ -61,18 +63,22 @@ export default async function WarehouseDetailPage({
                     </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
-                    <TransferForm
-                        warehouses={warehouses}
-                        userId={user!.id}
-                        defaultFromWarehouseId={warehouse.id}
-                        trigger={
-                            <Button variant="outline" className="w-full sm:w-auto">
-                                <ArrowRight className="mr-2 h-4 w-4" />
-                                Transferir Stock
-                            </Button>
-                        }
-                    />
-                    <WarehouseForm warehouse={JSON.parse(JSON.stringify(warehouse))} />
+                    {canManage && (
+                        <>
+                            <TransferForm
+                                warehouses={warehouses}
+                                userId={user!.id}
+                                defaultFromWarehouseId={warehouse.id}
+                                trigger={
+                                    <Button variant="outline" className="w-full sm:w-auto">
+                                        <ArrowRight className="mr-2 h-4 w-4" />
+                                        Transferir Stock
+                                    </Button>
+                                }
+                            />
+                            <WarehouseForm warehouse={JSON.parse(JSON.stringify(warehouse))} />
+                        </>
+                    )}
                 </div>
             </div>
 
