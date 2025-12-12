@@ -257,39 +257,6 @@ export default async function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Quick Links */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Acciones Rápidas</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-2 md:grid-cols-4">
-                    <Link
-                        href="/dashboard/products/new"
-                        className="text-sm hover:bg-accent p-3 rounded-md border transition-colors"
-                    >
-                        + Agregar Producto
-                    </Link>
-                    <Link
-                        href="/dashboard/purchases"
-                        className="text-sm hover:bg-accent p-3 rounded-md border transition-colors"
-                    >
-                        + Nueva Orden de Compra
-                    </Link>
-                    <Link
-                        href="/dashboard/deliveries"
-                        className="text-sm hover:bg-accent p-3 rounded-md border transition-colors"
-                    >
-                        + Nueva Entrega
-                    </Link>
-                    <Link
-                        href="/dashboard/reports"
-                        className="text-sm hover:bg-accent p-3 rounded-md border transition-colors"
-                    >
-                        📊 Ver Reportes
-                    </Link>
-                </CardContent>
-            </Card>
         </div>
     );
 }
