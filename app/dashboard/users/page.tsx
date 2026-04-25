@@ -23,7 +23,7 @@ export default async function UsersPage() {
     const isAdmin = isAdminUser(currentUser);
     const canManage = hasPermission(currentUser, "users.manage");
 
-    if (isAdmin) {
+    if (isAdmin || canManage) {
         // Filtra al usuario actual para que no se vea a sí mismo en la lista
         const filteredUsers = (users || []).filter((u) => u.id !== currentUser.id);
 
