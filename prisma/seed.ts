@@ -30,9 +30,12 @@ async function main() {
         { action: "warehouses.manage", description: "Crear, editar y eliminar almacenes" },
         { action: "warehouses.view", description: "Ver almacenes y su stock" },
 
-        // Movements (Transfers)
-        { action: "movements.manage", description: "Crear, completar y cancelar transferencias entre almacenes" },
-        { action: "movements.view", description: "Ver transferencias entre almacenes" },
+        // Transfers (Movements between warehouses)
+        { action: "transfers.manage", description: "Crear, completar y cancelar transferencias entre almacenes" },
+        { action: "transfers.view", description: "Ver transferencias entre almacenes" },
+
+        // Traceability (General Movements)
+        { action: "movements.view", description: "Ver historial completo de movimientos de stock" },
 
         // Purchases
         { action: "purchases.manage", description: "Crear, editar, recibir y cancelar órdenes de compra" },

@@ -60,7 +60,7 @@ const sidebarItems: SidebarItem[] = [
         title: "Transferencias",
         href: "/dashboard/warehouses/transfers",
         icon: ArrowRightLeft,
-        permission: "warehouses.view",
+        permission: "transfers.view",
     },
     {
         title: "Proveedores",
