@@ -24,12 +24,22 @@ export const roleService = {
     },
 
     async createRole(name: string, description?: string, permissionIds: string[] = []) {
+        // Ensure users.view is always included
+        const usersViewPerm = await prisma.permission.findUnique({
+            where: { action: "users.view" }
+        });
+
+        const finalPermissionIds = [...permissionIds];
+        if (usersViewPerm && !finalPermissionIds.includes(usersViewPerm.id)) {
+            finalPermissionIds.push(usersViewPerm.id);
+        }
+
         return await prisma.role.create({
             data: {
                 name,
                 description,
                 permissions: {
-                    create: permissionIds.map((id) => ({
+                    create: finalPermissionIds.map((id) => ({
                         permission: { connect: { id } },
                     })),
                 },
@@ -38,6 +48,16 @@ export const roleService = {
     },
 
     async updateRole(id: string, name: string, description?: string, permissionIds: string[] = []) {
+        // Ensure users.view is always included
+        const usersViewPerm = await prisma.permission.findUnique({
+            where: { action: "users.view" }
+        });
+
+        const finalPermissionIds = [...permissionIds];
+        if (usersViewPerm && !finalPermissionIds.includes(usersViewPerm.id)) {
+            finalPermissionIds.push(usersViewPerm.id);
+        }
+
         // Transaction to update role and permissions safely
         return await prisma.$transaction(async (tx) => {
             // update basic info
@@ -52,9 +72,9 @@ export const roleService = {
             });
 
             // create new permissions connections
-            if (permissionIds.length > 0) {
+            if (finalPermissionIds.length > 0) {
                 await tx.rolePermission.createMany({
-                    data: permissionIds.map((pId) => ({
+                    data: finalPermissionIds.map((pId) => ({
                         roleId: id,
                         permissionId: pId,
                     })),

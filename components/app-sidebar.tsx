@@ -115,11 +115,18 @@ export function AppSidebar({
 }) {
     const pathname = usePathname();
 
-    const filteredItems = sidebarItems.filter((item) => {
-        if (item.requiresAdmin) return isAdmin;
-        if (!item.permission) return true;
-        return userPermissions.includes(item.permission);
-    });
+    const filteredItems = sidebarItems
+        .filter((item) => {
+            if (item.requiresAdmin) return isAdmin;
+            if (!item.permission) return true;
+            return userPermissions.includes(item.permission);
+        })
+        .map((item) => {
+            if (item.href === "/dashboard/users" && !isAdmin) {
+                return { ...item, title: "Mi Cuenta" };
+            }
+            return item;
+        });
 
     return (
         <aside className={cn("w-64 bg-card flex flex-col", className)}>

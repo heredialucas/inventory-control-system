@@ -20,14 +20,6 @@ interface RoleListProps {
 }
 
 export function RoleList({ roles, permissions, canManage = false }: RoleListProps) {
-    const translateRoleName = (name: string) => {
-        const translations: Record<string, string> = {
-            ADMIN: "Administrador",
-            MANAGER: "Encargado",
-            VIEWER: "Empleado"
-        };
-        return translations[name] || name;
-    };
     if (roles.length === 0) {
         return (
             <div className="text-center p-8 border rounded-lg text-muted-foreground bg-card">
@@ -53,7 +45,7 @@ export function RoleList({ roles, permissions, canManage = false }: RoleListProp
                     <TableBody>
                         {roles.map((role) => (
                             <TableRow key={role.id}>
-                                <TableCell className="font-medium">{translateRoleName(role.name)}</TableCell>
+                                <TableCell className="font-medium">{role.name}</TableCell>
                                 <TableCell className="text-muted-foreground">{role.description}</TableCell>
                                 <TableCell>
                                     <div className="flex flex-wrap gap-1">
@@ -96,7 +88,7 @@ export function RoleList({ roles, permissions, canManage = false }: RoleListProp
                 {roles.map((role) => (
                     <Card key={role.id}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{translateRoleName(role.name)}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{role.name}</CardTitle>
                             <div className="flex items-center gap-1 text-muted-foreground">
                                 <Users className="h-3 w-3" />
                                 <span className="text-xs">{role._count.users}</span>

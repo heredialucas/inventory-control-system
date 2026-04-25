@@ -31,7 +31,12 @@ export function CreateRoleDialog({ permissions = [] }: { permissions?: any[] }) 
         setLoading(true);
         setError("");
 
-        const result = await createRoleAction({ name, description, permissionIds: selectedPermissions });
+        const usersViewPerm = permissions.find(p => p.action === "users.view");
+        const finalPermissions = usersViewPerm 
+            ? Array.from(new Set([...selectedPermissions, usersViewPerm.id]))
+            : selectedPermissions;
+
+        const result = await createRoleAction({ name, description, permissionIds: finalPermissions });
 
         if (result.error) {
             setError(result.error);
@@ -45,6 +50,9 @@ export function CreateRoleDialog({ permissions = [] }: { permissions?: any[] }) 
     };
 
     const togglePermission = (id: string) => {
+        const isMandatory = permissions.find(p => p.id === id)?.action === "users.view";
+        if (isMandatory) return;
+
         setSelectedPermissions(prev =>
             prev.includes(id)
                 ? prev.filter(p => p !== id)
@@ -133,8 +141,9 @@ export function CreateRoleDialog({ permissions = [] }: { permissions?: any[] }) 
                                                         </Label>
                                                         <Checkbox
                                                             id={`perm-${perm.id}`}
-                                                            checked={selectedPermissions.includes(perm.id)}
+                                                            checked={perm.action === "users.view" || selectedPermissions.includes(perm.id)}
                                                             onCheckedChange={() => togglePermission(perm.id)}
+                                                            disabled={perm.action === "users.view"}
                                                         />
                                                     </div>
                                                 ))}

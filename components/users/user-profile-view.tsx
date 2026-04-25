@@ -31,7 +31,7 @@ export function UserProfileView({ user }: { user: any }) {
     return (
         <div className="space-y-6 max-w-2xl mx-auto">
             <div className="space-y-1">
-                <h3 className="text-2xl font-semibold tracking-tight">Mi Perfil</h3>
+                <h3 className="text-2xl font-semibold tracking-tight">Mi Cuenta</h3>
                 <p className="text-sm text-muted-foreground">
                     Información de tu cuenta y accesos.
                 </p>
