@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
     LayoutDashboard,
     Package,
@@ -14,15 +15,16 @@ import {
     BarChart3,
     Activity,
     Layers,
+    Building,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarItem {
     title: string;
     href: string;
-    icon: any;
+    icon: LucideIcon;
     permission?: string;
-    requiresAdmin?: boolean; // Para items que solo el admin puede ver
+    requiresAdmin?: boolean;
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -30,7 +32,7 @@ const sidebarItems: SidebarItem[] = [
         title: "Dashboard",
         href: "/dashboard",
         icon: LayoutDashboard,
-        requiresAdmin: true, // Solo admin puede ver el dashboard
+        requiresAdmin: true,
     },
     {
         title: "Usuarios",
@@ -65,7 +67,7 @@ const sidebarItems: SidebarItem[] = [
     {
         title: "Proveedores",
         href: "/dashboard/suppliers",
-        icon: Users,
+        icon: Building, // Diferenciado de Users (Usuarios)
         permission: "suppliers.view",
     },
     {
@@ -100,26 +102,22 @@ const sidebarItems: SidebarItem[] = [
     },
 ];
 
-export function AppSidebar({ 
-    className, 
+export function AppSidebar({
+    className,
     onNavigate,
     userPermissions = [],
     isAdmin = false,
-}: { 
-    className?: string; 
+}: {
+    className?: string;
     onNavigate?: () => void;
     userPermissions?: string[];
     isAdmin?: boolean;
 }) {
     const pathname = usePathname();
 
-    // Filtrar items según permisos del usuario
-    const filteredItems = sidebarItems.filter(item => {
-        // Si requiere ser admin, verificar que lo sea
+    const filteredItems = sidebarItems.filter((item) => {
         if (item.requiresAdmin) return isAdmin;
-        // Si no requiere permiso, mostrarlo
         if (!item.permission) return true;
-        // Si requiere permiso, verificar que el usuario lo tenga
         return userPermissions.includes(item.permission);
     });
 
@@ -128,9 +126,10 @@ export function AppSidebar({
             <div className="p-6 border-b flex items-center justify-center">
                 <h2 className="font-bold text-xl tracking-tight">Gestión</h2>
             </div>
-            <nav className="flex-1 p-4 space-y-2">
+            {/* aria-label identifica el landmark de navegación para lectores de pantalla */}
+            <nav aria-label="Navegación principal" className="flex-1 p-4 space-y-2">
                 {filteredItems.map((item) => {
-                    // Exact match for dashboard home
+                    // Exact match para dashboard home
                     if (item.href === "/dashboard") {
                         const isActive = pathname === "/dashboard";
                         return (
@@ -138,6 +137,7 @@ export function AppSidebar({
                                 key={item.href}
                                 href={item.href}
                                 onClick={onNavigate}
+                                aria-current={isActive ? "page" : undefined}
                                 className={cn(
                                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
                                     isActive
@@ -145,21 +145,20 @@ export function AppSidebar({
                                         : "hover:bg-muted"
                                 )}
                             >
-                                <item.icon className="h-5 w-5" />
+                                <item.icon className="h-5 w-5" aria-hidden="true" />
                                 <span>{item.title}</span>
                             </Link>
                         );
                     }
 
-                    // For other routes, check if it's an exact match OR a child route
-                    // But exclude cases where a longer route might match a shorter one
-                    // (e.g., /warehouses/transfers shouldn't activate /warehouses)
                     const isExactMatch = pathname === item.href;
-                    const isChildRoute = pathname.startsWith(`${item.href}/`) &&
-                        !sidebarItems.some(otherItem =>
-                            otherItem.href !== item.href &&
-                            otherItem.href.startsWith(item.href) &&
-                            pathname.startsWith(otherItem.href)
+                    const isChildRoute =
+                        pathname.startsWith(`${item.href}/`) &&
+                        !sidebarItems.some(
+                            (otherItem) =>
+                                otherItem.href !== item.href &&
+                                otherItem.href.startsWith(item.href) &&
+                                pathname.startsWith(otherItem.href)
                         );
                     const isActive = isExactMatch || isChildRoute;
 
@@ -168,6 +167,7 @@ export function AppSidebar({
                             key={item.href}
                             href={item.href}
                             onClick={onNavigate}
+                            aria-current={isActive ? "page" : undefined}
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                                 isActive
@@ -175,7 +175,7 @@ export function AppSidebar({
                                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
-                            <item.icon className="h-4 w-4" />
+                            <item.icon className="h-4 w-4" aria-hidden="true" />
                             {item.title}
                         </Link>
                     );

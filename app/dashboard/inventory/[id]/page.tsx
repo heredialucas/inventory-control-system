@@ -183,7 +183,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
                                         </div>
                                         <div className="text-right">
                                             <div className={`font-bold text-lg ${move.type === "IN" ? "text-green-600" :
-                                                move.type === "OUT" ? "text-red-600" : "text-blue-600"
+                                                move.type === "OUT" ? "text-red-600" : "text-primary"
                                                 }`}>
                                                 {move.type === "IN" ? "+" : "-"}{move.quantity}
                                             </div>

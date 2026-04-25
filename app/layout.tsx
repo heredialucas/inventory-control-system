@@ -4,38 +4,55 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Kit de inicio Next.js y Supabase",
-  description: "La forma más rápida de construir aplicaciones con Next.js y Supabase",
+    metadataBase: new URL(defaultUrl),
+    title: {
+        default: "Control de Inventario",
+        template: "%s | Control de Inventario",
+    },
+    description:
+        "Sistema de gestión de inventario, depósitos, compras y entregas para organizaciones.",
+    openGraph: {
+        title: "Control de Inventario",
+        description: "Sistema de gestión de inventario, depósitos, compras y entregas.",
+        type: "website",
+        locale: "es_AR",
+    },
 };
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap",
-  subsets: ["latin"],
+    variable: "--font-geist-sans",
+    display: "swap",
+    subsets: ["latin"],
 });
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
-  return (
-    <html lang="es" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
-  );
+    return (
+        <html lang="es" suppressHydrationWarning>
+            <body className={`${geistSans.className} antialiased`}>
+                {/* Skip link para navegación por teclado: permite saltar el sidebar */}
+                <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium shadow-lg"
+                >
+                    Saltar al contenido principal
+                </a>
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                    disableTransitionOnChange
+                >
+                    {children}
+                </ThemeProvider>
+            </body>
+        </html>
+    );
 }

@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 export const inventoryService = {
     // Categorías
@@ -179,36 +180,10 @@ export const inventoryService = {
                 if (product.stock < quantity) throw new Error("Stock insuficiente");
                 newStock -= quantity;
             } else if (type === "ADJUSTMENT") {
-                // Para ajuste, ¿la cantidad es el cambio relativo o absoluto?
-                // Asumamos que quantity es el CAMBIO. ¿se necesita +/- explícito? ¿o confiamos en el signo de 'quantity'?
-                // Usualmente el ajuste maneja establecer directamente o diferencia.
-                // Tratemos 'ADJUSTMENT' como "Sumar/Restar" similar a otros pero con etiqueta diferente.
-                // ¿O quizás el ajuste sobrescribe el stock?
-                // Enfoque más seguro estándar: ADJUSTMENT es solo otro tipo de movimiento donde especificas la diferencia.
-                // Implementemos lógica: si ADJUSTMENT, solo agregar quantity (con signo).
-                // PERO `quantity` es Int usualmente positivo.
-                // Simplifiquemos: IN suma, OUT resta. ADJUSTMENT: ¿Usuario establece nuevo stock?
-                // Releyendo requerimientos: "sistema de inventario".
-                // Mantengamos IN/OUT por ahora. Si se necesita ADJUSTMENT, decidiremos cómo funciona.
-                // Probablemente mejor usar IN/OUT para todos los movimientos. Manteniendo ADJUSTMENT como etiqueta.
-
-                // Asumamos ADJUSTMENT significa "Establecer a valor específico" O "Corrección".
-                // Si "Establecer a valor", calculamos diferencia.
-                // Implementaré "ADJUSTMENT" como corrección que puede ser positiva o negativa.
-                // Dado que `quantity` en esquema es Int, puede ser negativo.
-                // Pero usualmente almacenamos cantidad absoluta y Type determina el signo.
-
-                // ¿Prohibamos ADJUSTMENT por ahora o tratemos como lógica IN/OUT dependiendo del contexto?
-                // Me mantengo en: IN (+), OUT (-). ADJUSTMENT será tratado como IN si >0, OUT si <0.
-                // No, permitamos solo IN/OUT.
-
-                // Espera, esquema tiene enum MovementType { IN, OUT, ADJUSTMENT }.
-                // Digamos ADJUSTMENT suma quantity (con signo).
-                // Pero revisando esquema anterior: `quantity Int`.
-
-                if (type === "ADJUSTMENT") {
-                    newStock += quantity; // ¿Permitir quantity negativa para ajuste?
-                }
+                // ADJUSTMENT suma quantity con signo:
+                // quantity > 0 → agrega stock (corrección positiva)
+                // quantity < 0 → resta stock (corrección negativa)
+                newStock += quantity;
             }
 
             await tx.product.update({
@@ -257,7 +232,8 @@ export const inventoryService = {
         userId?: string;
         limit?: number;
     }) {
-        const where: any = {};
+        // Usar el tipo generado por Prisma para type-safety completa
+        const where: Prisma.StockMovementWhereInput = {};
         if (filters?.type) where.type = filters.type;
         if (filters?.warehouseId) where.warehouseId = filters.warehouseId;
         if (filters?.productId) where.productId = filters.productId;
@@ -287,26 +263,17 @@ export const inventoryService = {
 
     async deleteProduct(id: string) {
         return await prisma.$transaction(async (tx) => {
-            // 1. Eliminar Stock de Depósito
-            await tx.warehouseStock.deleteMany({
-                where: { productId: id }
-            });
-
-            // 2. Eliminar Movimientos de Stock
-            await tx.stockMovement.deleteMany({
-                where: { productId: id }
-            });
-
-            // 3. Eliminar Transferencias
-            // Necesitamos decidir si queremos mantener el historial de transferencias con producto nulo o eliminarlas.
-            // Usualmente para una eliminación completa de producto ("remover del sistema"), eliminamos todo.
+            // WarehouseTransfer NO tiene onDelete: Cascade en el schema,
+            // por lo que debe eliminarse manualmente antes de borrar el producto.
+            // WarehouseStock y StockMovement SÍ tienen onDelete: Cascade
+            // y se eliminan automáticamente al borrar el producto.
             await tx.warehouseTransfer.deleteMany({
-                where: { productId: id }
+                where: { productId: id },
             });
 
-            // 4. Finalmente eliminar el Producto
+            // Al eliminar el producto, Cascade borra WarehouseStock y StockMovement
             return await tx.product.delete({
-                where: { id }
+                where: { id },
             });
         });
     },

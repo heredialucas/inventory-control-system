@@ -126,6 +126,8 @@ export async function createProductAction(formData: FormData) {
         return { error: "Error al crear producto" };
     }
 
+    // redirect() debe estar FUERA del try-catch: Next.js lanza NEXT_REDIRECT
+    // internamente y si es capturado por catch, la navegación falla.
     revalidatePath("/dashboard/inventory");
     if (initialWarehouseId) {
         revalidatePath("/dashboard/warehouses");
@@ -217,37 +219,25 @@ export async function updateProductAction(id: string, formData: FormData) {
 
         const newStock = parseInt(formData.get("stock") as string);
         if (!isNaN(newStock)) {
-            // Verificar stock actual para ver si necesitamos un ajuste
-            // ¿Necesitamos obtener el producto nuevamente o confiar en el cambio?
-            // Más seguro obtener el stock actual para calcular la diferencia correctamente.
             const product = await inventoryService.getProduct(id);
             if (product && product.stock !== newStock) {
                 const diff = newStock - product.stock;
-                // Si diff > 0, agregamos (IN/ADJUSTMENT)
-                // Si diff < 0, restamos (OUT/ADJUSTMENT)
-                // Lógica de registerMovement: IN suma, OUT resta. ADJUSTMENT permite lógica con signo si la implementamos,
-                // pero nuestra implementación verifica el tipo.
-
-                // Usemos tipo "ADJUSTMENT" pero necesitamos manejar la lógica del signo en el servicio o pasar parámetros correctos.
-                // Lógica del servicio para ADJUSTMENT: newStock += quantity.
-                // Entonces si diff es negativo, ¿pasamos quantity negativa? ¿O espera absoluto?
-                // Nuestro texto reciente del servicio dijo:
-                // if (type === "ADJUSTMENT") { newStock += quantity; }
-                // Así que podemos pasar la diferencia con signo directamente con tipo ADJUSTMENT.
-
+                // ADJUSTMENT suma quantity con signo: positivo agrega, negativo resta
                 await inventoryService.registerMovement({
                     productId: id,
                     type: "ADJUSTMENT",
-                    quantity: diff, // Entero con signo
+                    quantity: diff,
                     userId: user.id,
                     reason: "Corrección manual desde Edición de Producto",
                 });
             }
         }
     } catch (error) {
+        console.error("Error updating product:", error);
         return { error: "Error al actualizar producto" };
     }
 
+    // redirect() debe estar FUERA del try-catch
     revalidatePath(`/dashboard/inventory/${id}`);
     revalidatePath("/dashboard/inventory");
     redirect("/dashboard/inventory");

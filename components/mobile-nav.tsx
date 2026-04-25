@@ -20,9 +20,8 @@ export function MobileNav({
         <div className="md:hidden flex items-center gap-2 min-w-0">
             <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="shrink-0">
-                        <Menu className="h-5 w-5" />
-                        <span className="sr-only">Menú</span>
+                    <Button variant="ghost" size="icon" className="shrink-0" aria-label="Abrir menú de navegación">
+                        <Menu className="h-5 w-5" aria-hidden="true" />
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-64">

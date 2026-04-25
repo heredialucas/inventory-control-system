@@ -4,10 +4,12 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Suspense } from "react";
 import { MobileNav } from "@/components/mobile-nav";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isAdminUser } from "@/lib/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
-    title: "Dashboard - Inventory Control System",
+    title: "Dashboard",
+    description: "Panel de control del sistema de inventario",
 };
 
 export default async function DashboardLayout({
@@ -15,21 +17,23 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
+    // getCurrentUser usa React.cache(): se ejecuta una sola vez por request
+    // aunque sea llamado desde múltiples Server Components
     const user = await getCurrentUser();
-    
-    // Extraer todos los permisos del usuario
-    const userPermissions: string[] = user?.userRoles?.flatMap(ur => 
-        ur.role.permissions.map(rp => rp.permission.action)
-    ) || [];
 
-    // Verificar si el usuario es ADMIN
-    const isAdmin = user?.userRoles?.some((ur: any) => ur.role.name === "ADMIN") || false;
+    const userPermissions: string[] =
+        user?.userRoles?.flatMap((ur) =>
+            ur.role.permissions.map((rp) => rp.permission.action)
+        ) ?? [];
+
+    // Usa función tipada en lugar de (ur: any)
+    const isAdmin = isAdminUser(user);
 
     return (
         <div className="min-h-screen flex text-foreground bg-background">
             {/* Desktop Sidebar */}
-            <AppSidebar 
-                className="hidden md:flex border-r min-h-screen" 
+            <AppSidebar
+                className="hidden md:flex border-r min-h-screen"
                 userPermissions={userPermissions}
                 isAdmin={isAdmin}
             />
@@ -44,7 +48,8 @@ export default async function DashboardLayout({
                         <div className="hidden md:block" />
 
                         <div className="ml-auto flex items-center gap-2 md:gap-4 shrink-0">
-                            <Suspense fallback={<div className="h-8 w-8 animate-pulse bg-muted rounded" />}>
+                            {/* Skeleton correctamente usando el componente de shadcn */}
+                            <Suspense fallback={<Skeleton className="h-8 w-24 rounded-md" />}>
                                 <AuthButton />
                             </Suspense>
                             <ThemeSwitcher />
@@ -52,7 +57,8 @@ export default async function DashboardLayout({
                     </div>
                 </header>
 
-                <main className="flex-1 p-4 md:p-6 overflow-y-auto">
+                {/* id="main-content" es el destino del skip link de accesibilidad */}
+                <main id="main-content" className="flex-1 p-4 md:p-6 overflow-y-auto">
                     {children}
                 </main>
             </div>
