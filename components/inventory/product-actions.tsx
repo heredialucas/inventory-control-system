@@ -150,8 +150,8 @@ export function ProductActions({
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Esto eliminará permanentemente el producto
-                            y todos sus datos asociados.
+                            Esta acción no se puede deshacer. Esto eliminará permanentemente el producto,
+                            sus movimientos de stock, transferencias y toda la información asociada.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -20,6 +20,28 @@ export const inventoryService = {
         });
     },
 
+    async updateCategory(id: string, name: string, description?: string) {
+        return await prisma.category.update({
+            where: { id },
+            data: { name, description },
+        });
+    },
+
+    async deleteCategory(id: string) {
+        return await prisma.$transaction(async (tx) => {
+            // Set categoryId to null for all products in this category
+            await tx.product.updateMany({
+                where: { categoryId: id },
+                data: { categoryId: null },
+            });
+
+            // Delete the category
+            return await tx.category.delete({
+                where: { id },
+            });
+        });
+    },
+
     // Productos
     async getProducts() {
         return await prisma.product.findMany({
@@ -263,15 +285,35 @@ export const inventoryService = {
 
     async deleteProduct(id: string) {
         return await prisma.$transaction(async (tx) => {
-            // WarehouseTransfer NO tiene onDelete: Cascade en el schema,
-            // por lo que debe eliminarse manualmente antes de borrar el producto.
-            // WarehouseStock y StockMovement SÍ tienen onDelete: Cascade
-            // y se eliminan automáticamente al borrar el producto.
+            // Eliminar manualmente todas las relaciones que no tienen onDelete: Cascade
+            
+            // 1. Transferencias entre depósitos
             await tx.warehouseTransfer.deleteMany({
                 where: { productId: id },
             });
 
-            // Al eliminar el producto, Cascade borra WarehouseStock y StockMovement
+            // 2. Movimientos de stock
+            await tx.stockMovement.deleteMany({
+                where: { productId: id },
+            });
+
+            // 3. Items de órdenes de compra
+            await tx.purchaseOrderItem.deleteMany({
+                where: { productId: id },
+            });
+
+            // 4. Items de entregas
+            await tx.deliveryItem.deleteMany({
+                where: { productId: id },
+            });
+
+            // WarehouseStock SÍ tiene onDelete: Cascade en el schema,
+            // pero lo borramos igual para ser explícitos o por si acaso.
+            await tx.warehouseStock.deleteMany({
+                where: { productId: id },
+            });
+
+            // Finalmente eliminar el producto
             return await tx.product.delete({
                 where: { id },
             });

@@ -14,56 +14,90 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createCategoryAction } from "@/app/actions/inventory";
+import { createCategoryAction, updateCategoryAction } from "@/app/actions/inventory";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 interface CategoryFormProps {
     trigger?: React.ReactNode;
+    category?: {
+        id: string;
+        name: string;
+        description: string | null;
+    };
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export function CategoryForm({ trigger }: CategoryFormProps) {
-    const [open, setOpen] = useState(false);
+export function CategoryForm({ trigger, category, open: externalOpen, onOpenChange: setExternalOpen }: CategoryFormProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
+    
+    const open = externalOpen !== undefined ? externalOpen : internalOpen;
+    const setOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
+    
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
+    const isEditing = !!category;
+
     async function handleSubmit(formData: FormData) {
         setIsLoading(true);
-        const result = await createCategoryAction(formData);
+        
+        let result;
+        if (isEditing && category) {
+            result = await updateCategoryAction(category.id, formData);
+        } else {
+            result = await createCategoryAction(formData);
+        }
 
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Categoría creada exitosamente");
+            toast.success(isEditing ? "Categoría actualizada exitosamente" : "Categoría creada exitosamente");
             setOpen(false);
-            router.refresh(); // Refresh server components
+            router.refresh();
         }
         setIsLoading(false);
     }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {trigger || <Button>Nueva Categoría</Button>}
-            </DialogTrigger>
+            {trigger ? (
+                <DialogTrigger asChild>
+                    {trigger}
+                </DialogTrigger>
+            ) : !isEditing ? (
+                <DialogTrigger asChild>
+                    <Button>Nueva Categoría</Button>
+                </DialogTrigger>
+            ) : null}
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Categoría</DialogTitle>
+                    <DialogTitle>{isEditing ? "Editar Categoría" : "Crear Categoría"}</DialogTitle>
                     <DialogDescription>
-                        Ingrese los detalles de la nueva categoría de productos.
+                        {isEditing 
+                            ? "Modifique los detalles de la categoría." 
+                            : "Ingrese los detalles de la nueva categoría de productos."}
                     </DialogDescription>
                 </DialogHeader>
                 <form action={handleSubmit}>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Nombre</Label>
-                            <Input id="name" name="name" placeholder="Ej: Materiales de Construcción" required />
+                            <Input 
+                                id="name" 
+                                name="name" 
+                                defaultValue={category?.name}
+                                placeholder="Ej: Materiales de Construcción" 
+                                required 
+                            />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="description">Descripción</Label>
                             <Textarea
                                 id="description"
                                 name="description"
+                                defaultValue={category?.description || ""}
                                 placeholder="Descripción opcional de la categoría"
                             />
                         </div>
@@ -73,7 +107,7 @@ export function CategoryForm({ trigger }: CategoryFormProps) {
                             Cancelar
                         </Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Guardando..." : "Guardar Categoría"}
+                            {isLoading ? "Guardando..." : "Guardar Cambios"}
                         </Button>
                     </DialogFooter>
                 </form>

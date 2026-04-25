@@ -12,23 +12,23 @@ function extractPublicIdFromCloudinaryUrl(url: string): string | null {
     try {
         const urlParts = url.split('/upload/');
         if (urlParts.length < 2) return null;
-        
+
         const pathAfterUpload = urlParts[1];
         const pathSegments = pathAfterUpload.split('/');
-        
+
         // Buscar el inicio de la carpeta (después de versión o transformaciones)
         const folderIndex = pathSegments.findIndex(
             seg => seg === 'inventory-control' || (!seg.startsWith('v') && !seg.includes(','))
         );
-        
+
         if (folderIndex === -1) return null;
-        
+
         // Tomar desde la carpeta hasta el final
         const relevantSegments = pathSegments.slice(folderIndex);
         const fileName = relevantSegments[relevantSegments.length - 1];
         const fileNameWithoutExt = fileName.split('.')[0];
         relevantSegments[relevantSegments.length - 1] = fileNameWithoutExt;
-        
+
         return relevantSegments.join('/');
     } catch (error) {
         console.error('Error extracting publicId:', error);
@@ -93,11 +93,11 @@ export async function createProductAction(formData: FormData) {
             const buffer = Buffer.from(arrayBuffer);
             const base64 = buffer.toString('base64');
             const dataUrl = `data:${receiptImageFile.type};base64,${base64}`;
-            
+
             // Importar dinámicamente la función de upload
             const { uploadImage } = await import('./cloudinary');
             const uploadResult = await uploadImage(dataUrl, 'products');
-            
+
             if (uploadResult.success && uploadResult.url) {
                 receiptImageUrl = uploadResult.url;
             }
@@ -168,14 +168,14 @@ export async function updateProductAction(id: string, formData: FormData) {
             const buffer = Buffer.from(arrayBuffer);
             const base64 = buffer.toString('base64');
             const dataUrl = `data:${receiptImageFile.type};base64,${base64}`;
-            
+
             // Importar dinámicamente la función de upload/update
             const { uploadImage, updateImage } = await import('./cloudinary');
-            
+
             // Si existe una imagen previa, intentar actualizarla
             if (existingImageUrl) {
                 const oldPublicId = extractPublicIdFromCloudinaryUrl(existingImageUrl);
-                
+
                 if (oldPublicId) {
                     const updateResult = await updateImage(dataUrl, oldPublicId, 'products');
                     if (updateResult.success && updateResult.url) {
@@ -261,7 +261,7 @@ export async function deleteProductAction(id: string) {
 
 export async function createCategoryAction(formData: FormData) {
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "inventory.manage")) {
+    if (!user || !hasPermission(user, "inventory.manage") || !hasPermission(user, "categories.manage")) {
         return { error: "No tienes permisos para gestionar categorías" };
     }
 
@@ -279,6 +279,45 @@ export async function createCategoryAction(formData: FormData) {
     }
 
     revalidatePath("/dashboard/inventory/create");
+    revalidatePath("/dashboard/categories");
+    return { success: true };
+}
+
+export async function updateCategoryAction(id: string, formData: FormData) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "inventory.manage") || !hasPermission(user, "categories.manage")) {
+        return { error: "No tienes permisos para gestionar categorías" };
+    }
+
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string;
+
+    if (!name) {
+        return { error: "El nombre es requerido" };
+    }
+
+    try {
+        await inventoryService.updateCategory(id, name, description);
+    } catch (error) {
+        return { error: "Error al actualizar categoría" };
+    }
+
+    revalidatePath("/dashboard/categories");
+    return { success: true };
+}
+
+export async function deleteCategoryAction(id: string) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "inventory.manage") || !hasPermission(user, "categories.manage")) {
+        return { error: "No tienes permisos para eliminar categorías" };
+    }
+
+    try {
+        await inventoryService.deleteCategory(id);
+    } catch (error) {
+        return { error: "Error al eliminar categoría" };
+    }
+
     revalidatePath("/dashboard/categories");
     return { success: true };
 }

@@ -1,4 +1,5 @@
 import { CategoryForm } from "@/components/categories/category-form";
+import { CategoryActions } from "@/components/categories/category-actions";
 import { inventoryService } from "@/services/inventory-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
@@ -34,7 +35,6 @@ export default async function CategoriesPage() {
                         Gestionar categorías de productos
                     </p>
                 </div>
-                {canManage && <CategoryForm />}
             </div>
 
             {categories.length === 0 ? (
@@ -57,6 +57,7 @@ export default async function CategoriesPage() {
                                     <TableHead>Nombre</TableHead>
                                     <TableHead>Descripción</TableHead>
                                     <TableHead className="text-right">Productos</TableHead>
+                                    <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -66,6 +67,12 @@ export default async function CategoriesPage() {
                                         <TableCell>{category.description || "-"}</TableCell>
                                         <TableCell className="text-right">
                                             <Badge variant="secondary">{category._count.products}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <CategoryActions 
+                                                category={category} 
+                                                canManage={canManage} 
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -87,9 +94,15 @@ export default async function CategoriesPage() {
                                                 </CardDescription>
                                             )}
                                         </div>
-                                        <Badge variant="secondary" className="ml-2">
-                                            {category._count.products} productos
-                                        </Badge>
+                                        <div className="flex flex-col items-end gap-2">
+                                            <Badge variant="secondary">
+                                                {category._count.products} productos
+                                            </Badge>
+                                            <CategoryActions 
+                                                category={category} 
+                                                canManage={canManage} 
+                                            />
+                                        </div>
                                     </div>
                                 </CardHeader>
                                 {category.description && (
