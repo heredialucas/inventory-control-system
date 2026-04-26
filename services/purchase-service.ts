@@ -12,7 +12,9 @@ export const purchaseService = {
         supplierId?: string;
         warehouseId?: string;
     }) {
-        const where: Prisma.PurchaseOrderWhereInput = {};
+        const where: Prisma.PurchaseOrderWhereInput = {
+            deletedAt: null,
+        };
 
         if (filters?.status) {
             where.status = filters.status;
@@ -51,7 +53,7 @@ export const purchaseService = {
      */
     async getPurchaseOrder(id: string) {
         return await prisma.purchaseOrder.findUnique({
-            where: { id },
+            where: { id, deletedAt: null },
             include: {
                 supplier: true,
                 warehouse: true,
@@ -326,20 +328,23 @@ export const purchaseService = {
      */
     async getPurchaseStats() {
         const [totalOrders, totalSpent, pendingOrders, draftOrders] = await Promise.all([
-            prisma.purchaseOrder.count(),
+            prisma.purchaseOrder.count({
+                where: { deletedAt: null }
+            }),
             prisma.purchaseOrder.aggregate({
                 where: {
                     status: { in: ["RECEIVED", "PARTIAL"] },
+                    deletedAt: null,
                 },
                 _sum: {
                     totalAmount: true,
                 },
             }),
             prisma.purchaseOrder.count({
-                where: { status: "PENDING" },
+                where: { status: "PENDING", deletedAt: null },
             }),
             prisma.purchaseOrder.count({
-                where: { status: "DRAFT" },
+                where: { status: "DRAFT", deletedAt: null },
             }),
         ]);
 

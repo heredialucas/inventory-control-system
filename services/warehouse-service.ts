@@ -9,6 +9,7 @@ export const warehouseService = {
      */
     async getWarehouses() {
         return await prisma.warehouse.findMany({
+            where: { deletedAt: null },
             orderBy: { name: "asc" },
             include: {
                 _count: {
@@ -27,7 +28,7 @@ export const warehouseService = {
      */
     async getWarehouse(id: string) {
         return await prisma.warehouse.findUnique({
-            where: { id },
+            where: { id, deletedAt: null },
             include: {
                 stockItems: {
                     include: {
@@ -118,8 +119,9 @@ export const warehouseService = {
             );
         }
 
-        return await prisma.warehouse.delete({
+        return await prisma.warehouse.update({
             where: { id },
+            data: { deletedAt: new Date() },
         });
     },
 

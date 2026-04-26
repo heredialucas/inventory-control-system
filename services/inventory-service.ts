@@ -5,6 +5,7 @@ export const inventoryService = {
     // Categorías
     async getCategories() {
         return await prisma.category.findMany({
+            where: { deletedAt: null },
             orderBy: { name: "asc" },
             include: {
                 _count: {
@@ -28,23 +29,17 @@ export const inventoryService = {
     },
 
     async deleteCategory(id: string) {
-        return await prisma.$transaction(async (tx) => {
-            // Set categoryId to null for all products in this category
-            await tx.product.updateMany({
-                where: { categoryId: id },
-                data: { categoryId: null },
-            });
-
-            // Delete the category
-            return await tx.category.delete({
-                where: { id },
-            });
+        // Marcar categoría como eliminada lógicamente
+        return await prisma.category.update({
+            where: { id },
+            data: { deletedAt: new Date() }
         });
     },
 
     // Productos
     async getProducts() {
         return await prisma.product.findMany({
+            where: { deletedAt: null },
             include: {
                 category: true,
             },
@@ -54,7 +49,7 @@ export const inventoryService = {
 
     async getProduct(id: string) {
         return await prisma.product.findUnique({
-            where: { id },
+            where: { id, deletedAt: null },
             include: {
                 category: true,
                 supplier: true,
@@ -290,39 +285,9 @@ export const inventoryService = {
     },
 
     async deleteProduct(id: string) {
-        return await prisma.$transaction(async (tx) => {
-            // Eliminar manualmente todas las relaciones que no tienen onDelete: Cascade
-            
-            // 1. Transferencias entre depósitos
-            await tx.warehouseTransfer.deleteMany({
-                where: { productId: id },
-            });
-
-            // 2. Movimientos de stock
-            await tx.stockMovement.deleteMany({
-                where: { productId: id },
-            });
-
-            // 3. Items de órdenes de compra
-            await tx.purchaseOrderItem.deleteMany({
-                where: { productId: id },
-            });
-
-            // 4. Items de entregas
-            await tx.deliveryItem.deleteMany({
-                where: { productId: id },
-            });
-
-            // WarehouseStock SÍ tiene onDelete: Cascade en el schema,
-            // pero lo borramos igual para ser explícitos o por si acaso.
-            await tx.warehouseStock.deleteMany({
-                where: { productId: id },
-            });
-
-            // Finalmente eliminar el producto
-            return await tx.product.delete({
-                where: { id },
-            });
+        return await prisma.product.update({
+            where: { id },
+            data: { deletedAt: new Date() }
         });
     },
 };

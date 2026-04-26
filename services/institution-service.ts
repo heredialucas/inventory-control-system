@@ -6,6 +6,7 @@ export const institutionService = {
      */
     async getInstitutions() {
         return await prisma.institution.findMany({
+            where: { deletedAt: null },
             orderBy: { name: "asc" },
             include: {
                 _count: {
@@ -22,7 +23,7 @@ export const institutionService = {
      */
     async getInstitution(id: string) {
         return await prisma.institution.findUnique({
-            where: { id },
+            where: { id, deletedAt: null },
             include: {
                 deliveries: {
                     take: 10,
@@ -106,16 +107,9 @@ export const institutionService = {
      * Delete institution
      */
     async deleteInstitution(id: string) {
-        const deliveriesCount = await prisma.delivery.count({
-            where: { institutionId: id },
-        });
-
-        if (deliveriesCount > 0) {
-            throw new Error("No se puede eliminar institución con entregas existentes");
-        }
-
-        return await prisma.institution.delete({
+        return await prisma.institution.update({
             where: { id },
+            data: { deletedAt: new Date() },
         });
     },
 };

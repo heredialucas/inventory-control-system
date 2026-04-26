@@ -21,7 +21,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Power, Trash2, Users } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Power, Trash2, Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { toggleSupplierStatus, deleteSupplier } from "@/app/actions/suppliers";
@@ -39,6 +39,7 @@ type SupplierWithCounts = {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    deletedAt: Date | null;
     _count: {
         purchaseOrders: number;
     };
@@ -120,7 +121,7 @@ export function SupplierList({ suppliers, canManage = false }: SupplierListProps
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" disabled={isPending}>
-                                            <MoreHorizontal className="h-4 w-4" />
+                                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
@@ -198,7 +199,7 @@ export function SupplierList({ suppliers, canManage = false }: SupplierListProps
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" size="icon" disabled={isPending}>
-                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                                                     <span className="sr-only">Acciones</span>
                                                 </Button>
                                             </DropdownMenuTrigger>

@@ -14,7 +14,8 @@ import {
     Pencil,
     Trash,
     PackagePlus,
-    Download
+    Download,
+    Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -177,8 +178,8 @@ export function ProductActions({
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Esto eliminará permanentemente el producto,
-                            sus movimientos de stock, transferencias y toda la información asociada.
+                            ¿Estás seguro de que deseas eliminar este producto?
+                            El producto ya no estará visible, pero se conservará en el historial.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -191,6 +192,7 @@ export function ProductActions({
                             className="bg-red-600 hover:bg-red-700"
                             disabled={isDeleting}
                         >
+                            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isDeleting ? "Eliminando..." : "Eliminar"}
                         </AlertDialogAction>
                     </AlertDialogFooter>

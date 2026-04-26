@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { createSupplier, updateSupplier } from "@/app/actions/suppliers";
 import { Supplier } from "@prisma/client";
+import { Loader2 } from "lucide-react";
 
 interface SupplierFormProps {
     supplier?: Supplier;
@@ -151,6 +152,7 @@ export function SupplierForm({ supplier, trigger }: SupplierFormProps) {
                             Cancelar
                         </Button>
                         <Button type="submit" disabled={isPending}>
+                            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isPending ? "Guardando..." : supplier ? "Actualizar" : "Crear"}
                         </Button>
                     </DialogFooter>

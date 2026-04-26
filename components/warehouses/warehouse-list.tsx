@@ -36,6 +36,7 @@ type WarehouseWithCounts = {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    deletedAt: Date | null;
     _count: {
         stockItems: number;
         transfersFrom: number;

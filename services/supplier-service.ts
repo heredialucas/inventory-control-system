@@ -8,6 +8,7 @@ export const supplierService = {
      */
     async getSuppliers() {
         return await prisma.supplier.findMany({
+            where: { deletedAt: null },
             orderBy: { name: "asc" },
             include: {
                 _count: {
@@ -24,7 +25,7 @@ export const supplierService = {
      */
     async getSupplier(id: string) {
         return await prisma.supplier.findUnique({
-            where: { id },
+            where: { id, deletedAt: null },
             include: {
                 purchaseOrders: {
                     take: 10,
@@ -106,18 +107,9 @@ export const supplierService = {
      * Delete supplier (only if no purchase orders)
      */
     async deleteSupplier(id: string) {
-        const ordersCount = await prisma.purchaseOrder.count({
-            where: { supplierId: id },
-        });
-
-        if (ordersCount > 0) {
-            throw new Error(
-                "No se puede eliminar proveedor con órdenes de compra existentes"
-            );
-        }
-
-        return await prisma.supplier.delete({
+        return await prisma.supplier.update({
             where: { id },
+            data: { deletedAt: new Date() }
         });
     },
 
@@ -127,12 +119,13 @@ export const supplierService = {
     async getSupplierStats(id: string) {
         const [totalOrders, totalSpent, pendingOrders] = await Promise.all([
             prisma.purchaseOrder.count({
-                where: { supplierId: id },
+                where: { supplierId: id, deletedAt: null },
             }),
             prisma.purchaseOrder.aggregate({
                 where: {
                     supplierId: id,
                     status: { in: ["RECEIVED", "PARTIAL"] },
+                    deletedAt: null,
                 },
                 _sum: {
                     totalAmount: true,
@@ -142,6 +135,7 @@ export const supplierService = {
                 where: {
                     supplierId: id,
                     status: { in: ["DRAFT", "PENDING"] },
+                    deletedAt: null,
                 },
             }),
         ]);

@@ -21,6 +21,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface Category {
     id: string;
@@ -301,6 +302,7 @@ export function ProductForm({ categories, warehouses, suppliers = [], initialDat
                     Cancelar
                 </Button>
                 <Button type="submit" size="lg" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isLoading ? "Guardando..." : initialData ? "Actualizar Producto" : "Guardar Producto"}
                 </Button>
             </div>

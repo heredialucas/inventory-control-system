@@ -14,7 +14,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Save, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createPurchaseOrder } from "@/app/actions/purchases";
 import Link from "next/link";
@@ -206,7 +206,7 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                     </CardContent>
                     <CardFooter>
                         <Button className="w-full" type="submit" disabled={isPending}>
-                            <Save className="mr-2 h-4 w-4" />
+                            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             {isPending ? "Creando..." : "Crear Orden"}
                         </Button>
                     </CardFooter>

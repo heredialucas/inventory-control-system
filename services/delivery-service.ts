@@ -10,7 +10,9 @@ export const deliveryService = {
         institutionId?: string;
         warehouseId?: string;
     }) {
-        const where: Prisma.DeliveryWhereInput = {};
+        const where: Prisma.DeliveryWhereInput = {
+            deletedAt: null,
+        };
 
         if (filters?.status) {
             where.status = filters.status;
@@ -49,7 +51,7 @@ export const deliveryService = {
      */
     async getDelivery(id: string) {
         return await prisma.delivery.findUnique({
-            where: { id },
+            where: { id, deletedAt: null },
             include: {
                 institution: true,
                 warehouse: true,
@@ -263,15 +265,17 @@ export const deliveryService = {
      */
     async getDeliveryStats() {
         const [totalDeliveries, deliveredCount, pendingCount, draftCount] = await Promise.all([
-            prisma.delivery.count(),
             prisma.delivery.count({
-                where: { status: "DELIVERED" },
+                where: { deletedAt: null },
             }),
             prisma.delivery.count({
-                where: { status: "CONFIRMED" },
+                where: { status: "DELIVERED", deletedAt: null },
             }),
             prisma.delivery.count({
-                where: { status: "DRAFT" },
+                where: { status: "CONFIRMED", deletedAt: null },
+            }),
+            prisma.delivery.count({
+                where: { status: "DRAFT", deletedAt: null },
             }),
         ]);
 
