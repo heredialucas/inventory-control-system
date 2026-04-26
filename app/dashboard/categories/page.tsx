@@ -35,6 +35,7 @@ export default async function CategoriesPage() {
                         Gestionar categorías de productos
                     </p>
                 </div>
+                {canManage && <CategoryForm />}
             </div>
 
             {categories.length === 0 ? (
