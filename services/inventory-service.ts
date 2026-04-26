@@ -118,12 +118,6 @@ export const inventoryService = {
             minStock: restData.minStock || 0,
             ...(restData.description && { description: restData.description }),
             ...(restData.categoryId && { categoryId: restData.categoryId }),
-            ...(restData.purchaseCode && { purchaseCode: restData.purchaseCode }),
-            ...(restData.purchaseDate && { purchaseDate: restData.purchaseDate }),
-            ...(restData.purchaseAmount !== undefined && { purchaseAmount: restData.purchaseAmount }),
-            ...(restData.supplierId && { supplierId: restData.supplierId }),
-            ...(restData.destination && { destination: restData.destination }),
-            ...(restData.receiptImageUrl && { receiptImageUrl: restData.receiptImageUrl }),
         };
 
         return await prisma.$transaction(async (tx) => {
@@ -152,6 +146,12 @@ export const inventoryService = {
                         quantity: initialStock,
                         userId,
                         reason: "Stock inicial al crear producto",
+                        purchaseCode: restData.purchaseCode,
+                        purchaseDate: restData.purchaseDate,
+                        purchaseAmount: restData.purchaseAmount,
+                        supplierId: restData.supplierId,
+                        destination: restData.destination,
+                        receiptImageUrl: restData.receiptImageUrl,
                     },
                 });
             }
@@ -167,12 +167,6 @@ export const inventoryService = {
         categoryId?: string;
         minStock?: number;
         unit?: string;
-        purchaseCode?: string;
-        purchaseDate?: Date;
-        purchaseAmount?: number;
-        supplierId?: string;
-        destination?: string;
-        receiptImageUrl?: string;
     }) {
         return await prisma.product.update({
             where: { id },
@@ -188,8 +182,14 @@ export const inventoryService = {
         quantity: number;
         userId: string;
         reason?: string;
+        purchaseCode?: string;
+        purchaseDate?: Date;
+        purchaseAmount?: number;
+        supplierId?: string;
+        destination?: string;
+        receiptImageUrl?: string;
     }) {
-        const { productId, warehouseId, type, quantity, userId, reason } = data;
+        const { productId, warehouseId, type, quantity, userId, reason, purchaseCode, purchaseDate, purchaseAmount, supplierId, destination, receiptImageUrl } = data;
 
         return await prisma.$transaction(async (tx) => {
             const product = await tx.product.findUnique({ where: { id: productId } });
@@ -220,7 +220,13 @@ export const inventoryService = {
                     type,
                     quantity,
                     userId,
-                    reason
+                    reason,
+                    purchaseCode,
+                    purchaseDate,
+                    purchaseAmount,
+                    supplierId,
+                    destination,
+                    receiptImageUrl
                 }
             });
         });

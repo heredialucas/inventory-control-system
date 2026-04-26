@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { inventoryService } from "@/services/inventory-service";
 import { getWarehouses } from "@/app/actions/warehouses";
+import { getSuppliers } from "@/app/actions/suppliers";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { ProductActions } from "@/components/inventory/product-actions";
@@ -33,6 +34,7 @@ export default async function InventoryPage() {
 
     // Obtener depósitos para la acción de asignación de stock
     const warehouses = await getWarehouses();
+    const suppliers = await getSuppliers();
 
     return (
         <div className="flex flex-col gap-6">
@@ -92,6 +94,7 @@ export default async function InventoryPage() {
                                             canEdit={canEdit}
                                             canDelete={canDelete}
                                             warehouses={warehouses}
+                                            suppliers={suppliers}
                                             userId={user.id}
                                         />
                                     </TableCell>
@@ -139,6 +142,7 @@ export default async function InventoryPage() {
                                     canEdit={canEdit}
                                     canDelete={canDelete}
                                     warehouses={warehouses}
+                                    suppliers={suppliers}
                                     userId={user.id}
                                 />
                             </div>

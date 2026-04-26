@@ -47,12 +47,6 @@ interface Product {
     stock: number;
     minStock: number;
     categoryId: string | null;
-    purchaseCode?: string | null;
-    purchaseDate?: string | null;
-    purchaseAmount?: number | string | null;
-    supplierId?: string | null;
-    destination?: string | null;
-    receiptImageUrl?: string | null;
     unit?: string | null;
 }
 
@@ -90,102 +84,86 @@ export function ProductForm({ categories, warehouses, suppliers = [], initialDat
     return (
         <form action={handleSubmit} className="max-w-5xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row gap-6">
-                {/* Datos de Compra */}
-                <Card className="flex-1">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Datos de Compra</CardTitle>
-                        <CardDescription>Información del comprobante y proveedor</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="purchaseCode">Código de Expediente</Label>
-                                <Input
-                                    id="purchaseCode"
-                                    name="purchaseCode"
-                                    placeholder="2018/224/25"
-                                    defaultValue={initialData?.purchaseCode || ""}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="purchaseDate">Fecha de Compra</Label>
-                                <Input
-                                    id="purchaseDate"
-                                    name="purchaseDate"
-                                    type="date"
-                                    defaultValue={initialData?.purchaseDate ? new Date(initialData.purchaseDate).toISOString().split('T')[0] : ""}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="supplierId">Proveedor</Label>
-                            <Select name="supplierId" defaultValue={initialData?.supplierId || undefined}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar proveedor" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {suppliers.map(s => (
-                                        <SelectItem key={s.id} value={s.id}>
-                                            {s.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="purchaseAmount">Monto Total de la Compra</Label>
-                            <Input
-                                id="purchaseAmount"
-                                name="purchaseAmount"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                placeholder="Total de la factura"
-                                defaultValue={initialData?.purchaseAmount ? Number(initialData.purchaseAmount) : ""}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="destination">Destino / Responsable</Label>
-                            <Input
-                                id="destination"
-                                name="destination"
-                                placeholder="Ej: Automotores - Luis Caro"
-                                defaultValue={initialData?.destination || ""}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="receiptImageUrl">Imagen del Comprobante</Label>
-                            <Input
-                                id="receiptImageUrl"
-                                name="receiptImageUrl"
-                                type="file"
-                                accept="image/*"
-                                className="cursor-pointer"
-                            />
-                            {initialData?.receiptImageUrl ? (
-                                <div className="mt-2">
-                                    <p className="text-xs text-muted-foreground mb-2">Imagen actual:</p>
-                                    <div className="relative inline-block">
-                                        <img
-                                            src={initialData.receiptImageUrl}
-                                            alt="Comprobante actual"
-                                            className="max-w-full h-auto max-h-32 rounded border object-cover"
-                                        />
-                                    </div>
-                                    <input type="hidden" name="existingReceiptImageUrl" value={initialData.receiptImageUrl} />
+                {/* Datos de Compra - Solo visible al crear un nuevo producto con stock inicial */}
+                {!initialData && (
+                    <Card className="flex-1">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Datos de Ingreso</CardTitle>
+                            <CardDescription>Información del comprobante y proveedor para el stock inicial</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="purchaseCode">Código de Expediente o Remito</Label>
+                                    <Input
+                                        id="purchaseCode"
+                                        name="purchaseCode"
+                                        placeholder="2018/224/25 o R-0001"
+                                    />
                                 </div>
-                            ) : (
-                                <p className="text-xs text-muted-foreground">
+                                <div className="space-y-2">
+                                    <Label htmlFor="purchaseDate">Fecha del Comprobante</Label>
+                                    <Input
+                                        id="purchaseDate"
+                                        name="purchaseDate"
+                                        type="date"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="supplierId">Proveedor</Label>
+                                <Select name="supplierId">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar proveedor" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {suppliers.map(s => (
+                                            <SelectItem key={s.id} value={s.id}>
+                                                {s.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="purchaseAmount">Monto Total del Ingreso</Label>
+                                <Input
+                                    id="purchaseAmount"
+                                    name="purchaseAmount"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="Total de la factura"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="destination">Destino / Responsable</Label>
+                                <Input
+                                    id="destination"
+                                    name="destination"
+                                    placeholder="Ej: Automotores - Luis Caro"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="receiptImageUrl">Imagen del Comprobante</Label>
+                                <Input
+                                    id="receiptImageUrl"
+                                    name="receiptImageUrl"
+                                    type="file"
+                                    accept="image/*"
+                                    className="cursor-pointer"
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
                                     Formatos: JPG, PNG.
                                 </p>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Datos del Producto */}
                 <Card className="flex-1">

@@ -8,11 +8,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StockAssignmentDialog } from "./stock-assignment-dialog";
+import { RestockDialog } from "./restock-dialog";
 import {
     MoreHorizontal,
     Pencil,
     Trash,
-    PackagePlus
+    PackagePlus,
+    Download
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -37,6 +39,7 @@ interface ProductActionsProps {
     canEdit: boolean;
     canDelete: boolean;
     warehouses: { id: string; name: string; code: string }[];
+    suppliers?: { id: string; name: string; code: string }[];
     userId: string;
 }
 
@@ -47,11 +50,13 @@ export function ProductActions({
     canEdit,
     canDelete,
     warehouses,
+    suppliers = [],
     userId
 }: ProductActionsProps) {
     const [open, setOpen] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
+    const [showRestockDialog, setShowRestockDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
 
@@ -100,6 +105,19 @@ export function ProductActions({
                         </Link>
                     </DropdownMenuItem>
 
+                    {canEdit && (
+                        <DropdownMenuItem
+                            onSelect={(e) => {
+                                e.preventDefault();
+                                setShowRestockDialog(true);
+                                setOpen(false);
+                            }}
+                        >
+                            <Download className="mr-2 h-4 w-4" />
+                            Reingresar Stock
+                        </DropdownMenuItem>
+                    )}
+
                     {/* {canEdit && (
                         <DropdownMenuItem
                             onSelect={(e) => {
@@ -143,6 +161,15 @@ export function ProductActions({
                 product={{ id: productId, name: productName, sku: productSku }}
                 warehouses={warehouses}
                 userId={userId}
+            />
+
+            <RestockDialog 
+                open={showRestockDialog}
+                onOpenChange={setShowRestockDialog}
+                productId={productId}
+                productName={productName}
+                warehouses={warehouses}
+                suppliers={suppliers}
             />
 
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -148,60 +148,11 @@ export async function updateProductAction(id: string, formData: FormData) {
     const categoryId = formData.get("categoryId") as string;
     const unit = formData.get("unit") as string || "U";
 
-    // Campos de compra
-    const purchaseCode = formData.get("purchaseCode") as string || undefined;
-    const purchaseDateStr = formData.get("purchaseDate") as string;
-    const purchaseDate = purchaseDateStr ? new Date(purchaseDateStr) : undefined;
-    const purchaseAmount = parseFloat(formData.get("purchaseAmount") as string) || undefined;
-    const supplierId = formData.get("supplierId") as string || undefined;
-    const destination = formData.get("destination") as string || undefined;
-
-    // Manejar imagen
-    const receiptImageFile = formData.get("receiptImageUrl") as File | null;
-    const existingImageUrl = formData.get("existingReceiptImageUrl") as string || undefined;
-    let receiptImageUrl: string | undefined = existingImageUrl;
+    // Campos de compra ya no se actualizan directamente en el producto.
+    // Solo se permite actualizar detalles de catálogo (nombre, precio, etc).
 
     try {
-        // Si hay un nuevo archivo de imagen, procesarlo
-        if (receiptImageFile && receiptImageFile.size > 0) {
-            const arrayBuffer = await receiptImageFile.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            const base64 = buffer.toString('base64');
-            const dataUrl = `data:${receiptImageFile.type};base64,${base64}`;
-
-            // Importar dinámicamente la función de upload/update
-            const { uploadImage, updateImage } = await import('./cloudinary');
-
-            // Si existe una imagen previa, intentar actualizarla
-            if (existingImageUrl) {
-                const oldPublicId = extractPublicIdFromCloudinaryUrl(existingImageUrl);
-
-                if (oldPublicId) {
-                    const updateResult = await updateImage(dataUrl, oldPublicId, 'products');
-                    if (updateResult.success && updateResult.url) {
-                        receiptImageUrl = updateResult.url;
-                    } else {
-                        // Si falla la actualización, intentar subir como nueva
-                        const uploadResult = await uploadImage(dataUrl, 'products');
-                        if (uploadResult.success && uploadResult.url) {
-                            receiptImageUrl = uploadResult.url;
-                        }
-                    }
-                } else {
-                    // No pudimos extraer el publicId, subir como nueva
-                    const uploadResult = await uploadImage(dataUrl, 'products');
-                    if (uploadResult.success && uploadResult.url) {
-                        receiptImageUrl = uploadResult.url;
-                    }
-                }
-            } else {
-                // No hay imagen previa, subir como nueva
-                const uploadResult = await uploadImage(dataUrl, 'products');
-                if (uploadResult.success && uploadResult.url) {
-                    receiptImageUrl = uploadResult.url;
-                }
-            }
-        }
+        // No image upload logic here anymore, since products don't store receiptImageUrl directly.
 
         await inventoryService.updateProduct(id, {
             name,
@@ -209,12 +160,6 @@ export async function updateProductAction(id: string, formData: FormData) {
             minStock: isNaN(minStock) ? undefined : minStock,
             categoryId: categoryId || undefined,
             unit,
-            purchaseCode,
-            purchaseDate,
-            purchaseAmount,
-            supplierId,
-            destination,
-            receiptImageUrl,
         });
 
         const newStock = parseInt(formData.get("stock") as string);
@@ -241,6 +186,71 @@ export async function updateProductAction(id: string, formData: FormData) {
     revalidatePath(`/dashboard/inventory/${id}`);
     revalidatePath("/dashboard/inventory");
     redirect("/dashboard/inventory");
+}
+
+export async function restockProductAction(formData: FormData) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "inventory.manage")) {
+        return { error: "No tienes permisos para realizar esta acción" };
+    }
+
+    const productId = formData.get("productId") as string;
+    const quantity = parseInt(formData.get("quantity") as string);
+    const warehouseId = formData.get("warehouseId") as string;
+    const supplierId = formData.get("supplierId") as string || undefined;
+    const purchaseCode = formData.get("purchaseCode") as string || undefined;
+    const purchaseDateStr = formData.get("purchaseDate") as string;
+    const purchaseDate = purchaseDateStr ? new Date(purchaseDateStr) : undefined;
+    const purchaseAmount = parseFloat(formData.get("purchaseAmount") as string) || undefined;
+    const destination = formData.get("destination") as string || undefined;
+    const reason = formData.get("reason") as string || "Reingreso manual de stock";
+
+    if (!productId || isNaN(quantity) || quantity <= 0) {
+        return { error: "ID de producto o cantidad inválida" };
+    }
+
+    // Manejar archivo de imagen
+    const receiptImageFile = formData.get("receiptImageUrl") as File | null;
+    let receiptImageUrl: string | undefined = undefined;
+
+    try {
+        if (receiptImageFile && receiptImageFile.size > 0) {
+            const arrayBuffer = await receiptImageFile.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const base64 = buffer.toString('base64');
+            const dataUrl = `data:${receiptImageFile.type};base64,${base64}`;
+
+            const { uploadImage } = await import('./cloudinary');
+            const uploadResult = await uploadImage(dataUrl, 'products');
+
+            if (uploadResult.success && uploadResult.url) {
+                receiptImageUrl = uploadResult.url;
+            }
+        }
+
+        await inventoryService.registerMovement({
+            productId,
+            warehouseId: warehouseId || undefined,
+            type: "IN",
+            quantity,
+            userId: user.id,
+            reason,
+            purchaseCode,
+            purchaseDate,
+            purchaseAmount,
+            supplierId,
+            destination,
+            receiptImageUrl,
+        });
+    } catch (error) {
+        console.error("Error restocking product:", error);
+        return { error: "Error al reingresar stock" };
+    }
+
+    revalidatePath("/dashboard/inventory");
+    revalidatePath(`/dashboard/inventory/${productId}`);
+    revalidatePath("/dashboard/movements");
+    return { success: true };
 }
 
 export async function deleteProductAction(id: string) {
