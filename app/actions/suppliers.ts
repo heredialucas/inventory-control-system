@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function getSuppliers() {
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "suppliers.view")) {
+    if (!user) {
         throw new Error("No tienes permisos para ver proveedores");
     }
 
