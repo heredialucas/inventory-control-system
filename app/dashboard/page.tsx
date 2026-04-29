@@ -102,7 +102,11 @@ export default async function DashboardPage() {
     // Usa función tipada en lugar de (ur: any)
     const isAdmin = isAdminUser(user);
 
-    if (!user || !isAdmin) {
+    if (!user) {
+        redirect("/auth/login");
+    }
+
+    if (!isAdmin) {
         redirect("/dashboard/users");
     }
 

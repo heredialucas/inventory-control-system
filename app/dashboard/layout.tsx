@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -20,6 +22,10 @@ export default async function DashboardLayout({
     // getCurrentUser usa React.cache(): se ejecuta una sola vez por request
     // aunque sea llamado desde múltiples Server Components
     const user = await getCurrentUser();
+
+    if (!user) {
+        redirect("/auth/login");
+    }
 
     const userPermissions: string[] =
         user?.userRoles?.flatMap((ur) =>

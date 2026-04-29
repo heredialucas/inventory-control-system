@@ -13,6 +13,7 @@ import { getReceipts } from "@/app/actions/receipts";
 import { getWarehouses } from "@/app/actions/warehouses";
 import { getSuppliers } from "@/app/actions/suppliers";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { ProductActions } from "@/components/inventory/product-actions";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,11 @@ import { Separator } from "@/components/ui/separator";
 export default async function InventoryPage() {
     const user = await getCurrentUser();
 
-    if (!user || (!hasPermission(user, "inventory.view") && !hasPermission(user, "receipts.view"))) {
+    if (!user) {
+        redirect("/auth/login");
+    }
+
+    if (!hasPermission(user, "inventory.view") && !hasPermission(user, "receipts.view")) {
         return <UnauthorizedAccess action="ver" resource="ingresos" />;
     }
 

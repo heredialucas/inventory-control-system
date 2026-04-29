@@ -3,6 +3,7 @@ import { getUsersAction } from "@/app/actions/users";
 import { getCurrentUser, hasPermission, isAdminUser } from "@/lib/auth";
 import { AdminUsersView } from "@/components/users/admin-users-view";
 import { UserProfileView } from "@/components/users/user-profile-view";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export default async function UsersPage() {
     const currentUser = await getCurrentUser();
 
     if (!currentUser) {
-        return <div>No autorizado</div>;
+        redirect("/auth/login");
     }
 
     const [{ data: roles }, { data: permissions }, { data: users }] = await Promise.all([
