@@ -151,16 +151,18 @@ function UserRow({ user, roles, canManage = false }: UserRowProps) {
                 {new Date(user.createdAt).toLocaleDateString()}
             </TableCell>
             {canManage && (
-                <TableCell className="text-right flex items-center justify-end gap-2">
-                    <EditUserDialog user={user} roles={roles} />
-                    <form action={async () => {
-                        "use server";
-                        await deleteUserAction(user.id);
-                    }}>
-                        <Button variant="ghost" size="icon" type="submit">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    </form>
+                <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                        <EditUserDialog user={user} roles={roles} />
+                        <form action={async () => {
+                            "use server";
+                            await deleteUserAction(user.id);
+                        }}>
+                            <Button variant="ghost" size="icon" type="submit">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </form>
+                    </div>
                 </TableCell>
             )}
         </TableRow>

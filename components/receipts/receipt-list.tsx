@@ -72,18 +72,20 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                                         {format(new Date(receipt.date), "dd/MM/yyyy", { locale: es })}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Link href={`/dashboard/receipts/${receipt.id}`}>
-                                            <Button variant="ghost" size="icon" title="Ver detalle">
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                        </Link>
-                                        {canManage && (
-                                            <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
-                                                <Button variant="ghost" size="icon" title="Editar remito">
-                                                    <Edit className="h-4 w-4" />
+                                        <div className="flex items-center justify-end gap-2">
+                                            <Link href={`/dashboard/receipts/${receipt.id}`}>
+                                                <Button variant="ghost" size="icon" title="Ver detalle">
+                                                    <Eye className="h-4 w-4" />
                                                 </Button>
                                             </Link>
-                                        )}
+                                            {canManage && (
+                                                <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
+                                                    <Button variant="ghost" size="icon" title="Editar remito">
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))

@@ -53,6 +53,14 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                         </p>
                     </div>
                 </div>
+                {canManage && (
+                    <Link href={`/dashboard/expedientes/${expediente.id}/edit`}>
+                        <Button variant="outline">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar Expediente
+                        </Button>
+                    </Link>
+                )}
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">

@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -94,11 +94,20 @@ export function ExpedienteList({ expedientes, canManage }: ExpedienteListProps) 
                                         {format(new Date(expediente.createdAt), "dd/MM/yyyy", { locale: es })}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Link href={`/dashboard/expedientes/${expediente.id}`}>
-                                            <Button variant="ghost" size="icon">
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                        </Link>
+                                        <div className="flex justify-end gap-2">
+                                            <Link href={`/dashboard/expedientes/${expediente.id}`}>
+                                                <Button variant="ghost" size="icon">
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                            </Link>
+                                            {canManage && (
+                                                <Link href={`/dashboard/expedientes/${expediente.id}/edit`}>
+                                                    <Button variant="ghost" size="icon">
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))

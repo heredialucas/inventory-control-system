@@ -2,6 +2,7 @@
 
 import { receiptService } from "@/services/receipt-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 async function verifyPermission(permission: string) {
     const user = await getCurrentUser();
@@ -36,7 +37,18 @@ export async function createReceipt(data: {
     }>;
 }) {
     await verifyPermission("receipts.manage");
-    return receiptService.createReceipt(data);
+    const result = await receiptService.createReceipt(data);
+    revalidatePath("/dashboard/receipts");
+    revalidatePath("/dashboard/inventory");
+    revalidatePath("/dashboard/movements");
+    if (data.purchaseOrderId) {
+        revalidatePath(`/dashboard/purchases/${data.purchaseOrderId}`);
+        revalidatePath("/dashboard/purchases");
+    }
+    if (data.expedienteId) {
+        revalidatePath(`/dashboard/expedientes/${data.expedienteId}`);
+    }
+    return result;
 }
 
 export async function updateReceipt(id: string, data: {
@@ -53,5 +65,13 @@ export async function updateReceipt(id: string, data: {
     }>;
 }) {
     await verifyPermission("receipts.manage");
-    return receiptService.updateReceipt(id, data);
+    const result = await receiptService.updateReceipt(id, data);
+    revalidatePath("/dashboard/receipts");
+    revalidatePath(`/dashboard/receipts/${id}`);
+    revalidatePath("/dashboard/inventory");
+    revalidatePath("/dashboard/movements");
+    if (data.expedienteId) {
+        revalidatePath(`/dashboard/expedientes/${data.expedienteId}`);
+    }
+    return result;
 }

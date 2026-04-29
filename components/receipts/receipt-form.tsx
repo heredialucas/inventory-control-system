@@ -104,7 +104,7 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
         setItems(prev => prev.map(i => i.productId === productId ? { ...i, quantity: qty } : i));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!receiptNumber || !date || !warehouseId) {

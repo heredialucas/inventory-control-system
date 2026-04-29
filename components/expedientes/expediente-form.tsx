@@ -9,39 +9,57 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Save, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { createExpediente } from "@/app/actions/expedientes";
+import { createExpediente, updateExpediente } from "@/app/actions/expedientes";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function ExpedienteForm({ userId }: { userId: string }) {
+interface ExpedienteFormProps {
+    userId: string;
+    expediente?: any;
+}
+
+export function ExpedienteForm({ userId, expediente }: ExpedienteFormProps) {
+    const isEditing = !!expediente;
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
-    const [number, setNumber] = useState("");
-    const [year, setYear] = useState(new Date().getFullYear());
-    const [type, setType] = useState("COMPRA");
-    const [origin, setOrigin] = useState("");
-    const [description, setDescription] = useState("");
-    const [status, setStatus] = useState("ABIERTO");
+    const [number, setNumber] = useState(expediente?.number || "");
+    const [year, setYear] = useState(expediente?.year || new Date().getFullYear());
+    const [type, setType] = useState(expediente?.type || "COMPRA");
+    const [origin, setOrigin] = useState(expediente?.origin || "");
+    const [description, setDescription] = useState(expediente?.description || "");
+    const [status, setStatus] = useState(expediente?.status || "ABIERTO");
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
         startTransition(async () => {
             try {
-                await createExpediente({
-                    number: number || undefined,
-                    year,
-                    type,
-                    origin,
-                    description,
-                    status
-                });
-                toast.success("Expediente creado correctamente");
+                if (isEditing) {
+                    await updateExpediente(expediente.id, {
+                        number,
+                        year,
+                        type,
+                        origin,
+                        description,
+                        status
+                    });
+                    toast.success("Expediente actualizado correctamente");
+                } else {
+                    await createExpediente({
+                        number: number || undefined,
+                        year,
+                        type,
+                        origin,
+                        description,
+                        status
+                    });
+                    toast.success("Expediente creado correctamente");
+                }
                 router.push("/dashboard/expedientes");
                 router.refresh();
             } catch (error: any) {
-                toast.error(error.message || "Error al crear expediente");
+                toast.error(error.message || `Error al ${isEditing ? 'actualizar' : 'crear'} expediente`);
             }
         });
     };
@@ -55,9 +73,11 @@ export function ExpedienteForm({ userId }: { userId: string }) {
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-2xl font-bold">Nuevo Expediente</h1>
+                    <h1 className="text-2xl font-bold">{isEditing ? 'Editar Expediente' : 'Nuevo Expediente'}</h1>
                     <p className="text-muted-foreground text-sm">
-                        Crear un nuevo expediente para centralizar compras y entregas.
+                        {isEditing 
+                            ? 'Modificar los detalles del expediente seleccionado.' 
+                            : 'Crear un nuevo expediente para centralizar compras y entregas.'}
                     </p>
                 </div>
             </div>
@@ -147,12 +167,12 @@ export function ExpedienteForm({ userId }: { userId: string }) {
                         {isPending ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Creando Expediente...
+                                {isEditing ? 'Actualizando...' : 'Creando...'}
                             </>
                         ) : (
                             <>
                                 <Save className="mr-2 h-4 w-4" />
-                                Guardar Expediente
+                                {isEditing ? 'Guardar Cambios' : 'Guardar Expediente'}
                             </>
                         )}
                     </Button>

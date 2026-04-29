@@ -2,6 +2,7 @@
 
 import { expedienteService } from "@/services/expediente-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 async function verifyPermission(permission: string) {
     const user = await getCurrentUser();
@@ -29,7 +30,9 @@ export async function createExpediente(data: {
     status?: string;
 }) {
     await verifyPermission("expedientes.manage");
-    return expedienteService.createExpediente(data);
+    const result = await expedienteService.createExpediente(data);
+    revalidatePath("/dashboard/expedientes");
+    return result;
 }
 
 export async function updateExpediente(id: string, data: {
@@ -41,5 +44,8 @@ export async function updateExpediente(id: string, data: {
     status?: string;
 }) {
     await verifyPermission("expedientes.manage");
-    return expedienteService.updateExpediente(id, data);
+    const result = await expedienteService.updateExpediente(id, data);
+    revalidatePath("/dashboard/expedientes");
+    revalidatePath(`/dashboard/expedientes/${id}`);
+    return result;
 }

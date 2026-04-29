@@ -9,7 +9,25 @@ const Table = React.forwardRef<
     <div className="relative w-full overflow-auto">
         <table
             ref={ref}
-            className={cn("w-full caption-bottom text-sm", className)}
+            className={cn(
+                "w-full caption-bottom text-sm",
+                // Sticky actions column
+                "[&_th:last-child]:sticky [&_th:last-child]:right-0 [&_th:last-child]:bg-background [&_th:last-child]:z-10",
+                "[&_td:last-child]:sticky [&_td:last-child]:right-0 [&_td:last-child]:bg-background [&_td:last-child]:z-10",
+                // Guaranteed vertical line using pseudo-element with higher z-index
+                "[&_th:last-child]:before:content-[''] [&_th:last-child]:before:absolute [&_th:last-child]:before:left-0 [&_th:last-child]:before:inset-y-0 [&_th:last-child]:before:w-px [&_th:last-child]:before:bg-border [&_th:last-child]:before:z-20",
+                "[&_td:last-child]:before:content-[''] [&_td:last-child]:before:absolute [&_td:last-child]:before:left-0 [&_td:last-child]:before:inset-y-0 [&_td:last-child]:before:w-px [&_td:last-child]:before:bg-border [&_td:last-child]:before:z-20",
+                // Subtle shadow to enhance depth when scrolling over content
+                "[&_th:last-child]:shadow-[-10px_0_15px_-15px_rgba(0,0,0,0.3)]",
+                "[&_td:last-child]:shadow-[-10px_0_15px_-15px_rgba(0,0,0,0.3)]",
+                // Stacking actions on mobile - targets a div container inside the last cell
+                "[&_td:last-child>div]:flex [&_td:last-child>div]:flex-col [&_td:last-child>div]:sm:flex-row",
+                "[&_td:last-child>div]:items-center [&_td:last-child>div]:justify-center [&_td:last-child>div]:sm:justify-end [&_td:last-child>div]:gap-1",
+                // Preserve hover/selected styles for sticky cells
+                "[&_tr:hover_td:last-child]:bg-muted/50",
+                "[&_tr[data-state=selected]_td:last-child]:bg-muted",
+                className
+            )}
             {...props}
         />
     </div>
