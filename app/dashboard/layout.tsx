@@ -23,10 +23,6 @@ export default async function DashboardLayout({
     // aunque sea llamado desde múltiples Server Components
     const user = await getCurrentUser();
 
-    if (!user) {
-        redirect("/auth/login");
-    }
-
     const userPermissions: string[] =
         user?.userRoles?.flatMap((ur) =>
             ur.role.permissions.map((rp) => rp.permission.action)
