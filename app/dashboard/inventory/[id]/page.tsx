@@ -24,7 +24,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
             <div className="flex flex-col gap-2 border-b pb-4">
                 <div className="mb-2">
                     <Button variant="ghost" size="sm" asChild className="-ml-3 text-muted-foreground">
-                        <Link href="/dashboard/inventory">← Volver al inventario</Link>
+                        <Link href="/dashboard/inventory">← Volver a ingresos</Link>
                     </Button>
                 </div>
                 <h1 className="text-3xl font-bold">{product.name}</h1>

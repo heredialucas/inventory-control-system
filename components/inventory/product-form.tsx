@@ -34,12 +34,6 @@ interface Warehouse {
     name: string;
 }
 
-interface Supplier {
-    id: string;
-    name: string;
-    code: string;
-}
-
 interface Product {
     id: string;
     sku: string;
@@ -54,11 +48,11 @@ interface Product {
 interface ProductFormProps {
     categories: Category[];
     warehouses: Warehouse[];
-    suppliers?: Supplier[];
+    suppliers?: any[]; // Kept for compatibility but not used
     initialData?: Product | null;
 }
 
-export function ProductForm({ categories, warehouses, suppliers = [], initialData }: ProductFormProps) {
+export function ProductForm({ categories, warehouses, initialData }: ProductFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -77,95 +71,12 @@ export function ProductForm({ categories, warehouses, suppliers = [], initialDat
         if (result?.error) {
             setError(result.error);
             setIsLoading(false);
-        } else {
-            // Éxito manejado por redirección de acción
         }
     }
 
     return (
         <form action={handleSubmit} className="max-w-5xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row gap-6">
-                {/* Datos de Compra - Solo visible al crear un nuevo producto con stock inicial */}
-                {!initialData && (
-                    <Card className="flex-1">
-                        <CardHeader>
-                            <CardTitle className="text-lg">Datos de Ingreso</CardTitle>
-                            <CardDescription>Información del comprobante y proveedor para el stock inicial</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="purchaseCode">Código de Expediente o Remito</Label>
-                                    <Input
-                                        id="purchaseCode"
-                                        name="purchaseCode"
-                                        placeholder="2018/224/25 o R-0001"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="purchaseDate">Fecha del Comprobante</Label>
-                                    <Input
-                                        id="purchaseDate"
-                                        name="purchaseDate"
-                                        type="date"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="supplierId">Proveedor</Label>
-                                <Select name="supplierId">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar proveedor" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {suppliers.map(s => (
-                                            <SelectItem key={s.id} value={s.id}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="purchaseAmount">Monto Total del Ingreso</Label>
-                                <Input
-                                    id="purchaseAmount"
-                                    name="purchaseAmount"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="Total de la factura"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="destination">Destino / Responsable</Label>
-                                <Input
-                                    id="destination"
-                                    name="destination"
-                                    placeholder="Ej: Automotores - Luis Caro"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="receiptImageUrl">Imagen del Comprobante</Label>
-                                <Input
-                                    id="receiptImageUrl"
-                                    name="receiptImageUrl"
-                                    type="file"
-                                    accept="image/*"
-                                    className="cursor-pointer"
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Formatos: JPG, PNG.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
                 {/* Datos del Producto */}
                 <Card className="flex-1">
                     <CardHeader>
@@ -303,7 +214,7 @@ export function ProductForm({ categories, warehouses, suppliers = [], initialDat
                 </Button>
                 <Button type="submit" size="lg" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isLoading ? "Guardando..." : initialData ? "Actualizar Producto" : "Guardar Producto"}
+                    {isLoading ? "Guardando..." : initialData ? "Guardar Cambios" : "Registrar Producto"}
                 </Button>
             </div>
         </form>

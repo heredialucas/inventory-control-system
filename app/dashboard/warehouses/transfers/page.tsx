@@ -1,5 +1,6 @@
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getTransfers, getWarehouses } from "@/app/actions/warehouses";
+import { getExpedientes } from "@/app/actions/expedientes";
 import { TransferList } from "@/components/warehouses/transfer-list";
 import { TransferForm } from "@/components/warehouses/transfer-form";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
@@ -21,6 +22,7 @@ export default async function WarehouseTransfersPage() {
 
     const warehouses = await getWarehouses();
     const allTransfers = await getTransfers();
+    const expedientes = await getExpedientes({ status: "ABIERTO" });
 
     const pendingTransfers = allTransfers.filter((t) => t.status === "PENDING");
     const inTransitTransfers = allTransfers.filter((t) => t.status === "IN_TRANSIT");
@@ -40,6 +42,7 @@ export default async function WarehouseTransfersPage() {
                     <div className="flex justify-end">
                         <TransferForm
                             warehouses={warehouses}
+                            expedientes={expedientes}
                             userId={user!.id}
                             trigger={
                                 <Button>

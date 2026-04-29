@@ -106,18 +106,10 @@ export function ProductActions({
                         </Link>
                     </DropdownMenuItem>
 
-                    {canEdit && (
-                        <DropdownMenuItem
-                            onSelect={(e) => {
-                                e.preventDefault();
-                                setShowRestockDialog(true);
-                                setOpen(false);
-                            }}
-                        >
-                            <Download className="mr-2 h-4 w-4" />
-                            Reingresar Stock
-                        </DropdownMenuItem>
-                    )}
+                    {/* 
+                        Reingresar Stock se eliminó para forzar el uso de Remitos 
+                        con foto y trazabilidad completa.
+                    */}
 
                     {/* {canEdit && (
                         <DropdownMenuItem

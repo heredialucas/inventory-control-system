@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
     LayoutDashboard,
@@ -14,8 +15,11 @@ import {
     Truck,
     BarChart3,
     Activity,
-    Layers,
     Building,
+    FolderOpen,
+    FileCheck,
+    ChevronDown,
+    ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,78 +31,126 @@ interface SidebarItem {
     requiresAdmin?: boolean;
 }
 
-const sidebarItems: SidebarItem[] = [
+interface SidebarGroup {
+    groupTitle: string;
+    items: SidebarItem[];
+    defaultOpen?: boolean;
+}
+
+const sidebarGroups: SidebarGroup[] = [
     {
-        title: "Dashboard",
-        href: "/dashboard",
-        icon: LayoutDashboard,
-        requiresAdmin: true,
+        groupTitle: "Principal",
+        defaultOpen: true,
+        items: [
+            {
+                title: "Dashboard",
+                href: "/dashboard",
+                icon: LayoutDashboard,
+                requiresAdmin: true,
+            },
+        ],
     },
     {
-        title: "Usuarios",
-        href: "/dashboard/users",
-        icon: Users,
-        permission: "users.view",
+        groupTitle: "Gestión Administrativa",
+        defaultOpen: true,
+        items: [
+            {
+                title: "Expedientes",
+                href: "/dashboard/expedientes",
+                icon: FolderOpen,
+                permission: "expedientes.view",
+            },
+        ],
     },
     {
-        title: "Inventario",
-        href: "/dashboard/inventory",
-        icon: Package,
-        permission: "inventory.view",
+        groupTitle: "Almacenamiento",
+        defaultOpen: true,
+        items: [
+            {
+                title: "Ingresos",
+                href: "/dashboard/inventory",
+                icon: Package,
+                permission: "inventory.view",
+            },
+            {
+                title: "Depósitos",
+                href: "/dashboard/warehouses",
+                icon: Warehouse,
+                permission: "warehouses.view",
+            },
+            {
+                title: "Transferencias",
+                href: "/dashboard/warehouses/transfers",
+                icon: ArrowRightLeft,
+                permission: "transfers.view",
+            },
+        ],
     },
     {
-        title: "Categorías",
-        href: "/dashboard/categories",
-        icon: Layers,
-        permission: "categories.view",
+        groupTitle: "Compras",
+        defaultOpen: false,
+        items: [
+            {
+                title: "Proveedores",
+                href: "/dashboard/suppliers",
+                icon: Building,
+                permission: "suppliers.view",
+            },
+            {
+                title: "Órdenes de Compra",
+                href: "/dashboard/purchases",
+                icon: ShoppingCart,
+                permission: "purchases.view",
+            },
+        ],
     },
     {
-        title: "Depósitos",
-        href: "/dashboard/warehouses",
-        icon: Warehouse,
-        permission: "warehouses.view",
+        groupTitle: "Distribución",
+        defaultOpen: false,
+        items: [
+            {
+                title: "Instituciones",
+                href: "/dashboard/institutions",
+                icon: Building2,
+                permission: "institutions.view",
+            },
+            {
+                title: "Entregas",
+                href: "/dashboard/deliveries",
+                icon: Truck,
+                permission: "deliveries.view",
+            },
+        ],
     },
     {
-        title: "Transferencias",
-        href: "/dashboard/warehouses/transfers",
-        icon: ArrowRightLeft,
-        permission: "transfers.view",
+        groupTitle: "Control e Informes",
+        defaultOpen: false,
+        items: [
+            {
+                title: "Movimientos",
+                href: "/dashboard/movements",
+                icon: Activity,
+                permission: "movements.view",
+            },
+            {
+                title: "Reportes",
+                href: "/dashboard/reports",
+                icon: BarChart3,
+                permission: "reports.view",
+            },
+        ],
     },
     {
-        title: "Proveedores",
-        href: "/dashboard/suppliers",
-        icon: Building, // Diferenciado de Users (Usuarios)
-        permission: "suppliers.view",
-    },
-    {
-        title: "Compras",
-        href: "/dashboard/purchases",
-        icon: ShoppingCart,
-        permission: "purchases.view",
-    },
-    {
-        title: "Instituciones",
-        href: "/dashboard/institutions",
-        icon: Building2,
-        permission: "institutions.view",
-    },
-    {
-        title: "Entregas",
-        href: "/dashboard/deliveries",
-        icon: Truck,
-        permission: "deliveries.view",
-    },
-    {
-        title: "Reportes",
-        href: "/dashboard/reports",
-        icon: BarChart3,
-        permission: "reports.view",
-    },
-    {
-        title: "Movimientos",
-        href: "/dashboard/movements",
-        icon: Activity,
-        permission: "movements.view",
+        groupTitle: "Configuración",
+        defaultOpen: false,
+        items: [
+            {
+                title: "Usuarios",
+                href: "/dashboard/users",
+                icon: Users,
+                permission: "users.view",
+            },
+        ],
     },
 ];
 
@@ -114,83 +166,170 @@ export function AppSidebar({
     isAdmin?: boolean;
 }) {
     const pathname = usePathname();
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-    const filteredItems = sidebarItems
-        .filter((item) => {
-            if (item.requiresAdmin) return isAdmin;
-            if (!item.permission) return true;
-            return userPermissions.includes(item.permission);
-        })
-        .map((item) => {
-            if (item.href === "/dashboard/users" && !isAdmin) {
-                return { ...item, title: "Mi Cuenta" };
-            }
-            return item;
+    const filteredGroups = sidebarGroups.map(group => {
+        const filteredItems = group.items
+            .filter((item) => {
+                if (item.requiresAdmin) return isAdmin;
+                if (!item.permission) return true;
+                return userPermissions.includes(item.permission);
+            })
+            .map((item) => {
+                if (item.href === "/dashboard/users" && !isAdmin) {
+                    return { ...item, title: "Mi Cuenta" };
+                }
+                return item;
+            });
+
+        return { ...group, items: filteredItems };
+    }).filter(group => group.items.length > 0);
+
+    const allFilteredItems = filteredGroups.flatMap(g => g.items);
+
+    // Initialize open state based on current path
+    useEffect(() => {
+        const initialState: Record<string, boolean> = {};
+        filteredGroups.forEach(group => {
+            const hasActiveItem = group.items.some(item => {
+                if (item.href === "/dashboard") return pathname === "/dashboard";
+                return pathname === item.href || pathname.startsWith(`${item.href}/`);
+            });
+            initialState[group.groupTitle] = hasActiveItem || group.defaultOpen || false;
         });
+        setOpenGroups(initialState);
+    }, [pathname]); // Re-run only on pathname change to stay in sync
+
+    const toggleGroup = (groupTitle: string) => {
+        setOpenGroups(prev => ({
+            ...prev,
+            [groupTitle]: !prev[groupTitle],
+        }));
+    };
 
     return (
-        <aside className={cn("w-64 bg-card flex flex-col", className)}>
-            <div className="p-6 border-b flex items-center justify-center">
-                <h2 className="font-bold text-xl tracking-tight">Gestión</h2>
+        <aside className={cn("w-64 bg-card flex flex-col h-full overflow-y-auto border-r", className)}>
+            <div className="p-5 border-b flex items-center justify-center sticky top-0 bg-card z-10">
+                <h2 className="font-bold text-lg tracking-tight">Gestión</h2>
             </div>
-            {/* aria-label identifica el landmark de navegación para lectores de pantalla */}
-            <nav aria-label="Navegación principal" className="flex-1 p-4 space-y-2">
-                {filteredItems.map((item) => {
-                    // Exact match para dashboard home
-                    if (item.href === "/dashboard") {
-                        const isActive = pathname === "/dashboard";
+
+            <nav aria-label="Navegación principal" className="flex-1 px-3 py-3 space-y-1">
+                {filteredGroups.map((group) => {
+                    const isOpen = !!openGroups[group.groupTitle];
+                    const isPrincipal = group.groupTitle === "Principal";
+
+                    if (isPrincipal) {
                         return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={onNavigate}
-                                aria-current={isActive ? "page" : undefined}
-                                className={cn(
-                                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                                    isActive
-                                        ? "bg-primary text-primary-foreground"
-                                        : "hover:bg-muted"
-                                )}
-                            >
-                                <item.icon className="h-5 w-5" aria-hidden="true" />
-                                <span>{item.title}</span>
-                            </Link>
+                            <div key={group.groupTitle} className="space-y-0.5">
+                                {group.items.map((item) => (
+                                    <SidebarLink
+                                        key={item.href}
+                                        item={item}
+                                        pathname={pathname}
+                                        allFilteredItems={allFilteredItems}
+                                        onNavigate={onNavigate}
+                                    />
+                                ))}
+                            </div>
                         );
                     }
 
-                    const isExactMatch = pathname === item.href;
-                    const isChildRoute =
-                        pathname.startsWith(`${item.href}/`) &&
-                        !sidebarItems.some(
-                            (otherItem) =>
-                                otherItem.href !== item.href &&
-                                otherItem.href.startsWith(item.href) &&
-                                pathname.startsWith(otherItem.href)
-                        );
-                    const isActive = isExactMatch || isChildRoute;
-
                     return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={onNavigate}
-                            aria-current={isActive ? "page" : undefined}
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                                isActive
-                                    ? "bg-primary text-primary-foreground"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        <div key={group.groupTitle} className="space-y-0.5">
+                            <button
+                                type="button"
+                                onClick={() => toggleGroup(group.groupTitle)}
+                                className={cn(
+                                    "w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] font-bold tracking-tight transition-colors",
+                                    "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                )}
+                            >
+                                <span>{group.groupTitle}</span>
+                                {isOpen ? (
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                ) : (
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                )}
+                            </button>
+
+                            {isOpen && (
+                                <div className="space-y-0.5 pl-1">
+                                    {group.items.map((item) => (
+                                        <SidebarLink
+                                            key={item.href}
+                                            item={item}
+                                            pathname={pathname}
+                                            allFilteredItems={allFilteredItems}
+                                            onNavigate={onNavigate}
+                                        />
+                                    ))}
+                                </div>
                             )}
-                        >
-                            <item.icon className="h-4 w-4" aria-hidden="true" />
-                            {item.title}
-                        </Link>
+                        </div>
                     );
                 })}
             </nav>
-            <div className="p-4 border-t text-xs text-center text-muted-foreground">
-                v1.0.0
+            <div className="p-3 border-t text-xs text-center text-muted-foreground sticky bottom-0 bg-card">
+                v2.0 Expedientes
             </div>
         </aside>
+    );
+}
+
+function SidebarLink({
+    item,
+    pathname,
+    allFilteredItems,
+    onNavigate,
+}: {
+    item: SidebarItem;
+    pathname: string;
+    allFilteredItems: SidebarItem[];
+    onNavigate?: () => void;
+}) {
+    if (item.href === "/dashboard") {
+        const isActive = pathname === "/dashboard";
+        return (
+            <Link
+                href={item.href}
+                onClick={onNavigate}
+                className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-xs font-medium",
+                    isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+            >
+                <item.icon className="h-4 w-4" aria-hidden="true" />
+                <span>{item.title}</span>
+            </Link>
+        );
+    }
+
+    const isExactMatch = pathname === item.href;
+    const isChildRoute =
+        pathname.startsWith(`${item.href}/`) &&
+        !allFilteredItems.some(
+            (otherItem) =>
+                otherItem.href !== item.href &&
+                otherItem.href.startsWith(item.href) &&
+                pathname.startsWith(otherItem.href)
+        );
+    const isActive = isExactMatch || isChildRoute;
+
+    return (
+        <Link
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors",
+                isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+        >
+            <item.icon className="h-4 w-4" aria-hidden="true" />
+            {item.title}
+        </Link>
     );
 }

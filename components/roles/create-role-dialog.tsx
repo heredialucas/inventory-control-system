@@ -114,7 +114,7 @@ export function CreateRoleDialog({ permissions = [] }: { permissions?: any[] }) 
                                     Object.entries(permissions.reduce<Record<string, any[]>>((acc, perm) => {
                                         const prefix = perm.action.split('.')[0];
                                         const groupTranslations: Record<string, string> = {
-                                            inventory: "Inventario",
+                                            inventory: "Ingresos",
                                             warehouses: "Almacenes",
                                             transfers: "Transferencias",
                                             purchases: "Compras",

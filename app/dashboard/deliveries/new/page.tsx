@@ -3,14 +3,16 @@ import { getInstitutions } from "@/app/actions/institutions";
 import { getWarehouses } from "@/app/actions/warehouses";
 import { DeliveryForm } from "@/components/deliveries/delivery-form";
 import { redirect } from "next/navigation";
+import { getExpedientes } from "@/app/actions/expedientes";
 
 export default async function NewDeliveryPage() {
     const user = await getCurrentUser();
     if (!user) redirect("/login");
 
-    const [schools, warehouses] = await Promise.all([
+    const [schools, warehouses, expedientes] = await Promise.all([
         getInstitutions(),
         getWarehouses(),
+        getExpedientes({ status: "ABIERTO" }),
     ]);
 
     // Show only active ones? Usually yes.
@@ -22,6 +24,7 @@ export default async function NewDeliveryPage() {
             <DeliveryForm
                 schools={activeSchools}
                 warehouses={activeWarehouses}
+                expedientes={expedientes}
                 userId={user.id}
             />
         </div>

@@ -58,6 +58,7 @@ export async function createDelivery(data: {
         productId: string;
         quantity: number;
     }>;
+    expedienteId?: string;
 }) {
     const user = await getCurrentUser();
     if (!user || !hasPermission(user, "deliveries.manage")) {

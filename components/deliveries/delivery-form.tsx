@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 interface DeliveryFormProps {
     schools: any[];
     warehouses: any[];
+    expedientes: any[];
     userId: string;
 }
 
@@ -43,7 +44,7 @@ interface ProductItem {
     maxQuantity: number;
 }
 
-export function DeliveryForm({ schools, warehouses, userId }: DeliveryFormProps) {
+export function DeliveryForm({ schools, warehouses, expedientes = [], userId }: DeliveryFormProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isLoadingProducts, startProductLoad] = useTransition();
@@ -51,6 +52,7 @@ export function DeliveryForm({ schools, warehouses, userId }: DeliveryFormProps)
     // Form State
     const [institutionId, setInstitutionId] = useState("");
     const [warehouseId, setWarehouseId] = useState("");
+    const [expedienteId, setExpedienteId] = useState("");
     const [notes, setNotes] = useState("");
     const [items, setItems] = useState<ProductItem[]>([]);
 
@@ -149,6 +151,7 @@ export function DeliveryForm({ schools, warehouses, userId }: DeliveryFormProps)
                     institutionId,
                     warehouseId,
                     createdById: userId,
+                    expedienteId: expedienteId || undefined,
                     notes,
                     items: items.map(i => ({
                         productId: i.productId,
@@ -220,6 +223,23 @@ export function DeliveryForm({ schools, warehouses, userId }: DeliveryFormProps)
                             <p className="text-xs text-muted-foreground">
                                 * Al cambiar el depósito se reiniciará la lista de productos.
                             </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="expediente">Expediente (Opcional)</Label>
+                            <Select onValueChange={(value) => setExpedienteId(value === "none" ? "" : value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar expediente..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Sin expediente</SelectItem>
+                                    {expedientes.map((e) => (
+                                        <SelectItem key={e.id} value={e.id}>
+                                            {e.number}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="space-y-2">

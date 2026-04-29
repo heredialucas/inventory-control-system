@@ -38,17 +38,22 @@ export const inventoryService = {
 
     // Productos
     async getProducts() {
-        return await prisma.product.findMany({
+        const products = await prisma.product.findMany({
             where: { deletedAt: null },
             include: {
                 category: true,
             },
             orderBy: { name: "asc" },
         });
+
+        return products.map(product => ({
+            ...product,
+            price: Number(product.price),
+        }));
     },
 
     async getProduct(id: string) {
-        return await prisma.product.findUnique({
+        const product = await prisma.product.findUnique({
             where: { id, deletedAt: null },
             include: {
                 category: true,
@@ -65,6 +70,13 @@ export const inventoryService = {
                 },
             },
         });
+
+        if (!product) return null;
+
+        return {
+            ...product,
+            price: Number(product.price),
+        };
     },
 
     async createProduct(data: {
@@ -94,12 +106,6 @@ export const inventoryService = {
         initialStock?: number;
         warehouseId?: string;
         userId: string;
-        purchaseCode?: string;
-        purchaseDate?: Date;
-        purchaseAmount?: number;
-        supplierId?: string;
-        destination?: string;
-        receiptImageUrl?: string;
     }) {
         const { initialStock, warehouseId, userId, ...restData } = data;
 
@@ -141,12 +147,8 @@ export const inventoryService = {
                         quantity: initialStock,
                         userId,
                         reason: "Stock inicial al crear producto",
-                        purchaseCode: restData.purchaseCode,
-                        purchaseDate: restData.purchaseDate,
-                        purchaseAmount: restData.purchaseAmount,
-                        supplierId: restData.supplierId,
-                        destination: restData.destination,
-                        receiptImageUrl: restData.receiptImageUrl,
+                        sourceType: "ADJUSTMENT",
+                        sourceId: product.id,
                     },
                 });
             }
@@ -177,14 +179,11 @@ export const inventoryService = {
         quantity: number;
         userId: string;
         reason?: string;
-        purchaseCode?: string;
-        purchaseDate?: Date;
-        purchaseAmount?: number;
-        supplierId?: string;
-        destination?: string;
-        receiptImageUrl?: string;
+        sourceType: string;
+        sourceId: string;
+        expedienteId?: string;
     }) {
-        const { productId, warehouseId, type, quantity, userId, reason, purchaseCode, purchaseDate, purchaseAmount, supplierId, destination, receiptImageUrl } = data;
+        const { productId, warehouseId, type, quantity, userId, reason, sourceType, sourceId, expedienteId } = data;
 
         return await prisma.$transaction(async (tx) => {
             const product = await tx.product.findUnique({ where: { id: productId } });
@@ -216,12 +215,9 @@ export const inventoryService = {
                     quantity,
                     userId,
                     reason,
-                    purchaseCode,
-                    purchaseDate,
-                    purchaseAmount,
-                    supplierId,
-                    destination,
-                    receiptImageUrl
+                    sourceType,
+                    sourceId,
+                    expedienteId
                 }
             });
         });
@@ -233,6 +229,7 @@ export const inventoryService = {
         quantity: number;
         userId: string;
         reason?: string;
+        expedienteId?: string;
     }) {
         // Records an assignment (IN) to a warehouse without changing Product Total Stock
         // This implies the stock was "Unassigned" and is now "Assigned".
@@ -243,7 +240,10 @@ export const inventoryService = {
                 type: "IN", // We keep it IN for the warehouse perspective
                 quantity: data.quantity,
                 userId: data.userId,
-                reason: data.reason || "Asignación de stock"
+                reason: data.reason || "Asignación de stock",
+                sourceType: "ADJUSTMENT",
+                sourceId: data.productId, // Using product ID as dummy source
+                expedienteId: data.expedienteId
             }
         });
     },

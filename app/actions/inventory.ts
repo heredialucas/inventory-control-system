@@ -1,5 +1,6 @@
 "use server";
 
+import prisma from "@/lib/prisma";
 import { inventoryService } from "@/services/inventory-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
@@ -60,14 +61,6 @@ export async function createProductAction(formData: FormData) {
     // Lógica de Stock Inicial
     const initialStock = parseInt(formData.get("initialStock") as string) || 0;
     const initialWarehouseId = formData.get("initialWarehouseId") as string;
-
-    // Nuevos campos de compra
-    const purchaseCode = formData.get("purchaseCode") as string || undefined;
-    const purchaseDateStr = formData.get("purchaseDate") as string;
-    const purchaseDate = purchaseDateStr ? new Date(purchaseDateStr) : undefined;
-    const purchaseAmount = parseFloat(formData.get("purchaseAmount") as string) || undefined;
-    const supplierId = formData.get("supplierId") as string || undefined;
-    const destination = formData.get("destination") as string || undefined;
     const unit = formData.get("unit") as string || "U";
 
     // Manejar archivo de imagen - es un File object, no una string
@@ -113,13 +106,6 @@ export async function createProductAction(formData: FormData) {
             initialStock,
             warehouseId: initialWarehouseId || undefined,
             userId: user.id,
-            // Nuevos campos
-            purchaseCode,
-            purchaseDate,
-            purchaseAmount,
-            supplierId,
-            destination,
-            receiptImageUrl,
         });
     } catch (error) {
         console.error("Error creating product:", error);
@@ -134,6 +120,60 @@ export async function createProductAction(formData: FormData) {
         revalidatePath(`/dashboard/warehouses/${initialWarehouseId}`);
     }
     redirect("/dashboard/inventory");
+}
+
+export async function quickCreateProductAction(data: {
+    sku: string;
+    name: string;
+    price: number;
+    categoryId?: string;
+    newCategoryName?: string;
+    unit?: string;
+}) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "inventory.manage")) {
+        return { error: "No tienes permisos para realizar esta acción" };
+    }
+
+    try {
+        // 1. Validar si el SKU ya existe ANTES de intentar crear
+        const existingProduct = await prisma.product.findUnique({
+            where: { sku: data.sku }
+        });
+
+        if (existingProduct) {
+            return { error: `El código SKU "${data.sku}" ya pertenece al producto: ${existingProduct.name}.` };
+        }
+
+        let finalCategoryId = data.categoryId;
+
+        // 2. Crear categoría si es nueva
+        if (data.newCategoryName) {
+            const category = await inventoryService.createCategory(data.newCategoryName);
+            finalCategoryId = category.id;
+        }
+
+        // 3. Crear el producto
+        const product = await inventoryService.createProduct({
+            sku: data.sku,
+            name: data.name,
+            price: data.price,
+            categoryId: finalCategoryId,
+            minStock: 0,
+        });
+
+        revalidatePath("/dashboard/inventory");
+        return { 
+            success: true, 
+            product: {
+                ...product,
+                price: Number(product.price)
+            } 
+        };
+    } catch (error: any) {
+        console.error("Error in quickCreateProductAction:", error);
+        return { error: "Error interno al intentar crear el producto. Revisa los datos." };
+    }
 }
 
 export async function updateProductAction(id: string, formData: FormData) {
@@ -174,6 +214,8 @@ export async function updateProductAction(id: string, formData: FormData) {
                     quantity: diff,
                     userId: user.id,
                     reason: "Corrección manual desde Edición de Producto",
+                    sourceType: "ADJUSTMENT",
+                    sourceId: id,
                 });
             }
         }
@@ -197,12 +239,6 @@ export async function restockProductAction(formData: FormData) {
     const productId = formData.get("productId") as string;
     const quantity = parseInt(formData.get("quantity") as string);
     const warehouseId = formData.get("warehouseId") as string;
-    const supplierId = formData.get("supplierId") as string || undefined;
-    const purchaseCode = formData.get("purchaseCode") as string || undefined;
-    const purchaseDateStr = formData.get("purchaseDate") as string;
-    const purchaseDate = purchaseDateStr ? new Date(purchaseDateStr) : undefined;
-    const purchaseAmount = parseFloat(formData.get("purchaseAmount") as string) || undefined;
-    const destination = formData.get("destination") as string || undefined;
     const reason = formData.get("reason") as string || "Reingreso manual de stock";
 
     if (!productId || isNaN(quantity) || quantity <= 0) {
@@ -235,12 +271,8 @@ export async function restockProductAction(formData: FormData) {
             quantity,
             userId: user.id,
             reason,
-            purchaseCode,
-            purchaseDate,
-            purchaseAmount,
-            supplierId,
-            destination,
-            receiptImageUrl,
+            sourceType: "ADJUSTMENT",
+            sourceId: productId,
         });
     } catch (error) {
         console.error("Error restocking product:", error);

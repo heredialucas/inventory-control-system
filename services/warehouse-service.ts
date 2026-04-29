@@ -326,9 +326,10 @@ export const warehouseService = {
         productId: string;
         quantity: number;
         userId: string;
+        expedienteId?: string;
         notes?: string;
     }) {
-        const { fromWarehouseId, toWarehouseId, productId, quantity, userId, notes } = data;
+        const { fromWarehouseId, toWarehouseId, productId, quantity, userId, expedienteId, notes } = data;
 
         // Validación
         if (fromWarehouseId === toWarehouseId) {
@@ -369,27 +370,15 @@ export const warehouseService = {
                 },
             });
 
-            // Crear movimiento de stock para origen (OUT)
-            await tx.stockMovement.create({
-                data: {
-                    productId,
-                    warehouseId: fromWarehouseId,
-                    type: "OUT",
-                    quantity,
-                    userId,
-                    reason: `Transferencia a depósito (Transferencia pendiente)`,
-                },
-            });
-
-
-            // Crear registro de transferencia
-            return await tx.warehouseTransfer.create({
+            // Crear registro de transferencia PRIMERO para obtener el ID
+            const transfer = await tx.warehouseTransfer.create({
                 data: {
                     fromWarehouseId,
                     toWarehouseId,
                     productId,
                     quantity,
                     userId,
+                    expedienteId,
                     notes,
                     status: "PENDING",
                 },
@@ -399,6 +388,23 @@ export const warehouseService = {
                     product: true,
                 },
             });
+
+            // Crear movimiento de stock para origen (OUT)
+            await tx.stockMovement.create({
+                data: {
+                    productId,
+                    warehouseId: fromWarehouseId,
+                    type: "OUT",
+                    quantity,
+                    userId,
+                    reason: `Transferencia a depósito (Transferencia pendiente)`,
+                    sourceType: "TRANSFER",
+                    sourceId: transfer.id,
+                    expedienteId,
+                },
+            });
+
+            return transfer;
         });
     },
 
@@ -468,6 +474,9 @@ export const warehouseService = {
                     quantity: transfer.quantity,
                     userId,
                     reason: `Transferencia desde depósito completada`,
+                    sourceType: "TRANSFER",
+                    sourceId: transfer.id,
+                    expedienteId: transfer.expedienteId,
                 },
             });
 
@@ -526,6 +535,9 @@ export const warehouseService = {
                     quantity: transfer.quantity,
                     userId,
                     reason: `Transferencia cancelada - stock devuelto`,
+                    sourceType: "TRANSFER",
+                    sourceId: transfer.id,
+                    expedienteId: transfer.expedienteId,
                 },
             });
 

@@ -33,7 +33,6 @@ const getPurchaseOrderStatusLabel = (status: string) => {
             return status;
     }
 };
-import { ReceiveDialog } from "@/components/purchases/receive-dialog";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -109,7 +108,12 @@ export default async function PurchaseOrderDetailPage({
                         </>
                     )}
                     {canManage && isReceivable && (
-                        <ReceiveDialog order={JSON.parse(JSON.stringify(order))} userId={user.id} />
+                        <Link href="/dashboard/receipts/new">
+                            <Button size="sm">
+                                <Send className="mr-2 h-4 w-4" />
+                                Cargar Remito
+                            </Button>
+                        </Link>
                     )}
                     {canManage && !isDraft && !isCancelled && !isReceivable && order.status !== "RECEIVED" && (
                         <form action={cancelOrder}>

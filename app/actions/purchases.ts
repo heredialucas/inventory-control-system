@@ -41,6 +41,7 @@ export async function createPurchaseOrder(data: {
     supplierId: string;
     warehouseId: string;
     createdById: string;
+    expedienteId?: string;
     expectedDate?: Date;
     notes?: string;
     items: Array<{
@@ -83,33 +84,7 @@ export async function updatePurchaseOrder(
     }
 }
 
-export async function receivePurchaseOrder(
-    orderId: string,
-    userId: string,
-    receivedItems: Array<{
-        itemId: string;
-        quantity: number;
-    }>
-) {
-    const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "purchases.manage")) {
-        throw new Error("No tienes permisos para recibir órdenes de compra");
-    }
-
-    try {
-        const order = await purchaseService.receivePurchaseOrder(
-            orderId,
-            userId,
-            receivedItems
-        );
-        revalidatePath("/dashboard/purchases");
-        revalidatePath(`/dashboard/purchases/${orderId}`);
-        return order;
-    } catch (error: any) {
-        console.error("Error receiving purchase order:", error);
-        throw new Error(error.message || "Failed to receive purchase order");
-    }
-}
+// Removed receivePurchaseOrder as it is now handled by Receipts.
 
 export async function cancelPurchaseOrder(id: string) {
     const user = await getCurrentUser();

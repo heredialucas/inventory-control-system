@@ -82,6 +82,7 @@ export const deliveryService = {
         institutionId: string;
         warehouseId: string;
         createdById: string;
+        expedienteId?: string;
         deliveryDate?: Date;
         receivedBy?: string;
         notes?: string;
@@ -90,7 +91,7 @@ export const deliveryService = {
             quantity: number;
         }>;
     }) {
-        const { items, ...deliveryData } = data;
+        const { items, expedienteId, ...deliveryData } = data;
 
         // Generate delivery number
         const count = await prisma.delivery.count();
@@ -100,6 +101,7 @@ export const deliveryService = {
             data: {
                 ...deliveryData,
                 deliveryNumber,
+                expedienteId,
                 items: {
                     create: items,
                 },
@@ -219,6 +221,9 @@ export const deliveryService = {
                         quantity: item.quantity,
                         userId,
                         reason: `Entrega ${delivery.deliveryNumber} a institución`,
+                        sourceType: "DELIVERY",
+                        sourceId: delivery.id,
+                        expedienteId: delivery.expedienteId,
                     },
                 });
             }

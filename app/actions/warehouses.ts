@@ -310,6 +310,7 @@ export async function createTransfer(data: {
     productId: string;
     quantity: number;
     userId: string;
+    expedienteId?: string;
     notes?: string;
 }) {
     const user = await getCurrentUser();
@@ -386,6 +387,7 @@ export async function addStockToWarehouse(data: {
     productId: string;
     quantity: number;
     userId: string;
+    expedienteId?: string;
     notes?: string;
     isNewStock?: boolean;
 }) {
@@ -409,6 +411,9 @@ export async function addStockToWarehouse(data: {
                 quantity: data.quantity,
                 userId: data.userId,
                 reason: data.notes || "Ingreso de Mercadería (Nuevo Stock)",
+                sourceType: "ADJUSTMENT",
+                sourceId: data.productId,
+                expedienteId: data.expedienteId,
             });
         } else {
             // ASSIGNMENT: Does NOT increase Total Product Stock (moves from implicitly "Unassigned")
@@ -418,6 +423,7 @@ export async function addStockToWarehouse(data: {
                 quantity: data.quantity,
                 userId: data.userId,
                 reason: data.notes || "Asignación desde Sin Asignar",
+                expedienteId: data.expedienteId,
             });
         }
 

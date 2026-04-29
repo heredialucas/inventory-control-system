@@ -23,6 +23,7 @@ interface PurchaseOrderFormProps {
     suppliers: any[];
     warehouses: any[];
     products: any[];
+    expedientes: any[];
     userId: string;
 }
 
@@ -33,13 +34,14 @@ interface OrderItem {
     unitPrice: number;
 }
 
-export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: PurchaseOrderFormProps) {
+export function PurchaseOrderForm({ suppliers, warehouses, products, expedientes = [], userId }: PurchaseOrderFormProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
     const [formData, setFormData] = useState({
         supplierId: "",
         warehouseId: "",
+        expedienteId: "",
         expectedDate: "",
         notes: "",
     });
@@ -103,6 +105,7 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                     supplierId: formData.supplierId,
                     warehouseId: formData.warehouseId,
                     createdById: userId,
+                    expedienteId: formData.expedienteId || undefined,
                     expectedDate: formData.expectedDate ? new Date(formData.expectedDate) : undefined,
                     notes: formData.notes,
                     items: validItems.map((item) => ({
@@ -168,6 +171,24 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, userId }: P
                                     {warehouses.map((w) => (
                                         <SelectItem key={w.id} value={w.id}>
                                             {w.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="expediente">Expediente (Opcional)</Label>
+                            <Select
+                                onValueChange={(value) => setFormData({ ...formData, expedienteId: value === "none" ? "" : value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar expediente..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Sin expediente</SelectItem>
+                                    {expedientes.map((e) => (
+                                        <SelectItem key={e.id} value={e.id}>
+                                            {e.number}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

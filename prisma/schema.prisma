@@ -104,9 +104,10 @@ model Warehouse {
   purchaseOrders PurchaseOrder[]
   deliveries     Delivery[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  purchaseReceipts PurchaseReceipt[]
 
   @@map("warehouses")
 }
@@ -153,6 +154,9 @@ model WarehouseTransfer {
   userId String @db.Uuid
   user   User   @relation(fields: [userId], references: [id])
 
+  expedienteId String?     @db.Uuid
+  expediente   Expediente? @relation(fields: [expedienteId], references: [id])
+
   createdAt   DateTime  @default(now())
   completedAt DateTime?
 
@@ -173,10 +177,10 @@ model Supplier {
 
   purchaseOrders PurchaseOrder[]
   products       Product[]
-  stockMovements StockMovement[]
+  receipts       PurchaseReceipt[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@map("suppliers")
@@ -211,8 +215,13 @@ model PurchaseOrder {
   createdById String @db.Uuid
   createdBy   User   @relation(fields: [createdById], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  expedienteId String?     @db.Uuid
+  expediente   Expediente? @relation(fields: [expedienteId], references: [id])
+
+  receipts PurchaseReceipt[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@map("purchase_orders")
@@ -251,8 +260,8 @@ model Institution {
 
   deliveries Delivery[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@map("institutions")
@@ -284,8 +293,11 @@ model Delivery {
   createdById String @db.Uuid
   createdBy   User   @relation(fields: [createdById], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  expedienteId String?     @db.Uuid
+  expediente   Expediente? @relation(fields: [expedienteId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@map("deliveries")
@@ -341,9 +353,10 @@ model Product {
   warehouseTransfers WarehouseTransfer[]
   purchaseOrderItems PurchaseOrderItem[]
   deliveryItems      DeliveryItem[]
+  receiptItems       PurchaseReceiptItem[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@map("products")
@@ -367,20 +380,78 @@ model StockMovement {
   quantity Int
   reason   String?
 
+  sourceType String // "PURCHASE", "RECEIPT", "DELIVERY", "TRANSFER", "ADJUSTMENT"
+  sourceId   String @db.Uuid
+
+  expedienteId String?     @db.Uuid
+  expediente   Expediente? @relation(fields: [expedienteId], references: [id])
+
   userId String @db.Uuid
   user   User   @relation(fields: [userId], references: [id])
-
-  // Datos del comprobante de ingreso (Remito/Factura)
-  purchaseCode    String?   // Número de Remito/Expediente
-  purchaseDate    DateTime? // Fecha del comprobante
-  purchaseAmount  Decimal?  @db.Decimal(10, 2) // Monto total del ingreso
-  receiptImageUrl String?   // URL de la foto del remito
-  destination     String?   // Destino / Responsable final
-  
-  supplierId      String?   @db.Uuid
-  supplier        Supplier? @relation(fields: [supplierId], references: [id])
 
   createdAt DateTime @default(now())
 
   @@map("stock_movements")
+}
+
+model Expediente {
+  id          String  @id @default(uuid()) @db.Uuid
+  number      String  @unique
+  year        Int?
+  type        String?
+  origin      String?
+  description String?
+  status      String
+
+  purchases  PurchaseOrder[]
+  deliveries Delivery[]
+  transfers  WarehouseTransfer[]
+  movements  StockMovement[]
+  receipts   PurchaseReceipt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("expedientes")
+}
+
+model PurchaseReceipt {
+  id              String   @id @default(uuid()) @db.Uuid
+  purchaseOrderId String?  @db.Uuid
+  receiptNumber   String
+  date            DateTime
+  totalAmount     Decimal  @db.Decimal(10, 2)
+  imageUrl        String?
+  type            String   @default("PURCHASE") // "PURCHASE", "REINGRESO"
+  warehouseId     String?  @db.Uuid
+
+  expedienteId String?     @db.Uuid
+  expediente   Expediente? @relation(fields: [expedienteId], references: [id])
+
+  supplierId   String?     @db.Uuid
+  supplier     Supplier?   @relation(fields: [supplierId], references: [id])
+
+  purchaseOrder PurchaseOrder?        @relation(fields: [purchaseOrderId], references: [id])
+  warehouse     Warehouse?            @relation(fields: [warehouseId], references: [id])
+  items         PurchaseReceiptItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("purchase_receipts")
+}
+
+model PurchaseReceiptItem {
+  id        String @id @default(uuid()) @db.Uuid
+  receiptId String @db.Uuid
+  productId String @db.Uuid
+  quantity  Int
+
+  receipt PurchaseReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("purchase_receipt_items")
 }

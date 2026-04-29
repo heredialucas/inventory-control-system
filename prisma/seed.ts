@@ -59,6 +59,14 @@ async function main() {
         // Users & Roles (Admin)
         { action: "users.manage", description: "Gestionar usuarios, roles y permisos" },
         { action: "users.view", description: "Ver usuarios" },
+
+        // Expedientes
+        { action: "expedientes.manage", description: "Gestionar expedientes" },
+        { action: "expedientes.view", description: "Ver expedientes" },
+
+        // Receipts
+        { action: "receipts.manage", description: "Gestionar recibos de compra" },
+        { action: "receipts.view", description: "Ver recibos de compra" },
     ];
 
     for (const perm of permissions) {

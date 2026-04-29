@@ -40,24 +40,25 @@ type Product = {
 
 interface TransferFormProps {
     warehouses: Warehouse[];
+    expedientes?: any[];
     userId: string;
     defaultFromWarehouseId?: string;
     trigger?: React.ReactNode;
     isIngreso?: boolean;
 }
 
-export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigger, isIngreso = false }: TransferFormProps) {
+export function TransferForm({ warehouses, expedientes = [], userId, defaultFromWarehouseId, trigger, isIngreso = false }: TransferFormProps) {
     const [open, setOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoadingProducts, setIsLoadingProducts] = useState(false);
     const router = useRouter();
-
     const [formData, setFormData] = useState({
         fromWarehouseId: defaultFromWarehouseId || "",
         toWarehouseId: "",
         productId: "",
         quantity: 1,
+        expedienteId: "",
         notes: "",
     });
 
@@ -118,6 +119,7 @@ export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigg
                         quantity: formData.quantity,
                         userId,
                         notes: formData.notes,
+                        expedienteId: formData.expedienteId || undefined,
                         isNewStock: true,
                     });
                     toast.success("Ingreso registrado exitosamente");
@@ -135,6 +137,7 @@ export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigg
                     toWarehouseId: "",
                     productId: "",
                     quantity: 1,
+                    expedienteId: "",
                     notes: "",
                 });
                 router.refresh();
@@ -250,6 +253,25 @@ export function TransferForm({ warehouses, userId, defaultFromWarehouseId, trigg
                                 onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
                                 required
                             />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="expediente">Expediente (Opcional)</Label>
+                            <Select
+                                value={formData.expedienteId || "none"}
+                                onValueChange={(value) => setFormData({ ...formData, expedienteId: value === "none" ? "" : value })}
+                            >
+                                <SelectTrigger id="expediente">
+                                    <SelectValue placeholder="Seleccionar expediente..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Sin expediente</SelectItem>
+                                    {expedientes.map((e) => (
+                                        <SelectItem key={e.id} value={e.id}>
+                                            {e.number}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="notes">Notas / Referencia</Label>
