@@ -357,7 +357,7 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                         </CardHeader>
                         <CardContent>
                             <ImageUpload
-                                value={base64Image}
+                                value={base64Image || imageUrl}
                                 onChange={(base64) => setBase64Image(base64)}
                                 onRemove={() => {
                                     setBase64Image("");

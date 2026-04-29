@@ -4,7 +4,7 @@ import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { redirect, notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -116,6 +116,27 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
                     </Table>
                 </CardContent>
             </Card>
+
+            {receipt.imageUrl && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <ImageIcon className="h-5 w-5 text-primary" />
+                            Comprobante Adjunto (Remito)
+                        </CardTitle>
+                        <CardDescription>Imagen original del remito cargada en el sistema</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex justify-center bg-muted/20 p-6">
+                        <div className="relative max-w-2xl w-full border rounded-lg overflow-hidden shadow-sm">
+                            <img 
+                                src={receipt.imageUrl} 
+                                alt={`Remito ${receipt.receiptNumber}`}
+                                className="w-full h-auto object-contain"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }

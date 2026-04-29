@@ -33,7 +33,7 @@ export default async function DashboardLayout({
         <div className="min-h-screen flex text-foreground bg-background">
             {/* Desktop Sidebar */}
             <AppSidebar
-                className="hidden md:flex border-r min-h-screen"
+                className="hidden md:flex border-r sticky top-0 h-screen"
                 userPermissions={userPermissions}
                 isAdmin={isAdmin}
             />
@@ -58,7 +58,7 @@ export default async function DashboardLayout({
                 </header>
 
                 {/* id="main-content" es el destino del skip link de accesibilidad */}
-                <main id="main-content" className="flex-1 p-4 md:p-6 overflow-y-auto">
+                <main id="main-content" className="flex-1 p-4 md:p-6">
                     {children}
                 </main>
             </div>

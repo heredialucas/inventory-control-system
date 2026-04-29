@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Eye, Edit } from "lucide-react";
+import { Search, Eye, Edit, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -64,7 +64,16 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                         ) : (
                             filtered.map((receipt) => (
                                 <TableRow key={receipt.id}>
-                                    <TableCell className="font-medium">{receipt.receiptNumber}</TableCell>
+                                    <TableCell className="font-medium">
+                                        <div className="flex items-center gap-2">
+                                            {receipt.receiptNumber}
+                                            {receipt.imageUrl && (
+                                                <span title="Tiene imagen adjunta">
+                                                    <ImageIcon className="h-3 w-3 text-muted-foreground" />
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>{receipt.purchaseOrder?.orderNumber || "N/A"}</TableCell>
                                     <TableCell>{receipt.purchaseOrder?.supplier?.name || receipt.supplier?.name || "N/A"}</TableCell>
                                     <TableCell>{receipt.expediente?.number || "N/A"}</TableCell>
