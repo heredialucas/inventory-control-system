@@ -21,10 +21,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Power, Trash2, Package } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2, Package } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { toggleWarehouseStatus, deleteWarehouse } from "@/app/actions/warehouses";
+import { deleteWarehouse } from "@/app/actions/warehouses";
 import { WarehouseForm } from "./warehouse-form";
 
 type WarehouseWithCounts = {
@@ -62,18 +62,6 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
         }
     }, [editingWarehouse]);
 
-    const handleToggleStatus = (id: string) => {
-        startTransition(async () => {
-            try {
-                await toggleWarehouseStatus(id);
-                toast.success("Estado del depósito actualizado");
-                router.refresh();
-            } catch (error: any) {
-                toast.error(error.message || "Error al actualizar estado");
-            }
-        });
-    };
-
     const handleDelete = (id: string, name: string) => {
         if (!confirm(`¿Estás seguro de que quieres eliminar el depósito "${name}"?`)) {
             return;
@@ -102,8 +90,17 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
         );
     }
 
+    const hasWarehouseWithStock = warehouses.some(w => w._count.stockItems > 0);
+
     return (
         <>
+            {hasWarehouseWithStock && (
+                <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-md p-3 text-sm mb-4">
+                    <strong>Nota:</strong> Los depósitos con productos no pueden ser eliminados. 
+                    Primero debe transferir el stock a otro depósito.
+                </div>
+            )}
+
             {/* Vista de tabla para desktop */}
             <div className="hidden md:block rounded-md border">
                 <Table>
@@ -143,44 +140,33 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                                     </Badge>
                                 </TableCell>
                                 <TableCell>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" disabled={isPending}>
-                                                <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">Acciones</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem asChild>
-                                                <Link href={`/dashboard/warehouses/${warehouse.id}`}>
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Ver Detalles
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            {canManage && (
-                                                <>
-                                                    <DropdownMenuItem onClick={() => setEditingWarehouse(warehouse)}>
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Editar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleToggleStatus(warehouse.id)}>
-                                                        <Power className="mr-2 h-4 w-4" />
-                                                        {warehouse.isActive ? "Desactivar" : "Activar"}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        className="text-destructive"
-                                                        onClick={() => handleDelete(warehouse.id, warehouse.name)}
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Eliminar
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    <div className="flex items-center gap-2">
+                                        <Button variant="ghost" size="sm" asChild>
+                                            <Link href={`/dashboard/warehouses/${warehouse.id}`}>
+                                                <Eye className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                        {canManage && (
+                                            <>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setEditingWarehouse(warehouse)}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className={warehouse._count.stockItems > 0 ? "text-muted-foreground" : "text-destructive"}
+                                                    disabled={isPending || warehouse._count.stockItems > 0}
+                                                    onClick={() => handleDelete(warehouse.id, warehouse.name)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -221,45 +207,34 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                                 </div>
                             </div>
 
-                            <div className="flex justify-end pt-3 border-t">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" disabled={isPending}>
-                                            <MoreHorizontal className="h-4 w-4 mr-1" />
-                                            Acciones
+                            <div className="flex flex-wrap gap-2 pt-3 border-t">
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/dashboard/warehouses/${warehouse.id}`}>
+                                        <Eye className="h-4 w-4 mr-1" />
+                                        Ver
+                                    </Link>
+                                </Button>
+                                {canManage && (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setEditingWarehouse(warehouse)}
+                                        >
+                                            <Edit className="h-4 w-4 mr-1" />
+                                            Editar
                                         </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem asChild>
-                                            <Link href={`/dashboard/warehouses/${warehouse.id}`}>
-                                                <Eye className="mr-2 h-4 w-4" />
-                                                Ver Detalles
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        {canManage && (
-                                            <>
-                                                <DropdownMenuItem onClick={() => setEditingWarehouse(warehouse)}>
-                                                    <Edit className="mr-2 h-4 w-4" />
-                                                    Editar
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleToggleStatus(warehouse.id)}>
-                                                    <Power className="mr-2 h-4 w-4" />
-                                                    {warehouse.isActive ? "Desactivar" : "Activar"}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className="text-destructive"
-                                                    onClick={() => handleDelete(warehouse.id, warehouse.name)}
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Eliminar
-                                                </DropdownMenuItem>
-                                            </>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                        <Button
+                                            variant={warehouse._count.stockItems > 0 ? "outline" : "destructive"}
+                                            size="sm"
+                                            disabled={isPending || warehouse._count.stockItems > 0}
+                                            onClick={() => handleDelete(warehouse.id, warehouse.name)}
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-1" />
+                                            {warehouse._count.stockItems > 0 ? "Con Stock" : "Eliminar"}
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

@@ -18,8 +18,7 @@ export async function getDeliveries(filters?: {
 
     try {
         const deliveries = await deliveryService.getDeliveries(filters);
-        // No serialization needed here as getDeliveries doesn't include product details
-        return deliveries;
+        return serializePrisma(deliveries);
     } catch (error) {
         console.error("Error getting deliveries:", error);
         throw new Error("Failed to fetch deliveries");

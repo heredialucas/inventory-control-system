@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, CheckCircle2, XCircle, Truck, Building2, Package } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Truck, Building2, Package, User, Calendar, FileText, UserCog } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 
@@ -64,11 +64,12 @@ export default async function DeliveryDetailPage({
                         <div className="flex items-center gap-2 flex-wrap">
                             <h1 className="text-xl sm:text-3xl font-bold tracking-tight truncate">{delivery.deliveryNumber}</h1>
                             <Badge
-                                variant={isDelivered ? "default" : isCancelled ? "destructive" : "secondary"}
+                                variant={isDelivered ? "outline" : isCancelled ? "destructive" : "default"}
                                 className="text-sm px-2 py-0.5 shrink-0"
                             >
                                 {delivery.status === "DELIVERED" ? "Entregado" :
-                                    delivery.status === "CANCELLED" ? "Cancelado" : "Borrador"}
+                                    delivery.status === "CANCELLED" ? "Cancelado" :
+                                    delivery.status === "CONFIRMED" ? "Confirmado" : "En Camino"}
                             </Badge>
                         </div>
                         <p className="text-muted-foreground text-sm">
@@ -167,6 +168,35 @@ export default async function DeliveryDetailPage({
                                 </div>
                                 <div className="text-base">{delivery.warehouse.name}</div>
                             </div>
+                            {delivery.receivedBy && (
+                                <>
+                                    <Separator />
+                                    <div>
+                                        <div className="text-sm font-medium mb-1 flex items-center gap-2">
+                                            <UserCog className="h-4 w-4" /> Responsable de la Entrega
+                                        </div>
+                                        <div className="text-base">{delivery.receivedBy}</div>
+                                    </div>
+                                </>
+                            )}
+                            {delivery.createdBy && (
+                                <>
+                                    <Separator />
+                                    <div>
+                                        <div className="text-sm font-medium mb-1 flex items-center gap-2">
+                                            <User className="h-4 w-4" /> Creado por
+                                        </div>
+                                        <div className="text-base">{delivery.createdBy.username}</div>
+                                    </div>
+                                </>
+                            )}
+                            <Separator />
+                            <div>
+                                <div className="text-sm font-medium mb-1 flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" /> Fecha de Creación
+                                </div>
+                                <div className="text-base">{format(new Date(delivery.createdAt), "PPP 'a las' p", { locale: es })}</div>
+                            </div>
 
                             {delivery.deliveryDate && (
                                 <>
@@ -175,7 +205,7 @@ export default async function DeliveryDetailPage({
                                         <div className="text-sm font-medium mb-1 flex items-center gap-2">
                                             <Truck className="h-4 w-4" /> Fecha de Entrega
                                         </div>
-                                        <div className="text-base">{format(new Date(delivery.deliveryDate), "PPP", { locale: es })}</div>
+                                        <div className="text-base">{format(new Date(delivery.deliveryDate), "PPP 'a las' p", { locale: es })}</div>
                                     </div>
                                 </>
                             )}

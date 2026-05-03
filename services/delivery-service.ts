@@ -26,13 +26,29 @@ export const deliveryService = {
 
         return await prisma.delivery.findMany({
             where,
-            include: {
-                institution: true,
-                warehouse: true,
+            select: {
+                id: true,
+                deliveryNumber: true,
+                status: true,
+                deliveryDate: true,
+                receivedBy: true,
+                notes: true,
+                createdAt: true,
+                institution: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                warehouse: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
                 createdBy: {
                     select: {
                         id: true,
-                        email: true,
                         username: true,
                     },
                 },

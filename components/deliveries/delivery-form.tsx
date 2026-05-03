@@ -53,6 +53,7 @@ export function DeliveryForm({ schools, warehouses, expedientes = [], userId }: 
     const [institutionId, setInstitutionId] = useState("");
     const [warehouseId, setWarehouseId] = useState("");
     const [expedienteId, setExpedienteId] = useState("");
+    const [receivedBy, setReceivedBy] = useState("");
     const [notes, setNotes] = useState("");
     const [items, setItems] = useState<ProductItem[]>([]);
 
@@ -152,6 +153,7 @@ export function DeliveryForm({ schools, warehouses, expedientes = [], userId }: 
                     warehouseId,
                     createdById: userId,
                     expedienteId: expedienteId || undefined,
+                    receivedBy: receivedBy || undefined,
                     notes,
                     items: items.map(i => ({
                         productId: i.productId,
@@ -240,6 +242,15 @@ export function DeliveryForm({ schools, warehouses, expedientes = [], userId }: 
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Responsable de la Entrega</Label>
+                            <Input
+                                value={receivedBy}
+                                onChange={(e) => setReceivedBy(e.target.value)}
+                                placeholder="Nombre del responsable que entrega..."
+                            />
                         </div>
 
                         <div className="space-y-2">

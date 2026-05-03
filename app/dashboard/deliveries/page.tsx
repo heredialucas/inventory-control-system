@@ -13,9 +13,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Truck } from "lucide-react";
+import { Truck, Eye, Pencil, Trash2, CheckCircle, XCircle, PackageCheck } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { DeliveryActions } from "@/components/deliveries/delivery-actions";
 import { es } from "date-fns/locale";
 
 export const metadata = {
@@ -26,7 +27,7 @@ export const metadata = {
 const getDeliveryStatusLabel = (status: string) => {
     switch (status) {
         case "DRAFT":
-            return "Borrador";
+            return "En Camino";
         case "CONFIRMED":
             return "Confirmado";
         case "DELIVERED":
@@ -39,8 +40,8 @@ const getDeliveryStatusLabel = (status: string) => {
 };
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    DRAFT: "secondary",
-    CONFIRMED: "default",
+    DRAFT: "default",
+    CONFIRMED: "secondary",
     DELIVERED: "outline",
     CANCELLED: "destructive",
 };
@@ -89,23 +90,23 @@ export default async function DeliveriesPage() {
                 </div>
 
                 <TabsContent value="all" className="mt-6">
-                    <DeliveryTable deliveries={allDeliveries} />
+                    <DeliveryTable deliveries={allDeliveries} canManage={canManage} userId={user.id} />
                 </TabsContent>
                 <TabsContent value="draft" className="mt-6">
-                    <DeliveryTable deliveries={draftDeliveries} />
+                    <DeliveryTable deliveries={draftDeliveries} canManage={canManage} userId={user.id} />
                 </TabsContent>
                 <TabsContent value="confirmed" className="mt-6">
-                    <DeliveryTable deliveries={confirmedDeliveries} />
+                    <DeliveryTable deliveries={confirmedDeliveries} canManage={canManage} userId={user.id} />
                 </TabsContent>
                 <TabsContent value="delivered" className="mt-6">
-                    <DeliveryTable deliveries={deliveredDeliveries} />
+                    <DeliveryTable deliveries={deliveredDeliveries} canManage={canManage} userId={user.id} />
                 </TabsContent>
             </Tabs>
         </div>
     );
 }
 
-function DeliveryTable({ deliveries }: { deliveries: any[] }) {
+function DeliveryTable({ deliveries, canManage, userId }: { deliveries: any[]; canManage: boolean; userId: string }) {
     if (deliveries.length === 0) {
         return (
             <Card>
@@ -144,6 +145,11 @@ function DeliveryTable({ deliveries }: { deliveries: any[] }) {
                                         </Link>
                                     </div>
                                     <div className="text-sm text-muted-foreground">{delivery.warehouse.name}</div>
+                                    {delivery.receivedBy && (
+                                        <div className="text-sm text-muted-foreground">
+                                            Responsable: {delivery.receivedBy}
+                                        </div>
+                                    )}
                                 </div>
                                 <Badge variant={statusColors[delivery.status]}>
                                     {getDeliveryStatusLabel(delivery.status)}
@@ -156,6 +162,21 @@ function DeliveryTable({ deliveries }: { deliveries: any[] }) {
                                 <div className="text-xs text-muted-foreground">
                                     {formatDistanceToNow(new Date(delivery.createdAt), { addSuffix: true, locale: es })}
                                 </div>
+                            </div>
+                            <div className="flex gap-2 mt-3 pt-3 border-t">
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/dashboard/deliveries/${delivery.id}`}>
+                                        <Eye className="h-4 w-4 mr-1" />
+                                        Ver
+                                    </Link>
+                                </Button>
+                                {canManage && (
+                                    <DeliveryActions
+                                        deliveryId={delivery.id}
+                                        status={delivery.status}
+                                        userId={userId}
+                                    />
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -170,9 +191,11 @@ function DeliveryTable({ deliveries }: { deliveries: any[] }) {
                             <TableHead>Número de Entrega</TableHead>
                             <TableHead>Institución</TableHead>
                             <TableHead>Almacén</TableHead>
+                            <TableHead>Responsable</TableHead>
                             <TableHead>Artículos</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead>Creado</TableHead>
+                            <TableHead className="w-[100px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -197,6 +220,9 @@ function DeliveryTable({ deliveries }: { deliveries: any[] }) {
                                 <TableCell className="text-sm text-muted-foreground">
                                     {delivery.warehouse.name}
                                 </TableCell>
+                                <TableCell className="text-sm">
+                                    {delivery.receivedBy || "-"}
+                                </TableCell>
                                 <TableCell>
                                     <Badge variant="secondary">{delivery._count.items}</Badge>
                                 </TableCell>
@@ -207,6 +233,22 @@ function DeliveryTable({ deliveries }: { deliveries: any[] }) {
                                 </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">
                                     {formatDistanceToNow(new Date(delivery.createdAt), { addSuffix: true, locale: es })}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-1">
+                                        <Button variant="ghost" size="sm" asChild>
+                                            <Link href={`/dashboard/deliveries/${delivery.id}`}>
+                                                <Eye className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                        {canManage && (
+                                            <DeliveryActions
+                                                deliveryId={delivery.id}
+                                                status={delivery.status}
+                                                userId={userId}
+                                            />
+                                        )}
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
