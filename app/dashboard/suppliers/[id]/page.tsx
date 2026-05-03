@@ -52,7 +52,7 @@ export default async function SupplierDetailPage({
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex items-center gap-4 flex-1 min-w-0 self-start sm:self-center mt-1 sm:mt-0">
                     <Link href="/dashboard/suppliers">
                         <Button variant="ghost" size="icon">
                             <ArrowLeft className="h-4 w-4" />

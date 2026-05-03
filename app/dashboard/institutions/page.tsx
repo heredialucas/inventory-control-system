@@ -36,16 +36,17 @@ export default async function InstitutionsPage() {
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Escuelas</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Escuelas</h1>
+                    <p className="text-muted-foreground text-sm">
                         Gestión de establecimientos educativos
                     </p>
                 </div>
                 {canManage && (
-                    <Button asChild>
+                    <Button asChild className="w-full sm:w-auto">
                         <Link href="/dashboard/institutions/new">
                             <Building2 className="mr-2 h-4 w-4" />
-                            Nueva Escuela
+                            <span className="sm:hidden">Nueva</span>
+                            <span className="hidden sm:inline">Nueva Escuela</span>
                         </Link>
                     </Button>
                 )}

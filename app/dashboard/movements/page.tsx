@@ -36,14 +36,14 @@ export default async function MovementsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Movimientos de Stock</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Movimientos de Stock</h1>
+                    <p className="text-muted-foreground text-sm">
                         Trazabilidad completa de todos los movimientos de inventario
                     </p>
                 </div>
-                <Activity className="h-8 w-8 text-muted-foreground" />
+                <Activity className="h-8 w-8 text-muted-foreground hidden sm:block" />
             </div>
 
             <Card>

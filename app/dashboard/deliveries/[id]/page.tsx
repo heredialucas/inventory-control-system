@@ -54,39 +54,43 @@ export default async function DeliveryDetailPage({
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <Link href="/dashboard/deliveries">
-                    <Button variant="ghost" size="icon">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold tracking-tight">{delivery.deliveryNumber}</h1>
-                        <Badge
-                            variant={isDelivered ? "default" : isCancelled ? "destructive" : "secondary"}
-                            className="text-sm px-2 py-0.5"
-                        >
-                            {delivery.status === "DELIVERED" ? "Entregado" :
-                                delivery.status === "CANCELLED" ? "Cancelado" : "Borrador / Pendiente"}
-                        </Badge>
+                <div className="flex items-center gap-3 self-start sm:self-center">
+                    <Link href="/dashboard/deliveries">
+                        <Button variant="ghost" size="icon" className="shrink-0">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                    </Link>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-xl sm:text-3xl font-bold tracking-tight truncate">{delivery.deliveryNumber}</h1>
+                            <Badge
+                                variant={isDelivered ? "default" : isCancelled ? "destructive" : "secondary"}
+                                className="text-sm px-2 py-0.5 shrink-0"
+                            >
+                                {delivery.status === "DELIVERED" ? "Entregado" :
+                                    delivery.status === "CANCELLED" ? "Cancelado" : "Borrador"}
+                            </Badge>
+                        </div>
+                        <p className="text-muted-foreground text-sm">
+                            {format(new Date(delivery.createdAt), "PPP", { locale: es })}
+                        </p>
                     </div>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        Creado el {format(new Date(delivery.createdAt), "PPP", { locale: es })}
-                    </p>
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap sm:ml-auto">
                     {canManage && isDraft && (
                         <>
                             <form action={handleCancel}>
-                                <Button variant="outline" type="submit">
+                                <Button variant="outline" type="submit" className="w-full sm:w-auto">
                                     <XCircle className="mr-2 h-4 w-4" />
-                                    Cancelar
+                                    <span className="sm:hidden">Cancelar</span>
+                                    <span className="hidden sm:inline">Cancelar</span>
                                 </Button>
                             </form>
                             <form action={handleMarkDelivered}>
-                                <Button type="submit">
+                                <Button type="submit" className="w-full sm:w-auto">
                                     <CheckCircle2 className="mr-2 h-4 w-4" />
-                                    Marcar como Entregado
+                                    <span className="sm:hidden">Entregar</span>
+                                    <span className="hidden sm:inline">Marcar como Entregado</span>
                                 </Button>
                             </form>
                         </>
@@ -94,7 +98,7 @@ export default async function DeliveryDetailPage({
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
                 <Card className="md:col-span-2">
                     <CardHeader>
                         <CardTitle>Ítems de la Entrega</CardTitle>

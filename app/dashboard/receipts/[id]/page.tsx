@@ -22,69 +22,70 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/dashboard/inventory">
-                        <Button variant="ghost" size="icon">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <Link href="/dashboard/inventory" className="self-start sm:self-center mt-1 sm:mt-0">
+                        <Button variant="ghost" size="icon" className="shrink-0">
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
                     </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
                             Remito {receipt.receiptNumber}
                         </h1>
                         <p className="text-muted-foreground text-sm">
-                            Recibido el {format(new Date(receipt.date), "dd/MM/yyyy", { locale: es })}
+                            {format(new Date(receipt.date), "dd/MM/yyyy", { locale: es })}
                         </p>
                     </div>
                 </div>
                 <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
-                    <Button variant="outline">
+                    <Button variant="outline" className="w-full sm:w-auto">
                         <Plus className="mr-2 h-4 w-4" />
-                        Editar Remito
+                        <span className="sm:hidden">Editar</span>
+                        <span className="hidden sm:inline">Editar Remito</span>
                     </Button>
                 </Link>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Información General</CardTitle>
+                        <CardTitle className="text-base">Información General</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Orden de Compra Asociada</p>
-                            <p className="mt-1 font-medium">{receipt.purchaseOrder?.orderNumber || "Ingreso Directo"}</p>
+                    <CardContent className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Orden de Compra</span>
+                            <span className="font-medium text-right">{receipt.purchaseOrder?.orderNumber || "Ingreso Directo"}</span>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Proveedor</p>
-                            <p className="mt-1">{receipt.purchaseOrder?.supplier?.name || receipt.supplier?.name || "N/A"}</p>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Proveedor</span>
+                            <span className="text-right">{receipt.purchaseOrder?.supplier?.name || receipt.supplier?.name || "N/A"}</span>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Expediente</p>
-                            <p className="mt-1">{receipt.expediente?.number || "Sin expediente"}</p>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Expediente</span>
+                            <span className="text-right">{receipt.expediente?.number || "Sin expediente"}</span>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Depósito Destino</p>
-                            <p className="mt-1">{receipt.purchaseOrder?.warehouse?.name || receipt.warehouse?.name || "N/A"}</p>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Depósito</span>
+                            <span className="text-right">{receipt.purchaseOrder?.warehouse?.name || receipt.warehouse?.name || "N/A"}</span>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Detalles del Remito</CardTitle>
+                        <CardTitle className="text-base">Detalles del Remito</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Total Importe</p>
-                            <p className="mt-1 font-bold">${Number(receipt.totalAmount).toLocaleString()}</p>
+                    <CardContent className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Total Importe</span>
+                            <span className="font-bold">${Number(receipt.totalAmount).toLocaleString()}</span>
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Fecha de Carga en Sistema</p>
-                            <p className="mt-1">
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Fecha de Carga</span>
+                            <span className="text-right">
                                 {format(new Date(receipt.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
-                            </p>
+                            </span>
                         </div>
                     </CardContent>
                 </Card>
@@ -92,28 +93,44 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
             
             <Card>
                 <CardHeader>
-                    <CardTitle>Mercadería Recibida</CardTitle>
-                    <CardDescription>Detalle de los artículos ingresados al stock mediante este remito</CardDescription>
+                    <CardTitle className="text-base">Mercadería Recibida</CardTitle>
+                    <CardDescription className="text-sm">Detalle de los artículos ingresados al stock</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Producto</TableHead>
-                                <TableHead>SKU</TableHead>
-                                <TableHead className="text-right">Cantidad Recibida</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {receipt.items.map((item: any) => (
-                                <TableRow key={item.id}>
-                                    <TableCell className="font-medium">{item.product.name}</TableCell>
-                                    <TableCell className="text-muted-foreground">{item.product.sku}</TableCell>
-                                    <TableCell className="text-right font-bold text-primary">{item.quantity}</TableCell>
+                    {/* Tabla para desktop */}
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Producto</TableHead>
+                                    <TableHead>SKU</TableHead>
+                                    <TableHead className="text-right">Cantidad</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {receipt.items.map((item: any) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium">{item.product.name}</TableCell>
+                                        <TableCell className="text-muted-foreground">{item.product.sku}</TableCell>
+                                        <TableCell className="text-right font-bold text-primary">{item.quantity}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Cards para móvil */}
+                    <div className="md:hidden space-y-3">
+                        {receipt.items.map((item: any) => (
+                            <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="min-w-0">
+                                    <p className="font-medium truncate">{item.product.name}</p>
+                                    <p className="text-sm text-muted-foreground font-mono">{item.product.sku}</p>
+                                </div>
+                                <span className="font-bold text-primary shrink-0 ml-2">{item.quantity}</span>
+                            </div>
+                        ))}
+                    </div>
                 </CardContent>
             </Card>
 

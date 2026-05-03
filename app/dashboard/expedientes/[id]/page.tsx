@@ -33,16 +33,16 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/dashboard/expedientes">
-                        <Button variant="ghost" size="icon">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <Link href="/dashboard/expedientes" className="self-start sm:self-center mt-1 sm:mt-0">
+                        <Button variant="ghost" size="icon" className="shrink-0">
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
                     </Link>
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold tracking-tight">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
                                 Expediente {expediente.number}
                             </h1>
                             <Badge
@@ -53,48 +53,50 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                                             ? "secondary"
                                             : "destructive"
                                 }
+                                className="shrink-0"
                             >
                                 {expediente.status}
                             </Badge>
                         </div>
                         <p className="text-muted-foreground text-sm">
-                            Creado el {format(new Date(expediente.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
+                            {format(new Date(expediente.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
                         </p>
                     </div>
                 </div>
                 {canManage && (
                     <Link href={`/dashboard/expedientes/${expediente.id}/edit`}>
-                        <Button variant="outline">
+                        <Button variant="outline" className="w-full sm:w-auto">
                             <Edit className="mr-2 h-4 w-4" />
-                            Editar Expediente
+                            <span className="sm:hidden">Editar</span>
+                            <span className="hidden sm:inline">Editar Expediente</span>
                         </Button>
                     </Link>
                 )}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Información General</CardTitle>
+                        <CardTitle className="text-base">Información General</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                    <CardContent className="space-y-3 text-sm">
+                        <div className="grid grid-cols-2 gap-2">
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Año</p>
-                                <p className="mt-1">{expediente.year || "N/A"}</p>
+                                <p className="text-muted-foreground">Año</p>
+                                <p>{expediente.year || "N/A"}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Tipo</p>
+                                <p className="text-muted-foreground">Tipo</p>
                                 <Badge variant="outline" className="mt-1">{expediente.type || "N/A"}</Badge>
                             </div>
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground">Origen / Área</p>
-                            <p className="mt-1">{expediente.origin || "No especificado"}</p>
+                            <p className="text-muted-foreground">Origen / Área</p>
+                            <p>{expediente.origin || "No especificado"}</p>
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-muted-foreground">Descripción / Motivo</p>
-                            <p className="mt-1 whitespace-pre-wrap">{expediente.description || "Sin descripción"}</p>
+                            <p className="text-muted-foreground">Descripción</p>
+                            <p className="whitespace-pre-wrap">{expediente.description || "Sin descripción"}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -160,38 +162,61 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                             </h3>
                         </div>
                         {expediente.purchases.length > 0 ? (
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Número</TableHead>
-                                            <TableHead>Proveedor</TableHead>
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                            <TableHead className="text-right">Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {expediente.purchases.map((purchase) => (
-                                            <TableRow key={purchase.id}>
-                                                <TableCell className="font-medium">{purchase.orderNumber}</TableCell>
-                                                <TableCell>{purchase.supplier?.name || "N/A"}</TableCell>
-                                                <TableCell>{format(new Date(purchase.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline">{purchase.status}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Link href={`/dashboard/purchases/${purchase.id}`}>
-                                                        <Button variant="ghost" size="sm">
-                                                            Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
-                                                        </Button>
-                                                    </Link>
-                                                </TableCell>
+                            <>
+                                <div className="hidden md:block rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Número</TableHead>
+                                                <TableHead>Proveedor</TableHead>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead>Estado</TableHead>
+                                                <TableHead className="text-right">Acciones</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {expediente.purchases.map((purchase) => (
+                                                <TableRow key={purchase.id}>
+                                                    <TableCell className="font-medium">{purchase.orderNumber}</TableCell>
+                                                    <TableCell>{purchase.supplier?.name || "N/A"}</TableCell>
+                                                    <TableCell>{format(new Date(purchase.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{purchase.status}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Link href={`/dashboard/purchases/${purchase.id}`}>
+                                                            <Button variant="ghost" size="sm">
+                                                                Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
+                                                            </Button>
+                                                        </Link>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                <div className="md:hidden space-y-3">
+                                    {expediente.purchases.map((purchase) => (
+                                        <Card key={purchase.id}>
+                                            <CardContent className="p-4 space-y-2">
+                                                <div className="flex justify-between items-start">
+                                                    <span className="font-medium">{purchase.orderNumber}</span>
+                                                    <Badge variant="outline" className="shrink-0">{purchase.status}</Badge>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    <p>Proveedor: {purchase.supplier?.name || "N/A"}</p>
+                                                    <p>Fecha: {format(new Date(purchase.createdAt), "dd/MM/yyyy", { locale: es })}</p>
+                                                </div>
+                                                <Link href={`/dashboard/purchases/${purchase.id}`}>
+                                                    <Button variant="ghost" size="sm" className="w-full mt-2">
+                                                        Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
+                                                    </Button>
+                                                </Link>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </>
                         ) : (
                             <p className="text-sm text-muted-foreground italic">No hay órdenes de compra vinculadas.</p>
                         )}
@@ -209,45 +234,71 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                             </h3>
                         </div>
                         {expediente.receipts.length > 0 ? (
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Número</TableHead>
-                                            <TableHead>OC Relacionada</TableHead>
-                                            <TableHead>Tipo</TableHead>
-                                            <TableHead>Monto Total</TableHead>
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead className="text-right">Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {expediente.receipts.map((receipt) => (
-                                            <TableRow key={receipt.id}>
-                                                <TableCell className="font-medium">{receipt.receiptNumber}</TableCell>
-                                                <TableCell>{receipt.purchaseOrder?.orderNumber || "Directo"}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="secondary">
-                                                        {receipt.type === "PURCHASE" ? "COMPRA" : 
-                                                         receipt.type === "REINGRESO" ? "REINGRESO" : receipt.type}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(Number(receipt.totalAmount))}
-                                                </TableCell>
-                                                <TableCell>{format(new Date(receipt.date || receipt.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <Link href={`/dashboard/receipts/${receipt.id}`}>
-                                                        <Button variant="ghost" size="sm">
-                                                            Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
-                                                        </Button>
-                                                    </Link>
-                                                </TableCell>
+                            <>
+                                <div className="hidden md:block rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Número</TableHead>
+                                                <TableHead>OC Relacionada</TableHead>
+                                                <TableHead>Tipo</TableHead>
+                                                <TableHead>Monto Total</TableHead>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead className="text-right">Acciones</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {expediente.receipts.map((receipt) => (
+                                                <TableRow key={receipt.id}>
+                                                    <TableCell className="font-medium">{receipt.receiptNumber}</TableCell>
+                                                    <TableCell>{receipt.purchaseOrder?.orderNumber || "Directo"}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="secondary">
+                                                            {receipt.type === "PURCHASE" ? "COMPRA" : 
+                                                             receipt.type === "REINGRESO" ? "REINGRESO" : receipt.type}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(Number(receipt.totalAmount))}
+                                                    </TableCell>
+                                                    <TableCell>{format(new Date(receipt.date || receipt.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Link href={`/dashboard/receipts/${receipt.id}`}>
+                                                            <Button variant="ghost" size="sm">
+                                                                Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
+                                                            </Button>
+                                                        </Link>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                <div className="md:hidden space-y-3">
+                                    {expediente.receipts.map((receipt) => (
+                                        <Card key={receipt.id}>
+                                            <CardContent className="p-4 space-y-2">
+                                                <div className="flex justify-between items-start">
+                                                    <span className="font-medium">{receipt.receiptNumber}</span>
+                                                    <Badge variant="secondary" className="shrink-0">
+                                                        {receipt.type === "PURCHASE" ? "COMPRA" : receipt.type === "REINGRESO" ? "REINGRESO" : receipt.type}
+                                                    </Badge>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    <p>OC: {receipt.purchaseOrder?.orderNumber || "Directo"}</p>
+                                                    <p>Monto: {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(Number(receipt.totalAmount))}</p>
+                                                    <p>Fecha: {format(new Date(receipt.date || receipt.createdAt), "dd/MM/yyyy", { locale: es })}</p>
+                                                </div>
+                                                <Link href={`/dashboard/receipts/${receipt.id}`}>
+                                                    <Button variant="ghost" size="sm" className="w-full mt-2">
+                                                        Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
+                                                    </Button>
+                                                </Link>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </>
                         ) : (
                             <p className="text-sm text-muted-foreground italic">No hay remitos de recepción vinculados.</p>
                         )}
@@ -265,38 +316,61 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                             </h3>
                         </div>
                         {expediente.deliveries.length > 0 ? (
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Número</TableHead>
-                                            <TableHead>Institución</TableHead>
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                            <TableHead className="text-right">Acciones</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {expediente.deliveries.map((delivery) => (
-                                            <TableRow key={delivery.id}>
-                                                <TableCell className="font-medium">{delivery.deliveryNumber}</TableCell>
-                                                <TableCell>{delivery.institution?.name || "N/A"}</TableCell>
-                                                <TableCell>{delivery.deliveryDate ? format(new Date(delivery.deliveryDate), "dd/MM/yyyy", { locale: es }) : format(new Date(delivery.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline">{delivery.status}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Link href={`/dashboard/deliveries/${delivery.id}`}>
-                                                        <Button variant="ghost" size="sm">
-                                                            Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
-                                                        </Button>
-                                                    </Link>
-                                                </TableCell>
+                            <>
+                                <div className="hidden md:block rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Número</TableHead>
+                                                <TableHead>Institución</TableHead>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead>Estado</TableHead>
+                                                <TableHead className="text-right">Acciones</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {expediente.deliveries.map((delivery) => (
+                                                <TableRow key={delivery.id}>
+                                                    <TableCell className="font-medium">{delivery.deliveryNumber}</TableCell>
+                                                    <TableCell>{delivery.institution?.name || "N/A"}</TableCell>
+                                                    <TableCell>{delivery.deliveryDate ? format(new Date(delivery.deliveryDate), "dd/MM/yyyy", { locale: es }) : format(new Date(delivery.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{delivery.status}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Link href={`/dashboard/deliveries/${delivery.id}`}>
+                                                            <Button variant="ghost" size="sm">
+                                                                Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
+                                                            </Button>
+                                                        </Link>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                <div className="md:hidden space-y-3">
+                                    {expediente.deliveries.map((delivery) => (
+                                        <Card key={delivery.id}>
+                                            <CardContent className="p-4 space-y-2">
+                                                <div className="flex justify-between items-start">
+                                                    <span className="font-medium">{delivery.deliveryNumber}</span>
+                                                    <Badge variant="outline" className="shrink-0">{delivery.status}</Badge>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    <p>Institución: {delivery.institution?.name || "N/A"}</p>
+                                                    <p>Fecha: {delivery.deliveryDate ? format(new Date(delivery.deliveryDate), "dd/MM/yyyy", { locale: es }) : format(new Date(delivery.createdAt), "dd/MM/yyyy", { locale: es })}</p>
+                                                </div>
+                                                <Link href={`/dashboard/deliveries/${delivery.id}`}>
+                                                    <Button variant="ghost" size="sm" className="w-full mt-2">
+                                                        Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
+                                                    </Button>
+                                                </Link>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </>
                         ) : (
                             <p className="text-sm text-muted-foreground italic">No hay entregas vinculadas.</p>
                         )}
@@ -314,30 +388,47 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                             </h3>
                         </div>
                         {expediente.transfers.length > 0 ? (
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Producto</TableHead>
-                                            <TableHead>Desde</TableHead>
-                                            <TableHead>Hasta</TableHead>
-                                            <TableHead>Cantidad</TableHead>
-                                            <TableHead>Fecha</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {expediente.transfers.map((transfer) => (
-                                            <TableRow key={transfer.id}>
-                                                <TableCell className="font-medium">{transfer.product?.name || "N/A"}</TableCell>
-                                                <TableCell>{transfer.fromWarehouse?.name || "N/A"}</TableCell>
-                                                <TableCell>{transfer.toWarehouse?.name || "N/A"}</TableCell>
-                                                <TableCell>{transfer.quantity}</TableCell>
-                                                <TableCell>{format(new Date(transfer.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
+                            <>
+                                <div className="hidden md:block rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Producto</TableHead>
+                                                <TableHead>Desde</TableHead>
+                                                <TableHead>Hasta</TableHead>
+                                                <TableHead>Cantidad</TableHead>
+                                                <TableHead>Fecha</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {expediente.transfers.map((transfer) => (
+                                                <TableRow key={transfer.id}>
+                                                    <TableCell className="font-medium">{transfer.product?.name || "N/A"}</TableCell>
+                                                    <TableCell>{transfer.fromWarehouse?.name || "N/A"}</TableCell>
+                                                    <TableCell>{transfer.toWarehouse?.name || "N/A"}</TableCell>
+                                                    <TableCell>{transfer.quantity}</TableCell>
+                                                    <TableCell>{format(new Date(transfer.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                <div className="md:hidden space-y-3">
+                                    {expediente.transfers.map((transfer) => (
+                                        <Card key={transfer.id}>
+                                            <CardContent className="p-4 space-y-2">
+                                                <p className="font-medium">{transfer.product?.name || "N/A"}</p>
+                                                <div className="text-sm text-muted-foreground">
+                                                    <p>Desde: {transfer.fromWarehouse?.name || "N/A"}</p>
+                                                    <p>Hasta: {transfer.toWarehouse?.name || "N/A"}</p>
+                                                    <p>Cantidad: {transfer.quantity}</p>
+                                                    <p>Fecha: {format(new Date(transfer.createdAt), "dd/MM/yyyy", { locale: es })}</p>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </>
                         ) : (
                             <p className="text-sm text-muted-foreground italic">No hay transferencias vinculadas.</p>
                         )}
@@ -389,41 +480,66 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                             }
 
                             return (
-                                <div className="rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Producto</TableHead>
-                                                <TableHead>Depósito</TableHead>
-                                                <TableHead>Tipo</TableHead>
-                                                <TableHead>Cantidad</TableHead>
-                                                <TableHead>Motivo</TableHead>
-                                                <TableHead>Fecha</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {displayMovements.map((movement) => {
-                                                const isEntry = movement.type === "IN" || (movement.type === "ADJUSTMENT" && movement.quantity > 0);
-                                                return (
-                                                    <TableRow key={movement.id}>
-                                                        <TableCell className="font-medium">{movement.product?.name || "N/A"}</TableCell>
-                                                        <TableCell>{movement.warehouse?.name || "Sin asignar"}</TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={isEntry ? "default" : "destructive"}>
+                                <>
+                                    <div className="hidden md:block rounded-md border">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Producto</TableHead>
+                                                    <TableHead>Depósito</TableHead>
+                                                    <TableHead>Tipo</TableHead>
+                                                    <TableHead>Cantidad</TableHead>
+                                                    <TableHead>Motivo</TableHead>
+                                                    <TableHead>Fecha</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {displayMovements.map((movement) => {
+                                                    const isEntry = movement.type === "IN" || (movement.type === "ADJUSTMENT" && movement.quantity > 0);
+                                                    return (
+                                                        <TableRow key={movement.id}>
+                                                            <TableCell className="font-medium">{movement.product?.name || "N/A"}</TableCell>
+                                                            <TableCell>{movement.warehouse?.name || "Sin asignar"}</TableCell>
+                                                            <TableCell>
+                                                                <Badge variant={isEntry ? "default" : "destructive"}>
+                                                                    {isEntry ? "ENTRADA" : "SALIDA"}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>{Math.abs(movement.quantity)}</TableCell>
+                                                            <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate" title={movement.reason}>
+                                                                {movement.reason || "Sin especificar"}
+                                                            </TableCell>
+                                                            <TableCell>{format(new Date(movement.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                    <div className="md:hidden space-y-3">
+                                        {displayMovements.map((movement) => {
+                                            const isEntry = movement.type === "IN" || (movement.type === "ADJUSTMENT" && movement.quantity > 0);
+                                            return (
+                                                <Card key={movement.id}>
+                                                    <CardContent className="p-4 space-y-2">
+                                                        <div className="flex justify-between items-start">
+                                                            <p className="font-medium">{movement.product?.name || "N/A"}</p>
+                                                            <Badge variant={isEntry ? "default" : "destructive"} className="shrink-0">
                                                                 {isEntry ? "ENTRADA" : "SALIDA"}
                                                             </Badge>
-                                                        </TableCell>
-                                                        <TableCell>{Math.abs(movement.quantity)}</TableCell>
-                                                        <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate" title={movement.reason}>
-                                                            {movement.reason || "Sin especificar"}
-                                                        </TableCell>
-                                                        <TableCell>{format(new Date(movement.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                                        </div>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            <p>Depósito: {movement.warehouse?.name || "Sin asignar"}</p>
+                                                            <p>Cantidad: {Math.abs(movement.quantity)}</p>
+                                                            <p>Motivo: {movement.reason || "Sin especificar"}</p>
+                                                            <p>Fecha: {format(new Date(movement.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}</p>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            );
+                                        })}
+                                    </div>
+                                </>
                             );
                         })()}
                     </div>

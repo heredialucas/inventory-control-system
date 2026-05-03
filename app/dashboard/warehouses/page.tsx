@@ -23,19 +23,20 @@ export default async function WarehousesPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Depósitos</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Depósitos</h1>
+                    <p className="text-muted-foreground text-sm">
                         Gestionar ubicaciones de depósitos y distribución de inventario
                     </p>
                 </div>
                 {canManage && (
                     <WarehouseForm
                         trigger={
-                            <Button>
+                            <Button className="w-full sm:w-auto">
                                 <Package className="mr-2 h-4 w-4" />
-                                Agregar Depósito
+                                <span className="sm:hidden">Agregar</span>
+                                <span className="hidden sm:inline">Agregar Depósito</span>
                             </Button>
                         }
                     />

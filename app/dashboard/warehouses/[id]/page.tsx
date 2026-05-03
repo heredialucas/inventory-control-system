@@ -46,7 +46,7 @@ export default async function WarehouseDetailPage({
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
-                <Link href="/dashboard/warehouses">
+                <Link href="/dashboard/warehouses" className="self-start sm:self-center mt-1 sm:mt-0">
                     <Button variant="ghost" size="icon">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>

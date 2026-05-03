@@ -55,16 +55,17 @@ export default async function InventoryPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Ingresos</h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                         Gestión de remitos y stock de mercadería
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     {canManageReceipts && (
-                        <Button asChild>
+                        <Button asChild className="w-full sm:w-auto">
                             <Link href="/dashboard/receipts/new">
                                 <Plus className="mr-2 h-4 w-4" />
-                                Cargar Remito
+                                <span className="sm:hidden">Remito</span>
+                                <span className="hidden sm:inline">Cargar Remito</span>
                             </Link>
                         </Button>
                     )}

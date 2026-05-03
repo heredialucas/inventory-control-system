@@ -72,52 +72,54 @@ export default async function PurchaseOrderDetailPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4">
-                <Link href="/dashboard/purchases">
-                    <Button variant="ghost" size="icon">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold tracking-tight">{order.orderNumber}</h1>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
+                <div className="flex items-center gap-3 self-start sm:self-center">
+                    <Link href="/dashboard/purchases">
+                        <Button variant="ghost" size="icon" className="shrink-0">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                    </Link>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <h1 className="text-xl sm:text-3xl font-bold tracking-tight">{order.orderNumber}</h1>
                         <Badge variant={
                             order.status === "RECEIVED" ? "outline" :
                                 order.status === "CANCELLED" ? "destructive" :
                                     "default"
-                        }>
+                        } className="shrink-0">
                             {getPurchaseOrderStatusLabel(order.status)}
                         </Badge>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 sm:ml-auto">
                     {canManage && isDraft && (
                         <>
                             <form action={cancelOrder}>
-                                <Button variant="destructive" size="sm">
+                                <Button variant="destructive" size="sm" className="w-full sm:w-auto">
                                     <XCircle className="mr-2 h-4 w-4" />
-                                    Cancelar
+                                    <span className="sm:hidden">Cancelar</span>
                                 </Button>
                             </form>
                             <form action={submitOrder}>
-                                <Button size="sm">
+                                <Button size="sm" className="w-full sm:w-auto">
                                     <Send className="mr-2 h-4 w-4" />
-                                    Enviar Orden
+                                    <span className="sm:hidden">Enviar</span>
+                                    <span className="hidden sm:inline">Enviar Orden</span>
                                 </Button>
                             </form>
                         </>
                     )}
                     {canManage && isReceivable && (
                         <Link href="/dashboard/receipts/new">
-                            <Button size="sm">
+                            <Button size="sm" className="w-full sm:w-auto">
                                 <Send className="mr-2 h-4 w-4" />
-                                Cargar Remito
+                                <span className="sm:hidden">Remito</span>
+                                <span className="hidden sm:inline">Cargar Remito</span>
                             </Button>
                         </Link>
                     )}
                     {canManage && !isDraft && !isCancelled && !isReceivable && order.status !== "RECEIVED" && (
                         <form action={cancelOrder}>
-                            <Button variant="destructive" size="sm">Cancelar Orden</Button>
+                            <Button variant="destructive" size="sm" className="w-full sm:w-auto">Cancelar</Button>
                         </form>
                     )}
                 </div>
