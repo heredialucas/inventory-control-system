@@ -186,34 +186,6 @@ async function main() {
 
     console.log(`✅ Default warehouse created: ${defaultWarehouse.name}`);
 
-    // ==================== MIGRATE EXISTING PRODUCTS ====================
-    console.log("📦 Migrating existing product stock to default warehouse...");
-
-    const products = await prisma.product.findMany();
-    let migratedCount = 0;
-
-    for (const product of products) {
-        if (product.stock > 0) {
-            await prisma.warehouseStock.upsert({
-                where: {
-                    warehouseId_productId: {
-                        warehouseId: defaultWarehouse.id,
-                        productId: product.id,
-                    },
-                },
-                update: {},
-                create: {
-                    warehouseId: defaultWarehouse.id,
-                    productId: product.id,
-                    quantity: product.stock,
-                },
-            });
-            migratedCount++;
-        }
-    }
-
-    console.log(`✅ Migrated ${migratedCount} products to default warehouse`);
-
     // ==================== CREATE USERS ====================
     const adminPassword = await bcrypt.hash("admin123", 10);
     const encargadoPassword = await bcrypt.hash("encargado123", 10);

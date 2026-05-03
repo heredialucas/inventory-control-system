@@ -39,6 +39,7 @@ Organizaciones que:
 |----------|-------------|
 | **Producto** | Artículos que se compran, almacenan y distribuyen |
 | **Depósito** | Lugares físicos donde se almacena el inventario |
+| **WarehouseStock** | Control de stock por producto y depósito (no existe campo stock en Product) |
 | **Expediente** | (Opcional) Documento que agrupa operaciones relacionadas |
 
 ---
@@ -144,12 +145,31 @@ Expediente → [Compras] + [Recepciones] + [Entregas] + [Transferencias]
 
 ## 8. Características Clave
 
-- **Multi-depósito**: Control de stock por cada ubicación física
+- **Multi-depósito**: Control de stock por cada ubicación física (WarehouseStock)
 - **Trazabilidad completa**: Cada operación genera un registro de movimiento
 - **Expediente opcional**: Se puede trabajar con o sin él
 - **Control de permisos**: Roles y permisos granulares
 - **Múltiples destinatarios**: Instituciones como puntos de entrega
 - **Reportes**: Visibilidad del flujo de inventario
+- **Gestión de Stock por WarehouseStock**: El stock NO está en el modelo Product, sino en WarehouseStock (tabla relacional producto-depósito)
+
+### 8.1 Gestión de Stock
+
+El sistema no usa un campo `stock` en el modelo Product. En su lugar, usa `WarehouseStock`:
+
+- Cada registro representa cuánto stock hay de un producto en un depósito específico
+- Al hacer un ingreso (remito), se crea/actualiza un registro en WarehouseStock
+- Al hacer una entrega, se decrementa el stock en WarehouseStock
+- Al hacer una transferencia, se decrementa en origen y se incrementa en destino
+
+### 8.2 Gestión de Productos en Ingresos
+
+Al realizar un ingreso de mercadería (remito), el sistema permite:
+
+- **Seleccionar productos existentes**: Se listan todos los productos (con stock o sin stock)
+- **Ver stock actual**: En el dropdown se muestra el stock actual de cada producto (suma de todos los depósitos)
+- **Crear productos nuevos**: Si el producto no existe, se puede crear directamente desde el formulario
+- **Aumentar stock**: Al seleccionar un producto existente, el stock se incrementa automáticamente
 
 ---
 

@@ -27,7 +27,6 @@ export const analyticsService = {
             totalWarehouses,
             totalSuppliers,
             totalInstitutions,
-            lowStockProducts,
             recentMovements,
             pendingTransfers,
             pendingPurchases,
@@ -44,15 +43,6 @@ export const analyticsService = {
 
             // Total institutions
             prisma.institution.count({ where: { isActive: true } }),
-
-            // Low stock products (stock < minStock)
-            prisma.product.count({
-                where: {
-                    stock: {
-                        lt: prisma.product.fields.minStock,
-                    },
-                },
-            }),
 
             // Recent movements (last 7 days)
             prisma.stockMovement.count({
@@ -92,15 +82,16 @@ export const analyticsService = {
         ]);
 
         // Calculate total stock value
-        const products = await prisma.product.findMany({
-            select: {
-                stock: true,
-                price: true,
+        const warehouseStock = await prisma.warehouseStock.findMany({
+            include: {
+                product: {
+                    select: { price: true },
+                },
             },
         });
 
-        const totalStockValue = products.reduce(
-            (sum, p) => sum + p.stock * Number(p.price || 0),
+        const totalStockValue = warehouseStock.reduce(
+            (sum, ws) => sum + ws.quantity * Number(ws.product.price || 0),
             0
         );
 
@@ -109,7 +100,6 @@ export const analyticsService = {
             totalWarehouses,
             totalSuppliers,
             totalInstitutions,
-            lowStockProducts,
             recentMovements,
             pendingTransfers,
             pendingPurchases,
@@ -122,25 +112,29 @@ export const analyticsService = {
      * Obtener reporte de stock por categoría
      */
     async getStockByCategory() {
-        const categories = await prisma.category.findMany({
+        const warehouseStock = await prisma.warehouseStock.findMany({
             include: {
-                products: {
-                    select: {
-                        stock: true,
-                        price: true,
-                    },
+                product: {
+                    include: { category: true },
                 },
             },
         });
 
-        return categories.map((category) => ({
-            categoryName: category.name,
-            productCount: category.products.length,
-            totalStock: category.products.reduce((sum, p) => sum + p.stock, 0),
-            totalValue: category.products.reduce(
-                (sum, p) => sum + p.stock * Number(p.price || 0),
-                0
-            ),
+        const byCategory: Record<string, { productCount: number; totalStock: number; totalValue: number }> = {};
+
+        for (const ws of warehouseStock) {
+            const catName = ws.product.category?.name || "Sin categoría";
+            if (!byCategory[catName]) {
+                byCategory[catName] = { productCount: 0, totalStock: 0, totalValue: 0 };
+            }
+            byCategory[catName].productCount += 1;
+            byCategory[catName].totalStock += ws.quantity;
+            byCategory[catName].totalValue += ws.quantity * Number(ws.product.price || 0);
+        }
+
+        return Object.entries(byCategory).map(([categoryName, data]) => ({
+            categoryName,
+            ...data,
         }));
     },
 
@@ -237,17 +231,17 @@ export const analyticsService = {
             movements.map(async (m) => {
                 const product = await prisma.product.findUnique({
                     where: { id: m.productId },
-                    select: {
-                        name: true,
-                        sku: true,
-                        stock: true,
+                    include: {
+                        warehouseStock: true,
                     },
                 });
+
+                const currentStock = product?.warehouseStock.reduce((sum, ws) => sum + ws.quantity, 0) || 0;
 
                 return {
                     productName: product?.name || "Unknown",
                     productSku: product?.sku || "",
-                    currentStock: product?.stock || 0,
+                    currentStock,
                     movementCount: m._count.id,
                     totalQuantity: m._sum.quantity || 0,
                 };
@@ -262,41 +256,28 @@ export const analyticsService = {
      */
     async getLowStockProducts() {
         const products = await prisma.product.findMany({
-            where: {
-                OR: [
-                    {
-                        stock: {
-                            lt: prisma.product.fields.minStock,
-                        },
-                    },
-                    {
-                        stock: {
-                            equals: 0,
-                        },
-                    },
-                ],
-            },
+            where: { deletedAt: null },
             include: {
-                category: {
-                    select: {
-                        name: true,
-                    },
-                },
-            },
-            orderBy: {
-                stock: "asc",
+                category: true,
+                warehouseStock: true,
             },
         });
 
-        return products.map((p) => ({
-            id: p.id,
-            name: p.name,
-            sku: p.sku,
-            currentStock: p.stock,
-            minStock: p.minStock,
-            category: p.category?.name || "Uncategorized",
-            status: p.stock === 0 ? "out_of_stock" : "low_stock",
-        }));
+        return products
+            .map((p) => {
+                const totalStock = p.warehouseStock.reduce((sum, ws) => sum + ws.quantity, 0);
+                return {
+                    id: p.id,
+                    name: p.name,
+                    sku: p.sku,
+                    currentStock: totalStock,
+                    minStock: p.minStock,
+                    category: p.category?.name || "Uncategorized",
+                    status: totalStock === 0 ? "out_of_stock" : totalStock < p.minStock ? "low_stock" : "ok",
+                };
+            })
+            .filter((p) => p.status !== "ok")
+            .sort((a, b) => a.currentStock - b.currentStock);
     },
 
     /**

@@ -338,7 +338,6 @@ model Product {
   description String?
   price       Decimal @db.Decimal(10, 2)
   unit        String  @default("U") // Unidad de medida (U, Kg, L, m, etc.)
-  stock       Int     @default(0)
   minStock    Int     @default(0)
 
   categoryId String?   @db.Uuid

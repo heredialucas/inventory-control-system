@@ -31,6 +31,11 @@ export const warehouseService = {
             where: { id, deletedAt: null },
             include: {
                 stockItems: {
+                    where: {
+                        product: {
+                            deletedAt: null,
+                        },
+                    },
                     include: {
                         product: {
                             include: {

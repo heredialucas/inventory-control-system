@@ -275,7 +275,12 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                                             ) : (
                                                 allProducts.map((p) => (
                                                     <SelectItem key={p.id} value={p.id}>
-                                                        {p.name} - {p.sku}
+                                                        <div className="flex items-center justify-between w-full">
+                                                            <span>{p.name} - {p.sku}</span>
+                                                            <span className={`ml-4 text-xs ${p.stock > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                                                Stock: {p.stock}
+                                                            </span>
+                                                        </div>
                                                     </SelectItem>
                                                 ))
                                             )}

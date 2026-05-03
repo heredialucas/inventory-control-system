@@ -98,7 +98,7 @@ Clasifica los productos.
 ---
 
 ### Product (Producto)
-Representa los artículos que se manejan en el inventario.
+Representa los artículos que se manejan en el inventario. El stock se gestiona a través de `WarehouseStock`, no hay un campo de stock en este modelo.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -108,10 +108,10 @@ Representa los artículos que se manejan en el inventario.
 | `description` | String | Descripción |
 | `price` | Decimal | Precio unitario (para valorizar stock) |
 | `unit` | String | Unidad de medida (U, Kg, L, m, etc.) |
-| `stock` | Int | Stock global (legacy, usar WarehouseStock) |
 | `minStock` | Int | Stock mínimo para alertas |
 | `categoryId` | UUID | Categoría del producto |
 | `supplierId` | UUID | Proveedor principal (opcional) |
+| `deletedAt` | DateTime | soft delete |
 
 **Relaciones:**
 - Un producto pertenece a una categoría (`Category`)

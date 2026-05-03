@@ -202,16 +202,6 @@ export const deliveryService = {
                     },
                 });
 
-                // Reduce product total stock
-                await tx.product.update({
-                    where: { id: item.productId },
-                    data: {
-                        stock: {
-                            decrement: item.quantity,
-                        },
-                    },
-                });
-
                 // Create stock movement
                 await tx.stockMovement.create({
                     data: {

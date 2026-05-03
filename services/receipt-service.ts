@@ -202,12 +202,6 @@ export const receiptService = {
                     },
                 });
 
-                // Update Product Total Stock
-                await tx.product.update({
-                    where: { id: received.productId },
-                    data: { stock: { increment: received.quantity } },
-                });
-
                 // Create Stock Movement
                 await tx.stockMovement.create({
                     data: {
@@ -383,12 +377,6 @@ export const receiptService = {
                         },
                     });
 
-                    // Update Product Total Stock
-                    await tx.product.update({
-                        where: { id: productId },
-                        data: { stock: { increment: delta } },
-                    });
-
                     // Create movement for the delta adjustment
                     await tx.stockMovement.create({
                         data: {
@@ -447,12 +435,6 @@ export const receiptService = {
                     data: {
                         quantity: { decrement: item.quantity },
                     },
-                });
-
-                // Decrease Product Total Stock
-                await tx.product.update({
-                    where: { id: item.productId },
-                    data: { stock: { decrement: item.quantity } },
                 });
 
                 // If linked to PO, decrement receivedQty

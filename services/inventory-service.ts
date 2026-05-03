@@ -42,13 +42,44 @@ export const inventoryService = {
             where: { deletedAt: null },
             include: {
                 category: true,
+                warehouseStock: true,
             },
             orderBy: { name: "asc" },
         });
 
-        return products.map(product => ({
-            ...product,
-            price: Number(product.price),
+        return products.map(product => {
+            const totalStock = product.warehouseStock.reduce((sum, ws) => sum + ws.quantity, 0);
+            return {
+                ...product,
+                price: Number(product.price),
+                stock: totalStock,
+            };
+        });
+    },
+
+    // Productos con stock en un depósito específico
+    async getProductsByWarehouse(warehouseId: string) {
+        const stockItems = await prisma.warehouseStock.findMany({
+            where: { warehouseId },
+            include: {
+                product: {
+                    include: { category: true },
+                },
+            },
+            orderBy: { product: { name: "asc" } },
+        });
+
+        return stockItems.map(item => ({
+            id: item.product.id,
+            sku: item.product.sku,
+            name: item.product.name,
+            description: item.product.description,
+            price: Number(item.product.price),
+            unit: item.product.unit,
+            minStock: item.product.minStock,
+            category: item.product.category,
+            stock: item.quantity,
+            warehouseId: item.warehouseId,
         }));
     },
 
@@ -58,6 +89,7 @@ export const inventoryService = {
             include: {
                 category: true,
                 supplier: true,
+                warehouseStock: true,
                 movements: {
                     orderBy: { createdAt: "desc" },
                     take: 10,
@@ -73,9 +105,12 @@ export const inventoryService = {
 
         if (!product) return null;
 
+        const totalStock = product.warehouseStock.reduce((sum, ws) => sum + ws.quantity, 0);
+
         return {
             ...product,
             price: Number(product.price),
+            stock: totalStock,
         };
     },
 
@@ -90,7 +125,6 @@ export const inventoryService = {
         return await prisma.product.create({
             data: {
                 ...data,
-                stock: 0, // El stock inicial es 0, usar movimiento para agregar stock
             },
         });
     },
@@ -109,12 +143,11 @@ export const inventoryService = {
     }) {
         const { initialStock, warehouseId, userId, ...restData } = data;
 
-        // Construir datos del producto de forma profesional y type-safe
+        // Construir datos del producto
         const productData = {
             sku: restData.sku,
             name: restData.name,
             price: restData.price,
-            stock: initialStock || 0,
             unit: restData.unit || "U",
             minStock: restData.minStock || 0,
             ...(restData.description && { description: restData.description }),
@@ -174,7 +207,7 @@ export const inventoryService = {
     // Movimientos de Stock
     async registerMovement(data: {
         productId: string;
-        warehouseId?: string; // Opcional para llamadas heredadas si las hay
+        warehouseId?: string;
         type: "IN" | "OUT" | "ADJUSTMENT";
         quantity: number;
         userId: string;
@@ -186,26 +219,43 @@ export const inventoryService = {
         const { productId, warehouseId, type, quantity, userId, reason, sourceType, sourceId, expedienteId } = data;
 
         return await prisma.$transaction(async (tx) => {
-            const product = await tx.product.findUnique({ where: { id: productId } });
-            if (!product) throw new Error("Producto no encontrado");
-
-            let newStock = product.stock;
-            if (type === "IN") {
-                newStock += quantity;
-            } else if (type === "OUT") {
-                if (product.stock < quantity) throw new Error("Stock insuficiente");
-                newStock -= quantity;
-            } else if (type === "ADJUSTMENT") {
-                // ADJUSTMENT suma quantity con signo:
-                // quantity > 0 → agrega stock (corrección positiva)
-                // quantity < 0 → resta stock (corrección negativa)
-                newStock += quantity;
+            // Validar stock si es OUT y hay warehouse
+            if (type === "OUT" && warehouseId) {
+                const ws = await tx.warehouseStock.findUnique({
+                    where: {
+                        warehouseId_productId: {
+                            warehouseId,
+                            productId,
+                        },
+                    },
+                });
+                const currentStock = ws?.quantity || 0;
+                if (currentStock < quantity) {
+                    throw new Error("Stock insuficiente en el depósito");
+                }
             }
 
-            await tx.product.update({
-                where: { id: productId },
-                data: { stock: newStock },
-            });
+            // Actualizar WarehouseStock si hay warehouse
+            if (warehouseId) {
+                await tx.warehouseStock.upsert({
+                    where: {
+                        warehouseId_productId: {
+                            warehouseId,
+                            productId,
+                        },
+                    },
+                    create: {
+                        warehouseId,
+                        productId,
+                        quantity: type === "OUT" ? -quantity : quantity,
+                    },
+                    update: {
+                        quantity: {
+                            increment: type === "OUT" ? -quantity : quantity,
+                        },
+                    },
+                });
+            }
 
             return await tx.stockMovement.create({
                 data: {
@@ -285,6 +335,14 @@ export const inventoryService = {
     },
 
     async deleteProduct(id: string) {
+        const warehouseStock = await prisma.warehouseStock.findMany({
+            where: { productId: id, quantity: { gt: 0 } },
+        });
+
+        if (warehouseStock.length > 0) {
+            throw new Error("No se puede eliminar un producto que tiene stock en algún depósito");
+        }
+
         return await prisma.product.update({
             where: { id },
             data: { deletedAt: new Date() }
