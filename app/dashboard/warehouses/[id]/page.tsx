@@ -15,7 +15,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Package, MapPin, ArrowLeft, AlertTriangle, ArrowRight } from "lucide-react";
+import { Package, MapPin, ArrowLeft, AlertTriangle, ArrowRight, Edit } from "lucide-react";
 import Link from "next/link";
 
 export default async function WarehouseDetailPage({
@@ -62,7 +62,7 @@ export default async function WarehouseDetailPage({
                         {warehouse.code}
                     </p>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     {canManage && (
                         <>
                             <TransferForm
@@ -72,11 +72,18 @@ export default async function WarehouseDetailPage({
                                 trigger={
                                     <Button variant="outline" className="w-full sm:w-auto">
                                         <ArrowRight className="mr-2 h-4 w-4" />
-                                        Transferir Stock
+                                        <span className="sm:hidden">Transferir</span>
+                                        <span className="hidden sm:inline">Transferir Stock</span>
                                     </Button>
                                 }
                             />
-                            <WarehouseForm warehouse={JSON.parse(JSON.stringify(warehouse))} />
+                            <WarehouseForm warehouse={JSON.parse(JSON.stringify(warehouse))} trigger={
+                                <Button className="w-full sm:w-auto">
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    <span className="sm:hidden">Editar</span>
+                                    <span className="hidden sm:inline">Editar</span>
+                                </Button>
+                            } />
                         </>
                     )}
                 </div>
