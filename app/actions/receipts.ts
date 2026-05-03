@@ -37,6 +37,7 @@ export async function createReceipt(data: {
         itemId?: string;
         productId: string;
         quantity: number;
+        unitPrice?: number;
     }>;
 }) {
     await verifyPermission("receipts.manage");
@@ -68,6 +69,7 @@ export async function updateReceipt(id: string, data: {
     items?: Array<{
         productId: string;
         quantity: number;
+        unitPrice?: number;
     }>;
 }) {
     await verifyPermission("receipts.manage");

@@ -12,33 +12,19 @@ import { RestockDialog } from "./restock-dialog";
 import {
     MoreHorizontal,
     Pencil,
-    Trash,
     PackagePlus,
     Download,
-    Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { deleteProductAction } from "@/app/actions/inventory";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface ProductActionsProps {
     productId: string;
     productName: string;
     productSku: string;
     canEdit: boolean;
-    canDelete: boolean;
     warehouses: { id: string; name: string; code: string }[];
     suppliers?: { id: string; name: string; code: string }[];
     userId: string;
@@ -49,20 +35,16 @@ export function ProductActions({
     productName,
     productSku,
     canEdit,
-    canDelete,
     warehouses,
     suppliers = [],
     userId
 }: ProductActionsProps) {
     const [open, setOpen] = useState(false);
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
     const [showRestockDialog, setShowRestockDialog] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
 
-    // Si no hay permisos de editar/eliminar, mostrar solo botón de ver
-    if (!canEdit && !canDelete) {
+    if (!canEdit) {
         return (
             <Button variant="ghost" size="sm" asChild>
                 <Link href={`/dashboard/inventory/${productId}`}>
@@ -71,24 +53,6 @@ export function ProductActions({
             </Button>
         );
     }
-
-    const handleDelete = async () => {
-        setIsDeleting(true);
-        try {
-            const result = await deleteProductAction(productId);
-            if (result.error) {
-                toast.error(result.error);
-            } else {
-                toast.success("Producto eliminado exitosamente");
-                router.refresh();
-            }
-        } catch (error) {
-            toast.error("Error al eliminar el producto");
-        } finally {
-            setIsDeleting(false);
-            setShowDeleteDialog(false);
-        }
-    };
 
     return (
         <>
@@ -132,19 +96,6 @@ export function ProductActions({
                             </Link>
                         </DropdownMenuItem>
                     )}
-                    {canDelete && (
-                        <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600"
-                            onSelect={(e) => {
-                                e.preventDefault();
-                                setShowDeleteDialog(true);
-                                setOpen(false);
-                            }}
-                        >
-                            <Trash className="mr-2 h-4 w-4" />
-                            Eliminar
-                        </DropdownMenuItem>
-                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -165,31 +116,6 @@ export function ProductActions({
                 suppliers={suppliers}
             />
 
-            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            ¿Estás seguro de que deseas eliminar este producto?
-                            El producto ya no estará visible, pero se conservará en el historial.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={(e) => {
-                                e.preventDefault();
-                                handleDelete();
-                            }}
-                            className="bg-red-600 hover:bg-red-700"
-                            disabled={isDeleting}
-                        >
-                            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isDeleting ? "Eliminando..." : "Eliminar"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </>
+            </>
     );
 }

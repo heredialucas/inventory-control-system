@@ -103,9 +103,10 @@ export const receiptService = {
         expedienteId?: string;
         supplierId?: string;
         items: Array<{
-            itemId?: string;    // Optional if not from PO
+            itemId?: string;
             productId: string;
             quantity: number;
+            unitPrice?: number;
         }>;
     }) {
         const { purchaseOrderId, warehouseId, receiptNumber, date, imageUrl, userId, expedienteId, supplierId, items } = data;
@@ -138,7 +139,7 @@ export const receiptService = {
                     }
                 }
             } else {
-                // If direct entry, we need a warehouse and we calculate total based on current product price
+                // If direct entry, we need a warehouse and we calculate total based on provided unitPrice or current product price
                 if (!finalWarehouseId) throw new Error("Debe seleccionar un depósito para el ingreso directo");
                 
                 const productIds = items.map(i => i.productId);
@@ -148,9 +149,8 @@ export const receiptService = {
 
                 for (const received of items) {
                     const product = products.find(p => p.id === received.productId);
-                    if (product) {
-                        receiptTotalAmount += received.quantity * Number(product.price);
-                    }
+                    const unitPrice = received.unitPrice ?? (product ? Number(product.price) : 0);
+                    receiptTotalAmount += received.quantity * unitPrice;
                 }
             }
 
@@ -166,15 +166,23 @@ export const receiptService = {
                     expedienteId: expedienteId || order?.expedienteId || null,
                     supplierId: supplierId || order?.supplierId || null,
                     items: {
-                        create: items.map(item => ({
-                            productId: item.productId,
-                            quantity: item.quantity,
-                        }))
+                        create: items.map(item => {
+                            const product = order?.items.find(oi => oi.productId === item.productId);
+                            const unitPrice = item.unitPrice ?? (product ? Number(product.unitPrice) : 0);
+                            return {
+                                productId: item.productId,
+                                quantity: item.quantity,
+                                unitPrice: unitPrice,
+                            };
+                        })
                     }
+                },
+                include: {
+                    items: true
                 }
             });
 
-            // 3. Process each item (Update Stock & Movements)
+            // 3. Create price history records and process stock
             for (const received of items) {
                 // Update PO Item if applicable
                 if (purchaseOrderId && received.itemId) {
@@ -182,6 +190,29 @@ export const receiptService = {
                         where: { id: received.itemId },
                         data: { receivedQty: { increment: received.quantity } },
                     });
+                }
+
+                // Find the created receipt item to link price history
+                const receiptItem = receipt.items.find(ri => ri.productId === received.productId);
+                
+                // Create price history record
+                if (receiptItem) {
+                    const product = await tx.product.findUnique({ where: { id: received.productId } });
+                    const unitPrice = received.unitPrice ?? (product ? Number(product.price) : 0);
+                    const finalSupplierId = supplierId || order?.supplierId || null;
+                    
+                    if (finalSupplierId && unitPrice > 0) {
+                        await tx.productPriceHistory.create({
+                            data: {
+                                productId: received.productId,
+                                receiptItemId: receiptItem.id,
+                                supplierId: finalSupplierId,
+                                unitPrice: unitPrice,
+                                quantity: received.quantity,
+                                receiptDate: date,
+                            }
+                        });
+                    }
                 }
 
                 // Update Warehouse Stock
@@ -274,6 +305,7 @@ export const receiptService = {
         items?: Array<{
             productId: string;
             quantity: number;
+            unitPrice?: number;
         }>;
         userId: string;
     }) {

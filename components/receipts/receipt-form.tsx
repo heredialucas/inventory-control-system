@@ -55,12 +55,13 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
 
     // State for items
     const [selectedProductId, setSelectedProductId] = useState<string>("");
-    const [items, setItems] = useState<Array<{ productId: string, name: string, sku: string, quantity: number }>>(
+    const [items, setItems] = useState<Array<{ productId: string, name: string, sku: string, quantity: number, price: number }>>(
         initialData?.items?.map((i: any) => ({
             productId: i.productId,
             name: i.product?.name || "",
             sku: i.product?.sku || "",
-            quantity: i.quantity
+            quantity: i.quantity,
+            price: i.unitPrice ? Number(i.unitPrice) : (i.product?.price ? Number(i.product.price) : 0)
         })) || []
     );
 
@@ -80,7 +81,8 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
             productId: newProduct.id,
             name: newProduct.name,
             sku: newProduct.sku,
-            quantity: 1
+            quantity: 1,
+            price: Number(newProduct.price) || 0
         }]);
 
         toast.success(`${newProduct.name} creado e incorporado al remito`);
@@ -102,6 +104,10 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
 
     const updateItemQty = (productId: string, qty: number) => {
         setItems(prev => prev.map(i => i.productId === productId ? { ...i, quantity: qty } : i));
+    };
+
+    const updateItemPrice = (productId: string, price: number) => {
+        setItems(prev => prev.map(i => i.productId === productId ? { ...i, price } : i));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -141,7 +147,8 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                         userId,
                         items: items.map(i => ({
                             productId: i.productId,
-                            quantity: i.quantity
+                            quantity: i.quantity,
+                            unitPrice: i.price
                         }))
                     });
                     toast.success("Remito actualizado correctamente");
@@ -157,7 +164,8 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                         supplierId: supplierId && supplierId !== "none" ? supplierId : undefined,
                         items: items.map(i => ({
                             productId: i.productId,
-                            quantity: i.quantity
+                            quantity: i.quantity,
+                            unitPrice: i.price
                         }))
                     });
                     toast.success("Ingreso registrado correctamente");
@@ -258,7 +266,8 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                                                             productId: product.id,
                                                             name: product.name,
                                                             sku: product.sku,
-                                                            quantity: 1
+                                                            quantity: 1,
+                                                            price: Number(product.price) || 0
                                                         }]);
                                                     }
                                                 }
@@ -275,11 +284,21 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                                             ) : (
                                                 allProducts.map((p) => (
                                                     <SelectItem key={p.id} value={p.id}>
-                                                        <div className="flex items-center justify-between w-full">
-                                                            <span>{p.name} - {p.sku}</span>
-                                                            <span className={`ml-4 text-xs ${p.stock > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                                                                Stock: {p.stock}
-                                                            </span>
+                                                        <div className="flex flex-col w-full">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className={p.isDeleted ? "text-muted-foreground line-through" : ""}>
+                                                                    {p.name} - {p.sku}
+                                                                </span>
+                                                                {p.isDeleted && (
+                                                                    <span className="ml-2 text-xs text-orange-600 bg-orange-50 px-1 rounded">
+                                                                        inactivo
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                                                <span>Stock: {p.stock}</span>
+                                                                <span>${Number(p.price).toFixed(2)}</span>
+                                                            </div>
                                                         </div>
                                                     </SelectItem>
                                                 ))
@@ -298,14 +317,15 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                                     <TableHeader className="bg-muted/80">
                                         <TableRow>
                                             <TableHead className="font-bold">Producto</TableHead>
-                                            <TableHead className="w-[120px] text-center font-bold">Cantidad</TableHead>
+                                            <TableHead className="w-[100px] text-center font-bold">Cantidad</TableHead>
+                                            <TableHead className="w-[100px] text-center font-bold">Precio Unit.</TableHead>
                                             <TableHead className="w-[50px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {items.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={3} className="text-center py-16 text-muted-foreground">
+                                                <TableCell colSpan={4} className="text-center py-16 text-muted-foreground">
                                                     <div className="flex flex-col items-center gap-2">
                                                         <Package className="h-10 w-10 opacity-20" />
                                                         <p>La lista está vacía</p>
@@ -327,6 +347,17 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                                                             value={item.quantity}
                                                             onChange={(e) => updateItemQty(item.productId, parseInt(e.target.value) || 0)}
                                                             className="text-right font-bold"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.01"
+                                                            value={item.price}
+                                                            onChange={(e) => updateItemPrice(item.productId, parseFloat(e.target.value) || 0)}
+                                                            className="text-right"
+                                                            placeholder="0.00"
                                                         />
                                                     </TableCell>
                                                     <TableCell>

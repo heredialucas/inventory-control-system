@@ -36,23 +36,53 @@ export const inventoryService = {
         });
     },
 
-    // Productos
+    // Productos (solo activos)
     async getProducts() {
         const products = await prisma.product.findMany({
             where: { deletedAt: null },
             include: {
                 category: true,
-                warehouseStock: true,
             },
             orderBy: { name: "asc" },
         });
 
+        const stockItems = await prisma.warehouseStock.findMany();
+        const stockByProduct = stockItems.reduce((acc, item) => {
+            acc[item.productId] = (acc[item.productId] || 0) + item.quantity;
+            return acc;
+        }, {} as Record<string, number>);
+
         return products.map(product => {
-            const totalStock = product.warehouseStock.reduce((sum, ws) => sum + ws.quantity, 0);
             return {
                 ...product,
                 price: Number(product.price),
-                stock: totalStock,
+                stock: stockByProduct[product.id] || 0,
+            };
+        });
+    },
+
+    // Productos incluyendo los eliminados (para reusar en receipts)
+    async getAllProductsIncludingDeleted() {
+        const products = await prisma.product.findMany({
+            include: {
+                category: true,
+            },
+            orderBy: { name: "asc" },
+        });
+
+        // Get warehouse stock separately to avoid relation issues
+        const stockItems = await prisma.warehouseStock.findMany();
+        const stockByProduct = stockItems.reduce((acc, item) => {
+            acc[item.productId] = (acc[item.productId] || 0) + item.quantity;
+            return acc;
+        }, {} as Record<string, number>);
+
+        return products.map(product => {
+            return {
+                ...product,
+                price: Number(product.price),
+                stock: stockByProduct[product.id] || 0,
+                isDeleted: product.deletedAt !== null,
             };
         });
     },
