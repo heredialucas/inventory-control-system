@@ -4,6 +4,7 @@ import { deliveryService } from "@/services/delivery-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { DeliveryStatus } from "@prisma/client";
+import { serializePrisma } from "@/lib/utils";
 
 export async function getDeliveries(filters?: {
     status?: DeliveryStatus;
@@ -31,16 +32,7 @@ export async function getDelivery(id: string) {
         if (!delivery) return null;
         
         // Serialize Decimal fields
-        return {
-            ...delivery,
-            items: delivery.items.map(item => ({
-                ...item,
-                product: {
-                    ...item.product,
-                    price: item.product.price?.toString() || "0",
-                },
-            })),
-        };
+        return serializePrisma(delivery);
     } catch (error) {
         console.error("Error getting delivery:", error);
         throw new Error("Failed to fetch delivery");
@@ -70,16 +62,7 @@ export async function createDelivery(data: {
         revalidatePath("/dashboard/deliveries");
         
         // Serialize Decimal fields to avoid "Only plain objects can be passed to Client Components" error
-        return {
-            ...delivery,
-            items: delivery.items.map(item => ({
-                ...item,
-                product: {
-                    ...item.product,
-                    price: item.product.price?.toString() || "0",
-                },
-            })),
-        };
+        return serializePrisma(delivery);
     } catch (error: any) {
         console.error("Error creating delivery:", error);
         throw new Error(error.message || "Failed to create delivery");

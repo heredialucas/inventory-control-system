@@ -293,32 +293,34 @@ export const receiptService = {
 
             if (!oldReceipt) throw new Error("Remito no encontrado");
 
-            // 1. Revert old stock if items are provided
+            // 1. Calculate deltas for each product
+            const deltas = new Map<string, { productId: string, delta: number }>();
+            
             if (items) {
+                // Subtract old quantities
                 for (const oldItem of oldReceipt.items) {
-                    await tx.warehouseStock.update({
-                        where: {
-                            warehouseId_productId: {
-                                warehouseId: oldReceipt.warehouseId!,
-                                productId: oldItem.productId,
-                            },
-                        },
-                        data: { quantity: { decrement: oldItem.quantity } },
+                    deltas.set(oldItem.productId, { 
+                        productId: oldItem.productId, 
+                        delta: -oldItem.quantity 
                     });
-
-                    await tx.product.update({
-                        where: { id: oldItem.productId },
-                        data: { stock: { decrement: oldItem.quantity } },
+                }
+                
+                // Add new quantities
+                for (const newItem of items) {
+                    const entry = deltas.get(newItem.productId) || { productId: newItem.productId, delta: 0 };
+                    deltas.set(newItem.productId, { 
+                        productId: newItem.productId, 
+                        delta: entry.delta + newItem.quantity 
                     });
                 }
 
-                // Delete old items
+                // 2. Delete old receipt items and apply new ones in the database record
                 await tx.purchaseReceiptItem.deleteMany({
                     where: { receiptId: id }
                 });
             }
 
-            // 2. Calculate new total amount
+            // 3. Calculate new total amount
             let receiptTotalAmount = Number(oldReceipt.totalAmount);
             if (items) {
                 receiptTotalAmount = 0;
@@ -335,7 +337,7 @@ export const receiptService = {
                 }
             }
 
-            // 3. Update Receipt Record
+            // 4. Update Receipt Record
             const updatedReceipt = await tx.purchaseReceipt.update({
                 where: { id },
                 data: {
@@ -355,39 +357,45 @@ export const receiptService = {
                 }
             });
 
-            // 4. Apply new stock
+            // 5. Apply deltas to stock and create movements
             if (items) {
                 const finalWarehouseId = warehouseId ?? oldReceipt.warehouseId;
-                for (const item of items) {
+                
+                for (const [productId, { delta }] of deltas.entries()) {
+                    // If no change, skip stock updates and movements
+                    if (delta === 0) continue;
+
+                    // Update Warehouse Stock (can be negative if decrementing)
                     await tx.warehouseStock.upsert({
                         where: {
                             warehouseId_productId: {
                                 warehouseId: finalWarehouseId!,
-                                productId: item.productId,
+                                productId: productId,
                             },
                         },
                         create: {
                             warehouseId: finalWarehouseId!,
-                            productId: item.productId,
-                            quantity: item.quantity,
+                            productId: productId,
+                            quantity: delta,
                         },
                         update: {
-                            quantity: { increment: item.quantity },
+                            quantity: { increment: delta },
                         },
                     });
 
+                    // Update Product Total Stock
                     await tx.product.update({
-                        where: { id: item.productId },
-                        data: { stock: { increment: item.quantity } },
+                        where: { id: productId },
+                        data: { stock: { increment: delta } },
                     });
 
-                    // Create movement for adjustment
+                    // Create movement for the delta adjustment
                     await tx.stockMovement.create({
                         data: {
-                            productId: item.productId,
+                            productId: productId,
                             warehouseId: finalWarehouseId,
                             type: "ADJUSTMENT",
-                            quantity: item.quantity,
+                            quantity: delta, // This is the net change (+50 or -20 etc.)
                             reason: `Edición de remito ${updatedReceipt.receiptNumber}`,
                             userId,
                             sourceType: "RECEIPT",
@@ -398,7 +406,111 @@ export const receiptService = {
                 }
             }
 
-            return updatedReceipt;
+            return {
+                ...updatedReceipt,
+                totalAmount: Number(updatedReceipt.totalAmount),
+            };
+        });
+    },
+
+    /**
+     * Delete a receipt and revert all its effects (stock, PO status, etc.)
+     */
+    async deleteReceipt(id: string, userId: string) {
+        return await prisma.$transaction(async (tx) => {
+            // 1. Get receipt with items and PO info
+            const receipt = await tx.purchaseReceipt.findUnique({
+                where: { id },
+                include: { 
+                    items: true,
+                    purchaseOrder: {
+                        include: { items: true }
+                    }
+                }
+            });
+
+            if (!receipt) throw new Error("Remito no encontrado");
+
+            const finalWarehouseId = receipt.warehouseId || receipt.purchaseOrder?.warehouseId;
+            if (!finalWarehouseId) throw new Error("No se pudo determinar el depósito del remito");
+
+            // 2. Revert stock and create "removal" movements
+            for (const item of receipt.items) {
+                // Decrease Warehouse Stock
+                await tx.warehouseStock.update({
+                    where: {
+                        warehouseId_productId: {
+                            warehouseId: finalWarehouseId,
+                            productId: item.productId,
+                        },
+                    },
+                    data: {
+                        quantity: { decrement: item.quantity },
+                    },
+                });
+
+                // Decrease Product Total Stock
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: { stock: { decrement: item.quantity } },
+                });
+
+                // If linked to PO, decrement receivedQty
+                if (receipt.purchaseOrderId) {
+                    // Find the matching PO item. 
+                    // Note: This assumes one PO item per product in the receipt, which is typical.
+                    // If there are multiple PO items for the same product, this might need refinement.
+                    const poItem = receipt.purchaseOrder?.items.find(poi => poi.productId === item.productId);
+                    if (poItem) {
+                        await tx.purchaseOrderItem.update({
+                            where: { id: poItem.id },
+                            data: { receivedQty: { decrement: item.quantity } },
+                        });
+                    }
+                }
+
+                // Create Stock Movement (Adjustment/Removal)
+                await tx.stockMovement.create({
+                    data: {
+                        productId: item.productId,
+                        warehouseId: finalWarehouseId,
+                        type: "OUT",
+                        quantity: item.quantity,
+                        reason: `Eliminación de remito ${receipt.receiptNumber}`,
+                        userId,
+                        sourceType: "RECEIPT",
+                        sourceId: receipt.id,
+                        expedienteId: receipt.expedienteId,
+                    },
+                });
+            }
+
+            // 3. Update PO status if applicable
+            if (receipt.purchaseOrderId) {
+                const updatedItems = await tx.purchaseOrderItem.findMany({
+                    where: { purchaseOrderId: receipt.purchaseOrderId },
+                });
+
+                const allReceived = updatedItems.every(item => item.receivedQty === item.quantity && item.quantity > 0);
+                const partialReceived = updatedItems.some(item => item.receivedQty > 0);
+
+                await tx.purchaseOrder.update({
+                    where: { id: receipt.purchaseOrderId },
+                    data: {
+                        status: allReceived ? "RECEIVED" : partialReceived ? "PARTIAL" : "PENDING",
+                        receivedDate: allReceived ? new Date() : (partialReceived ? receipt.purchaseOrder?.receivedDate : null),
+                    },
+                });
+            }
+
+            // 4. Delete the receipt (items will be deleted via Cascade if configured, but let's be explicit if not)
+            // The schema says: receipt PurchaseReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+            // So deleting the receipt will delete its items.
+            await tx.purchaseReceipt.delete({
+                where: { id }
+            });
+
+            return { success: true };
         });
     },
 };

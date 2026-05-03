@@ -4,6 +4,7 @@ import { purchaseService } from "@/services/purchase-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { PurchaseOrderStatus } from "@prisma/client";
+import { serializePrisma } from "@/lib/utils";
 
 export async function getPurchaseOrders(filters?: {
     status?: PurchaseOrderStatus;
@@ -11,12 +12,17 @@ export async function getPurchaseOrders(filters?: {
     warehouseId?: string;
 }) {
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "purchases.view")) {
+    const canView = hasPermission(user, "purchases.view") || 
+                    hasPermission(user, "receipts.view") || 
+                    hasPermission(user, "receipts.manage");
+
+    if (!user || !canView) {
         throw new Error("No tienes permisos para ver órdenes de compra");
     }
 
     try {
-        return await purchaseService.getPurchaseOrders(filters);
+        const orders = await purchaseService.getPurchaseOrders(filters);
+        return serializePrisma(orders);
     } catch (error) {
         console.error("Error getting purchase orders:", error);
         throw new Error("Failed to fetch purchase orders");
@@ -25,12 +31,17 @@ export async function getPurchaseOrders(filters?: {
 
 export async function getPurchaseOrder(id: string) {
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "purchases.view")) {
+    const canView = hasPermission(user, "purchases.view") || 
+                    hasPermission(user, "receipts.view") || 
+                    hasPermission(user, "receipts.manage");
+
+    if (!user || !canView) {
         throw new Error("No tienes permisos para ver órdenes de compra");
     }
 
     try {
-        return await purchaseService.getPurchaseOrder(id);
+        const order = await purchaseService.getPurchaseOrder(id);
+        return serializePrisma(order);
     } catch (error) {
         console.error("Error getting purchase order:", error);
         throw new Error("Failed to fetch purchase order");
@@ -58,7 +69,7 @@ export async function createPurchaseOrder(data: {
     try {
         const order = await purchaseService.createPurchaseOrder(data);
         revalidatePath("/dashboard/purchases");
-        return order;
+        return serializePrisma(order);
     } catch (error: any) {
         console.error("Error creating purchase order:", error);
         throw new Error(error.message || "Failed to create purchase order");
@@ -77,7 +88,7 @@ export async function updatePurchaseOrder(
         const order = await purchaseService.updatePurchaseOrder(id, data);
         revalidatePath("/dashboard/purchases");
         revalidatePath(`/dashboard/purchases/${id}`);
-        return order;
+        return serializePrisma(order);
     } catch (error: any) {
         console.error("Error updating purchase order:", error);
         throw new Error(error.message || "Failed to update purchase order");
@@ -96,7 +107,7 @@ export async function cancelPurchaseOrder(id: string) {
         const order = await purchaseService.cancelPurchaseOrder(id);
         revalidatePath("/dashboard/purchases");
         revalidatePath(`/dashboard/purchases/${id}`);
-        return order;
+        return serializePrisma(order);
     } catch (error: any) {
         console.error("Error cancelling purchase order:", error);
         throw new Error(error.message || "Failed to cancel purchase order");
@@ -108,7 +119,7 @@ export async function submitPurchaseOrder(id: string) {
         const order = await purchaseService.submitPurchaseOrder(id);
         revalidatePath("/dashboard/purchases");
         revalidatePath(`/dashboard/purchases/${id}`);
-        return order;
+        return serializePrisma(order);
     } catch (error: any) {
         console.error("Error submitting purchase order:", error);
         throw new Error(error.message || "Failed to submit purchase order");

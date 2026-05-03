@@ -140,8 +140,6 @@ export async function getProductStockByWarehouse(productId: string) {
     }
 }
 
-
-
 export async function getWarehouseProducts(warehouseId: string) {
     try {
         if (warehouseId === "unassigned") {
@@ -150,7 +148,7 @@ export async function getWarehouseProducts(warehouseId: string) {
                 id: p.id,
                 name: p.name,
                 sku: p.sku,
-                quantity: p.stock, // Stock total
+                quantity: p.stock,
                 price: p.price?.toString() || "0",
                 unit: p.unit,
                 categoryId: p.categoryId,
@@ -158,7 +156,6 @@ export async function getWarehouseProducts(warehouseId: string) {
         }
 
         const stockItems = await warehouseService.getWarehouseStock(warehouseId);
-        // Filtrar items con cantidad > 0 y mapear al formato serializable (sin Decimals)
         return stockItems
             .filter(item => item.quantity > 0)
             .map(item => ({
@@ -193,13 +190,12 @@ export async function getTransfers(filters?: {
     }
 
     try {
-        // 1. Fetch regular transfers
+        // Solo obtenemos transferencias reales entre depósitos
         const transfers = await warehouseService.getTransfers(filters);
 
-        // 2. Map transfers to plain objects (serializing Decimals)
-        const mappedTransfers = transfers.map(t => ({
+        return transfers.map(t => ({
             id: t.id,
-            type: "TRANSFER" as const, // Discriminador para UI si es necesario
+            type: "TRANSFER" as const,
             quantity: t.quantity,
             status: t.status,
             notes: t.notes,
@@ -219,76 +215,9 @@ export async function getTransfers(filters?: {
                 id: t.product.id,
                 name: t.product.name,
                 sku: t.product.sku,
-                // price: t.product.price.toString(), // Si se necesita precio, habilitar esto. Actualmente la UI no parece usarlo.
             },
             user: t.user,
         }));
-
-        // 3. If we are showing "all" or filtering by destination warehouse, fetch "Ingresos" (Unassigned -> Warehouse)
-        let stockMovements: any[] = [];
-
-        if (!filters?.status || filters.status === "COMPLETED") {
-            // Obtener movimientos "IN" que podrían ser "Ingresos"
-            // Estrategia: los "Ingresos" válidos usualmente tienen warehouseId (destino) pero no son creados por una transferencia
-            // (aunque la finalización de transferencia también crea movimientos IN).
-            // Para distinguir: Los movimientos de finalización de transferencia tienen reason "Transfer from warehouse completed".
-            // Queremos "Transfer from Unassigned..." o similar, ¿o simplemente todo lo demás?
-            // Más seguro: Filtrar FUERA aquellos con reason "Transfer from warehouse completed".
-            // También filtrar por warehouseId si se proporciona en los filtros.
-
-            const movements = await inventoryService.getStockMovements({
-                type: "IN",
-                warehouseId: filters?.warehouseId,
-                // Filtraremos por reason manualmente ya que nuestro servicio es simple
-            });
-
-            // Filtrar movimientos que vienen de Finalización de Transferencia (para evitar duplicados en la UI)
-            // El string reason en `completeTransfer` es "Transfer from warehouse completed"
-            // El string reason en `cancelTransfer` es "Transfer cancelled - stock returned" -> ¿Debería mostrarse? ¿Quizás como devolución cancelada?
-            // Enfoquémonos en "Ingresos" (Agregar Stock).
-            // `addStockToWarehouse` reason: data.notes || "Transfer from Unassigned/Adjustment"
-
-            stockMovements = movements.filter(m =>
-                m.reason !== "Transfer from warehouse completed" &&
-                m.reason !== "Transfer cancelled - stock returned"
-            );
-        }
-
-        const mappedMovements = stockMovements.map(m => ({
-            id: m.id,
-            type: "MOVEMENT" as const,
-            quantity: m.quantity,
-            status: "COMPLETED", // Los movimientos siempre están completados
-            notes: m.reason,
-            createdAt: m.createdAt,
-            completedAt: m.createdAt, // Igual
-            fromWarehouse: {
-                id: "unassigned",
-                name: "Sin Asignar / Externo",
-                code: "N/A"
-            },
-            toWarehouse: {
-                id: m.warehouse?.id || "unknown",
-                name: m.warehouse?.name || "Unknown",
-                code: m.warehouse?.code || "??"
-            },
-            product: {
-                id: m.product.id,
-                name: m.product.name,
-                sku: m.product.sku,
-            },
-            user: m.user,
-        }));
-
-        // 4. Combinar y ordenar
-        const combined = [...mappedTransfers, ...mappedMovements].sort((a, b) => { // Ordenar descendente por fecha
-            const dateA = new Date(a.createdAt).getTime();
-            const dateB = new Date(b.createdAt).getTime();
-            return dateB - dateA;
-        });
-
-        return combined;
-
     } catch (error) {
         console.error("Error obteniendo transferencias:", error);
         throw new Error("Error al obtener transferencias");
@@ -323,7 +252,7 @@ export async function createTransfer(data: {
         revalidatePath("/dashboard/warehouses/transfers");
         revalidatePath(`/dashboard/warehouses/${data.fromWarehouseId}`);
         revalidatePath(`/dashboard/warehouses/${data.toWarehouseId}`);
-        revalidatePath("/dashboard/warehouses"); // Actualizar conteos de lista principal
+        revalidatePath("/dashboard/warehouses");
         return transfer;
     } catch (error: any) {
         console.error("Error creating transfer:", error);
@@ -356,7 +285,7 @@ export async function completeTransfer(transferId: string, userId: string) {
     try {
         const transfer = await warehouseService.completeTransfer(transferId, userId);
         revalidatePath("/dashboard/warehouses/transfers");
-        revalidatePath("/dashboard/warehouses"); // Actualizar conteos de lista principal
+        revalidatePath("/dashboard/warehouses");
         return transfer;
     } catch (error: any) {
         console.error("Error completing transfer:", error);
@@ -374,8 +303,6 @@ export async function cancelTransfer(transferId: string, userId: string) {
         const transfer = await warehouseService.cancelTransfer(transferId, userId);
         revalidatePath("/dashboard/warehouses/transfers");
         return transfer;
-
-
     } catch (error: any) {
         console.error("Error cancelling transfer:", error);
         throw new Error(error.message || "Error al cancelar transferencia");
@@ -397,13 +324,9 @@ export async function addStockToWarehouse(data: {
     }
 
     try {
-        // Distinguir entre STOCK NUEVO (Compra) y ASIGNACIÓN (Distribución)
-
-        // 1. Actualizar Stock de Depósito (Siempre aumenta en el depósito destino)
         await warehouseService.updateWarehouseStock(data.warehouseId, data.productId, data.quantity);
 
         if (data.isNewStock) {
-            // NEW STOCK: Increases Total Product Stock
             await inventoryService.registerMovement({
                 productId: data.productId,
                 warehouseId: data.warehouseId,
@@ -416,7 +339,6 @@ export async function addStockToWarehouse(data: {
                 expedienteId: data.expedienteId,
             });
         } else {
-            // ASSIGNMENT: Does NOT increase Total Product Stock (moves from implicitly "Unassigned")
             await inventoryService.registerStockAssignment({
                 productId: data.productId,
                 warehouseId: data.warehouseId,

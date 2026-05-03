@@ -85,26 +85,28 @@ async function main() {
     const adminRole = await prisma.role.upsert({
         where: { name: "ADMIN" },
         update: {},
-        create: { name: "ADMIN", description: "Administrador del sistema con todos los permisos" },
-    });
-
-    const managerRole = await prisma.role.upsert({
-        where: { name: "MANAGER" },
-        update: {},
-        create: { name: "MANAGER", description: "Encargado con permisos de gestión en todos los módulos" },
-    });
-
-    const viewerRole = await prisma.role.upsert({
-        where: { name: "VIEWER" },
-        update: {},
-        create: { name: "VIEWER", description: "Empleado con permisos de solo lectura" },
+        create: { name: "ADMIN", description: "Administrador con acceso total" },
     });
 
     const encargadoRole = await prisma.role.upsert({
         where: { name: "ENCARGADO" },
         update: {},
-        create: { name: "ENCARGADO", description: "Encargado con permisos de vista limitada para usuarios, inventario y entregas" },
+        create: { name: "ENCARGADO", description: "Encargado con acceso administrativo operativo" },
     });
+
+    const comprasRole = await prisma.role.upsert({
+        where: { name: "COMPRAS" },
+        update: {},
+        create: { name: "COMPRAS", description: "Personal del departamento de Compras" },
+    });
+
+    const depositoRole = await prisma.role.upsert({
+        where: { name: "DEPOSITO" },
+        update: {},
+        create: { name: "DEPOSITO", description: "Personal del departamento de Depósito" },
+    });
+
+    console.log("✅ Seeded roles: ADMIN, ENCARGADO, COMPRAS, DEPOSITO");
 
     console.log("✅ Seeded 4 roles");
 
@@ -113,78 +115,57 @@ async function main() {
 
     const allPermissions = await prisma.permission.findMany();
 
+    // Helper function to assign permissions
+    const assignPermissions = async (roleId: string, actions: string[]) => {
+        const permsToAssign = allPermissions.filter(p => actions.includes(p.action));
+        for (const p of permsToAssign) {
+            await prisma.rolePermission.upsert({
+                where: { roleId_permissionId: { roleId, permissionId: p.id } },
+                update: {},
+                create: { roleId, permissionId: p.id }
+            });
+        }
+    };
+
     // ADMIN gets all permissions
     for (const p of allPermissions) {
         await prisma.rolePermission.upsert({
-            where: {
-                roleId_permissionId: {
-                    roleId: adminRole.id,
-                    permissionId: p.id
-                }
-            },
+            where: { roleId_permissionId: { roleId: adminRole.id, permissionId: p.id } },
             update: {},
-            create: {
-                roleId: adminRole.id,
-                permissionId: p.id
-            }
+            create: { roleId: adminRole.id, permissionId: p.id }
         });
     }
 
-    // MANAGER gets all manage permissions + all view permissions
-    const managePermissions = allPermissions.filter(p => p.action.endsWith(".manage"));
-    const viewPermissions = allPermissions.filter(p => p.action.endsWith(".view"));
-    for (const p of [...managePermissions, ...viewPermissions]) {
-        await prisma.rolePermission.upsert({
-            where: {
-                roleId_permissionId: {
-                    roleId: managerRole.id,
-                    permissionId: p.id
-                }
-            },
-            update: {},
-            create: {
-                roleId: managerRole.id,
-                permissionId: p.id
-            }
-        });
-    }
+    // ENCARGADO gets everything except users.manage
+    const encargadoActions = allPermissions
+        .filter(p => p.action !== "users.manage")
+        .map(p => p.action);
+    await assignPermissions(encargadoRole.id, encargadoActions);
 
-    // VIEWER gets only view permissions
-    for (const p of viewPermissions) {
-        await prisma.rolePermission.upsert({
-            where: {
-                roleId_permissionId: {
-                    roleId: viewerRole.id,
-                    permissionId: p.id
-                }
-            },
-            update: {},
-            create: {
-                roleId: viewerRole.id,
-                permissionId: p.id
-            }
-        });
-    }
+    // COMPRAS permissions
+    const comprasActions = [
+        "purchases.manage", "purchases.view",
+        "suppliers.manage", "suppliers.view",
+        "receipts.manage", "receipts.view",
+        "movements.view",
+        "users.view"
+    ];
+    await assignPermissions(comprasRole.id, comprasActions);
 
-    // ENCARGADO gets specific view permissions
-    const encargadoPermissions = allPermissions.filter(p =>
-        p.action === "users.view" || p.action === "inventory.view" || p.action === "deliveries.view"
-    );
-    for (const p of encargadoPermissions) {
-        await prisma.rolePermission.upsert({
-            where: {
-                roleId_permissionId: {
-                    roleId: encargadoRole.id,
-                    permissionId: p.id
-                }
-            },
-            update: {},
-            create: {
-                roleId: encargadoRole.id,
-                permissionId: p.id
-            }
-        });
-    }
+    // DEPOSITO permissions
+    const depositoActions = [
+        "inventory.manage", "inventory.view",
+        "warehouses.manage", "warehouses.view",
+        "transfers.manage", "transfers.view",
+        "deliveries.manage", "deliveries.view",
+        "receipts.manage", "receipts.view",
+        "institutions.manage", "institutions.view",
+        "categories.view", "warehouses.view",
+        "users.view"
+    ];
+    await assignPermissions(depositoRole.id, depositoActions);
+
+    console.log("✅ Assigned permissions to roles");
 
     console.log("✅ Assigned permissions to roles");
 
@@ -233,75 +214,70 @@ async function main() {
 
     console.log(`✅ Migrated ${migratedCount} products to default warehouse`);
 
-    // ==================== CREATE ADMIN USER ====================
-    console.log("👤 Creating admin user...");
+    // ==================== CREATE USERS ====================
+    const adminPassword = await bcrypt.hash("admin123", 10);
+    const encargadoPassword = await bcrypt.hash("encargado123", 10);
+    const comprasPassword = await bcrypt.hash("compras123", 10);
+    const depositoPassword = await bcrypt.hash("deposito123", 10);
 
-    const hashedPassword = await bcrypt.hash("admin123", 10);
-
-    const adminUser = await prisma.user.upsert({
-        where: { email: "admin@gmail.com" },
-        update: {},
-        create: {
+    const usersToCreate = [
+        {
             email: "admin@gmail.com",
             username: "admin",
-            password: hashedPassword,
             firstName: "Admin",
             lastName: "User",
-            isActive: true,
+            password: adminPassword,
+            role: adminRole
         },
-    });
-
-    // Assign admin role to the user
-    await prisma.userRole.upsert({
-        where: {
-            userId_roleId: {
-                userId: adminUser.id,
-                roleId: adminRole.id,
-            },
-        },
-        update: {},
-        create: {
-            userId: adminUser.id,
-            roleId: adminRole.id,
-        },
-    });
-
-    console.log(`✅ Admin user created: ${adminUser.email}`);
-
-    // ==================== CREATE ENCARGADO USER ====================
-    console.log("👤 Creating encargado user...");
-
-    const encargadoHashedPassword = await bcrypt.hash("encargado123", 10);
-
-    const encargadoUser = await prisma.user.upsert({
-        where: { email: "encargado@gmail.com" },
-        update: {},
-        create: {
+        {
             email: "encargado@gmail.com",
             username: "encargado",
-            password: encargadoHashedPassword,
             firstName: "Encargado",
-            lastName: "User",
-            isActive: true,
+            lastName: "General",
+            password: encargadoPassword,
+            role: encargadoRole
         },
-    });
+        {
+            email: "compras@gmail.com",
+            username: "compras",
+            firstName: "Responsable",
+            lastName: "Compras",
+            password: comprasPassword,
+            role: comprasRole
+        },
+        {
+            email: "deposito@gmail.com",
+            username: "deposito",
+            firstName: "Responsable",
+            lastName: "Depósito",
+            password: depositoPassword,
+            role: depositoRole
+        }
+    ];
 
-    // Assign encargado role to the user
-    await prisma.userRole.upsert({
-        where: {
-            userId_roleId: {
-                userId: encargadoUser.id,
-                roleId: encargadoRole.id,
+    for (const u of usersToCreate) {
+        console.log(`👤 Creating/Updating user: ${u.email}...`);
+        const user = await prisma.user.upsert({
+            where: { email: u.email },
+            update: {
+                password: u.password // Actualizar contraseña por si cambió en el seed
             },
-        },
-        update: {},
-        create: {
-            userId: encargadoUser.id,
-            roleId: encargadoRole.id,
-        },
-    });
+            create: {
+                email: u.email,
+                username: u.username,
+                password: u.password,
+                firstName: u.firstName,
+                lastName: u.lastName,
+                isActive: true,
+            },
+        });
 
-    console.log(`✅ Encargado user created: ${encargadoUser.email}`);
+        await prisma.userRole.upsert({
+            where: { userId_roleId: { userId: user.id, roleId: u.role.id } },
+            update: {},
+            create: { userId: user.id, roleId: u.role.id },
+        });
+    }
 
     console.log("✅ Database seeding completed!");
 }

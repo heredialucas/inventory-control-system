@@ -12,9 +12,21 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Eye, Edit, Image as ImageIcon } from "lucide-react";
+import { Search, Eye, Edit, Image as ImageIcon, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { deleteReceipt } from "@/app/actions/receipts";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ReceiptListProps {
     receipts: any[];
@@ -23,6 +35,19 @@ interface ReceiptListProps {
 
 export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
     const [search, setSearch] = useState("");
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+    const handleDelete = async (id: string) => {
+        try {
+            setIsDeleting(id);
+            await deleteReceipt(id);
+        } catch (error) {
+            console.error("Error deleting receipt:", error);
+            alert("Error al eliminar el remito");
+        } finally {
+            setIsDeleting(null);
+        }
+    };
 
     const filtered = receipts.filter(
         (r) =>
@@ -88,11 +113,50 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                                                 </Button>
                                             </Link>
                                             {canManage && (
-                                                <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
-                                                    <Button variant="ghost" size="icon" title="Editar remito">
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
+                                                <>
+                                                    <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
+                                                        <Button variant="ghost" size="icon" title="Editar remito">
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                    </Link>
+
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                title="Eliminar remito"
+                                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                disabled={isDeleting === receipt.id}
+                                                            >
+                                                                {isDeleting === receipt.id ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                )}
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Esta acción eliminará el remito y revertirá el stock ingresado.
+                                                                    Si el remito está asociado a una Orden de Compra, el estado de la misma será actualizado.
+                                                                    Esta acción no se puede deshacer.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={() => handleDelete(receipt.id)}
+                                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                >
+                                                                    Eliminar
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </>
                                             )}
                                         </div>
                                     </TableCell>

@@ -86,7 +86,12 @@ export const expedienteService = {
                 },
                 receipts: {
                     include: {
-                        purchaseOrder: true,
+                        purchaseOrder: {
+                            include: {
+                                warehouse: true
+                            }
+                        },
+                        warehouse: true,
                         items: {
                             include: {
                                 product: true

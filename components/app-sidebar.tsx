@@ -201,6 +201,18 @@ export function AppSidebar({
     }, [pathname]); // Re-run only on pathname change to stay in sync
 
     const toggleGroup = (groupTitle: string) => {
+        const group = filteredGroups.find(g => g.groupTitle === groupTitle);
+        if (!group) return;
+
+        const hasActiveItem = group.items.some(item => {
+            if (item.href === "/dashboard") return pathname === "/dashboard";
+            return pathname === item.href || pathname.startsWith(`${item.href}/`);
+        });
+
+        if (hasActiveItem && openGroups[groupTitle]) {
+            return;
+        }
+
         setOpenGroups(prev => ({
             ...prev,
             [groupTitle]: !prev[groupTitle],

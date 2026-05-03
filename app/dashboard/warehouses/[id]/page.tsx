@@ -133,7 +133,7 @@ export default async function WarehouseDetailPage({
             {/* Stock Table */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Ingresos</CardTitle>
+                    <CardTitle>Stock Actual</CardTitle>
                     <CardDescription>
                         Niveles de stock actuales para este depósito
                     </CardDescription>

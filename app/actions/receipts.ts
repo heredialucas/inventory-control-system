@@ -3,6 +3,7 @@
 import { receiptService } from "@/services/receipt-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { serializePrisma } from "@/lib/utils";
 
 async function verifyPermission(permission: string) {
     const user = await getCurrentUser();
@@ -13,12 +14,14 @@ async function verifyPermission(permission: string) {
 
 export async function getReceipts(filters?: { expedienteId?: string; purchaseOrderId?: string }) {
     await verifyPermission("receipts.view");
-    return receiptService.getReceipts(filters);
+    const result = await receiptService.getReceipts(filters);
+    return serializePrisma(result);
 }
 
 export async function getReceipt(id: string) {
     await verifyPermission("receipts.view");
-    return receiptService.getReceipt(id);
+    const result = await receiptService.getReceipt(id);
+    return serializePrisma(result);
 }
 
 export async function createReceipt(data: {
@@ -45,10 +48,13 @@ export async function createReceipt(data: {
         revalidatePath(`/dashboard/purchases/${data.purchaseOrderId}`);
         revalidatePath("/dashboard/purchases");
     }
-    if (data.expedienteId) {
-        revalidatePath(`/dashboard/expedientes/${data.expedienteId}`);
+    
+    // Revalidate the expediente path if the receipt is linked to one
+    if (result.expedienteId) {
+        revalidatePath(`/dashboard/expedientes/${result.expedienteId}`);
     }
-    return result;
+    
+    return serializePrisma(result);
 }
 
 export async function updateReceipt(id: string, data: {
@@ -66,12 +72,42 @@ export async function updateReceipt(id: string, data: {
 }) {
     await verifyPermission("receipts.manage");
     const result = await receiptService.updateReceipt(id, data);
+    
     revalidatePath("/dashboard/receipts");
     revalidatePath(`/dashboard/receipts/${id}`);
     revalidatePath("/dashboard/inventory");
     revalidatePath("/dashboard/movements");
-    if (data.expedienteId) {
-        revalidatePath(`/dashboard/expedientes/${data.expedienteId}`);
+    
+    // Revalidate the expediente path if the receipt is linked to one
+    if (result.expedienteId) {
+        revalidatePath(`/dashboard/expedientes/${result.expedienteId}`);
     }
-    return result;
+    
+    return serializePrisma(result);
+}
+
+export async function deleteReceipt(id: string) {
+    await verifyPermission("receipts.manage");
+    const user = await getCurrentUser();
+    if (!user) throw new Error("No autorizado");
+
+    // Get the receipt before deleting it to know what to revalidate
+    const receipt = await receiptService.getReceipt(id);
+    
+    const result = await receiptService.deleteReceipt(id, user.id);
+    
+    revalidatePath("/dashboard/receipts");
+    revalidatePath("/dashboard/inventory");
+    revalidatePath("/dashboard/movements");
+    
+    if (receipt?.purchaseOrderId) {
+        revalidatePath(`/dashboard/purchases/${receipt.purchaseOrderId}`);
+        revalidatePath("/dashboard/purchases");
+    }
+    
+    if (receipt?.expedienteId) {
+        revalidatePath(`/dashboard/expedientes/${receipt.expedienteId}`);
+    }
+    
+    return serializePrisma(result);
 }

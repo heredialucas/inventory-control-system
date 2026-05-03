@@ -175,10 +175,14 @@ export const purchaseService = {
             status?: PurchaseOrderStatus;
         }
     ) {
-        return await prisma.purchaseOrder.update({
+        const order = await prisma.purchaseOrder.update({
             where: { id },
             data,
         });
+        return {
+            ...order,
+            totalAmount: Number(order.totalAmount),
+        };
     },
 
 
@@ -202,10 +206,14 @@ export const purchaseService = {
             throw new Error("No se puede cancelar orden con artículos recibidos");
         }
 
-        return await prisma.purchaseOrder.update({
+        const cancelledOrder = await prisma.purchaseOrder.update({
             where: { id },
             data: { status: "CANCELLED" },
         });
+        return {
+            ...cancelledOrder,
+            totalAmount: Number(cancelledOrder.totalAmount),
+        };
     },
 
     /**
@@ -221,10 +229,14 @@ export const purchaseService = {
             throw new Error("Solo se pueden enviar órdenes en borrador");
         }
 
-        return await prisma.purchaseOrder.update({
+        const submittedOrder = await prisma.purchaseOrder.update({
             where: { id },
             data: { status: "PENDING" },
         });
+        return {
+            ...submittedOrder,
+            totalAmount: Number(submittedOrder.totalAmount),
+        };
     },
 
     /**

@@ -1,503 +1,183 @@
-# 🏛️ IMPLEMENTACIÓN FINAL — SISTEMA DE INVENTARIO ORIENTADO A EXPEDIENTES
+# Visión General - Sistema de Control de Inventario
 
 ---
 
-# 1. OBJETIVO
+## 1. Qué es el Sistema
 
-Reestructurar el sistema para:
-
-* Centralizar la trazabilidad en expedientes (opcional)
-* Separar responsabilidades por áreas
-* Simplificar módulos
-* Normalizar modelos de datos
-* Garantizar auditoría completa
+Sistema de gestión de inventario para organizaciones que necesitan:
+- Controlar stock de productos en múltiples depósitos
+- Registrar compras a proveedores
+- Distribuir productos a instituciones
+- Mantener trazabilidad completa de operaciones
 
 ---
 
-# 2. ESTRUCTURA DEL SIDEBAR
+## 2. Para quién está diseñado
 
-## 2.1 Módulos principales (colapsables)
-
-```
-1. Expedientes
-2. Depósito
-3. Compras
-4. Distribución
-5. Control
-6. Configuración
-```
+Organizaciones que:
+- Manejan inventario en varios depósitos o almacenes
+- Compran productos a proveedores externos
+- Distribuyen productos a múltiples instituciones (escuelas, hospitales, organizaciones)
+- Necesitan trazabilidad de todas las operaciones
+- Requieren control de permisos por roles
 
 ---
 
-## 2.2 Submódulos
+## 3. Modelo de Negocio
 
-### 1. Expedientes
+### Actores Principales
 
-```
-/dashboard/expedientes
-/dashboard/expedientes/new
-/dashboard/expedientes/[id]
-```
+| Actor | Descripción |
+|-------|-------------|
+| **Usuario** | Personas que usan el sistema (empleados, administradores) |
+| **Proveedor** | Empresas que venden productos |
+| **Institución** | Organizaciones que reciben productos (destinatarios) |
 
----
+### Elementos Centrales
 
-### 2. Depósito
-
-```
-/dashboard/inventory
-/dashboard/warehouses
-/dashboard/transfers
-/dashboard/movements
-```
+| Elemento | Descripción |
+|----------|-------------|
+| **Producto** | Artículos que se compran, almacenan y distribuyen |
+| **Depósito** | Lugares físicos donde se almacena el inventario |
+| **Expediente** | (Opcional) Documento que agrupa operaciones relacionadas |
 
 ---
 
-### 3. Compras
+## 4. Procesos del Negocio
+
+### 4.1 Compras
 
 ```
-/dashboard/purchases
-/dashboard/suppliers
-/dashboard/receipts
+Orden de Compra → Recepción → Ingreso a Stock
 ```
+
+1. Se registra una orden de compra especificando productos, proveedor y depósito destino
+2. Cuando llegan los productos, se registra la recepción
+3. El stock se incrementa en el depósito correspondiente
+
+**Importante:** El stock solo se afecta cuando se registra la recepción, no al crear la orden.
 
 ---
 
-### 4. Distribución
+### 4.2 Distribución
 
 ```
-/dashboard/deliveries
-/dashboard/institutions
+Entrega → Salida de Stock
 ```
+
+1. Se registra una entrega especificando productos, institución destino y depósito origen
+2. Al confirmar la entrega, el stock se decrementa
 
 ---
 
-### 5. Control
+### 4.3 Transferencias
 
 ```
-/dashboard/movements
-/dashboard/reports
+Depósito A → Transferencia → Depósito B
 ```
+
+1. Se registra una transferencia de productos entre dos depósitos
+2. El stock disminuye en el depósito origen y aumenta en el destino
 
 ---
 
-### 6. Configuración
+### 4.4 Expedientes (Opcional)
 
-```
-/dashboard/users
-/dashboard/roles
-```
+Cada operación puede vincularse a un expediente para mantener trazabilidad agrupada:
+- Una compra puede estar asociada a un expediente
+- Una entrega puede estar asociada a un expediente
+- Una transferencia puede estar asociada a un expediente
+- Un expediente puede agrupar múltiples operaciones
 
----
-
-# 3. PERMISOS
-
-## 3.1 Nuevos permisos
-
-```
-expedientes.view
-expedientes.manage
-
-receipts.view
-receipts.manage
-```
+**El expediente es completamente opcional.** Se puede trabajar sin él.
 
 ---
 
-## 3.2 Permisos existentes (mantener)
+## 5. Estructura del Sistema
 
-```
-inventory.*
-warehouses.*
-transfers.*
-purchases.*
-suppliers.*
-deliveries.*
-institutions.*
-movements.view
-reports.view
-users.*
-```
+### 5.1 Módulos Principales
+
+| Módulo | Descripción |
+|--------|-------------|
+| **Expedientes** | Gestión de casos (opcional) |
+| **Depósito** | Inventario, depósitos, transferencias, movimientos |
+| **Compras** | Órdenes de compra, proveedores, recepciones |
+| **Distribución** | Entregas, instituciones |
+| **Control** | Movimientos, reportes |
+| **Configuración** | Usuarios, roles |
 
 ---
 
-# 4. MODELOS (PRISMA)
+## 6. Permisos y Roles
+
+El sistema maneja permisos granulares por roles. Ejemplos:
+- Administrador: acceso completo
+- Gerente: gestiona compras e inventario
+- Encargado de depósitos: transfiere y controla stock
+- Operario: registra entregas
 
 ---
 
-## 4.1 Expediente
+## 7. Flujo de Trazabilidad
 
-```ts
-model Expediente {
-  id          String   @id @default(uuid())
-  number      String   @unique
-  description String?
-  status      String
-  createdAt   DateTime @default(now())
-
-  purchases   PurchaseOrder[]
-  deliveries  Delivery[]
-  transfers   WarehouseTransfer[]
-  movements   StockMovement[]
-}
+### Entrada de Productos
+```
+Compra → Recepción → Movimiento (IN) → Stock
 ```
 
----
+### Salida de Productos
+```
+Entrega → Movimiento (OUT) → Stock
+```
 
-## 4.2 PurchaseOrder (modificación)
+### Transferencia
+```
+Transferencia → Movimiento (OUT origen) + Movimiento (IN destino)
+```
 
-```ts
-expedienteId String?
+### Expediente
+```
+Expediente → [Compras] + [Recepciones] + [Entregas] + [Transferencias]
 ```
 
 ---
 
-## 4.3 Delivery (modificación)
+## 8. Características Clave
 
-```ts
-expedienteId String?
-```
-
----
-
-## 4.4 WarehouseTransfer (modificación)
-
-```ts
-expedienteId String?
-```
+- **Multi-depósito**: Control de stock por cada ubicación física
+- **Trazabilidad completa**: Cada operación genera un registro de movimiento
+- **Expediente opcional**: Se puede trabajar con o sin él
+- **Control de permisos**: Roles y permisos granulares
+- **Múltiples destinatarios**: Instituciones como puntos de entrega
+- **Reportes**: Visibilidad del flujo de inventario
 
 ---
 
-## 4.5 StockMovement (reestructuración)
+## 9. Objetivo del Sistema
 
-```ts
-model StockMovement {
-  id            String   @id @default(uuid())
-  productId     String
-  warehouseId   String?
-  type          MovementType
-  quantity      Int
-
-  sourceType    String
-  sourceId      String
-
-  expedienteId  String?
-
-  createdAt     DateTime @default(now())
-}
-```
+Proporcionar una herramienta que permita:
+1. **Controlar** el inventario en múltiples depósitos
+2. **Registrar** compras a proveedores con trazabilidad
+3. **Distribuir** productos a instituciones de forma organizada
+4. **Rastrear** cada operación mediante movimientos de stock
+5. **Agrupar** operaciones en expedientes (opcional)
+6. **Gestionar** permisos y accesos por roles
 
 ---
 
-## 4.6 PurchaseReceipt (nuevo)
-
-```ts
-model PurchaseReceipt {
-  id              String   @id @default(uuid())
-  purchaseOrderId String
-  receiptNumber   String
-  date            DateTime
-  totalAmount     Decimal
-  imageUrl        String?
-
-  expedienteId    String?
-
-  items           PurchaseReceiptItem[]
-}
-```
-
----
-
-## 4.7 PurchaseReceiptItem
-
-```ts
-model PurchaseReceiptItem {
-  id         String @id @default(uuid())
-  receiptId  String
-  productId  String
-  quantity   Int
-}
-```
-
----
-
-# 5. REGLAS DE NEGOCIO
-
----
-
-## 5.1 Expediente
-
-* Campo opcional en todas las operaciones
-* Se permite operar sin expediente
-
----
-
-## 5.2 Movimientos
-
-* Toda operación genera `StockMovement`
-* No se permite edición de movimientos
-
----
-
-## 5.3 Tipos de sourceType
-
-```
-PURCHASE
-RECEIPT
-DELIVERY
-TRANSFER
-ADJUSTMENT
-```
-
----
-
-## 5.4 Compras
-
-* No afectan stock directamente
-* El stock se actualiza en recepción
-
----
-
-## 5.5 Recepciones
-
-* Incrementan stock
-* Generan movimientos tipo IN
-
----
-
-## 5.6 Entregas
-
-* Reducen stock
-* Generan movimientos tipo OUT
-
----
-
-## 5.7 Transferencias
-
-* Generan:
-
-  * OUT (depósito origen)
-  * IN (depósito destino)
-
----
-
-# 6. ENDPOINTS
-
----
-
-## 6.1 Expedientes
-
-```
-GET    /expedientes
-POST   /expedientes
-GET    /expedientes/:id
-GET    /expedientes/:id/full
-```
-
----
-
-## 6.2 Compras
-
-```
-GET    /purchases
-POST   /purchases
-```
-
----
-
-## 6.3 Recepciones
-
-```
-GET    /receipts
-POST   /receipts
-```
-
----
-
-## 6.4 Entregas
-
-```
-GET    /deliveries
-POST   /deliveries
-```
-
----
-
-## 6.5 Transferencias
-
-```
-GET    /transfers
-POST   /transfers
-```
-
----
-
-## 6.6 Movimientos
-
-```
-GET /movements
-```
-
----
-
-# 7. RESPUESTA /expedientes/:id/full
-
-```json
-{
-  "expediente": {},
-  "purchases": [],
-  "receipts": [],
-  "deliveries": [],
-  "transfers": [],
-  "movements": []
-}
-```
-
----
-
-# 8. FRONTEND — VISTA EXPEDIENTE
-
----
-
-## 8.1 Secciones
-
-```
-- Header (número, estado, descripción)
-- Timeline
-- Tabs opcionales:
-  - Compras
-  - Recepciones
-  - Entregas
-  - Transferencias
-```
-
----
-
-## 8.2 Timeline
-
-Ordenado por fecha:
-
-```
-Compra creada
-Recepción registrada
-Transferencia realizada
-Entrega realizada
-```
-
----
-
-# 9. SIDEBAR (IMPLEMENTACIÓN)
-
----
-
-## 9.1 Estructura
-
-```ts
-[
-  {
-    label: "Expedientes",
-    children: [...]
-  },
-  {
-    label: "Depósito",
-    children: [...]
-  },
-  {
-    label: "Compras",
-    children: [...]
-  },
-  {
-    label: "Distribución",
-    children: [...]
-  },
-  {
-    label: "Control",
-    children: [...]
-  },
-  {
-    label: "Configuración",
-    children: [...]
-  }
-]
-```
-
----
-
-# 10. ORDEN DE IMPLEMENTACIÓN
-
----
-
-## Paso 1
-
-* Crear modelos:
-
-  * Expediente
-  * PurchaseReceipt
-  * PurchaseReceiptItem
-
----
-
-## Paso 2
-
-* Modificar:
-
-  * PurchaseOrder
-  * Delivery
-  * WarehouseTransfer
-  * StockMovement
-
----
-
-## Paso 3
-
-* Ejecutar migración
-* Resetear base de datos si aplica
-
----
-
-## Paso 4
-
-* Implementar endpoints
-
----
-
-## Paso 5
-
-* Implementar lógica de movimientos
-
----
-
-## Paso 6
-
-* Implementar endpoint `/expedientes/:id/full`
-
----
-
-## Paso 7
-
-* Rediseñar sidebar
-
----
-
-## Paso 8
-
-* Crear vista de expediente (timeline)
-
----
-
-## Paso 9
-
-* Implementar permisos nuevos
-
----
-
-# 11. RESULTADO FINAL
-
-Sistema con:
-
-* Trazabilidad completa
-* Expedientes opcionales
-* Separación por áreas
-* Auditoría consistente
-* UI simplificada
-
----
+## 10. Alcance
+
+Este sistema NO cubre:
+- Contabilidad financiera (solo valorización de inventario)
+- Facturación electrónica
+- Gestión de producción
+- CRM completo
+
+Este sistema SI cubre:
+- Gestión de inventario multi-depósito
+- Compras y recepciones
+- Distribución a instituciones
+- Transferencias
+- Movimientos y trazabilidad
+- Permisos y usuarios
+- Expedientes opcionales

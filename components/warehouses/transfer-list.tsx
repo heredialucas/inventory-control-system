@@ -181,7 +181,7 @@ export function TransferList({ transfers, userId, canManage = false }: TransferL
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-2 text-primary">
                                                     <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">
-                                                        ✨ Ingreso
+                                                        {transfer.type === "MOVEMENT" && transfer.notes?.includes("Edición") ? "🔧 Ajuste" : "✨ Ingreso"}
                                                     </Badge>
                                                     <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                                     <span className="font-mono text-sm font-medium">{transfer.toWarehouse.code}</span>
@@ -312,7 +312,7 @@ export function TransferList({ transfers, userId, canManage = false }: TransferL
                                         {isIngreso ? (
                                             <div className="flex items-center gap-2 text-primary">
                                                 <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">
-                                                    ✨ Ingreso
+                                                    {transfer.type === "MOVEMENT" && transfer.notes?.includes("Edición") ? "🔧 Ajuste" : "✨ Ingreso"}
                                                 </Badge>
                                                 <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                                 <span className="font-mono text-sm font-medium">{transfer.toWarehouse.code}</span>

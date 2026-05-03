@@ -5,6 +5,7 @@ import { inventoryService } from "@/services/inventory-service";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { serializePrisma } from "@/lib/utils";
 
 /**
  * Extrae el publicId de una URL de Cloudinary
@@ -165,10 +166,7 @@ export async function quickCreateProductAction(data: {
         revalidatePath("/dashboard/inventory");
         return { 
             success: true, 
-            product: {
-                ...product,
-                price: Number(product.price)
-            } 
+            product: serializePrisma(product)
         };
     } catch (error: any) {
         console.error("Error in quickCreateProductAction:", error);
