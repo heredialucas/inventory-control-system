@@ -47,6 +47,73 @@ export async function getProducts() {
     }));
 }
 
+export async function getProductsWithWarehouseStock() {
+    const products = await inventoryService.getAllProductsIncludingDeleted();
+    
+    const warehouses = await prisma.warehouse.findMany({
+        where: { deletedAt: null },
+        orderBy: { name: "asc" },
+    });
+    
+    const stockItems = await prisma.warehouseStock.findMany({
+        include: {
+            warehouse: {
+                select: { id: true, name: true },
+            },
+        },
+    });
+    
+    const stockByProduct = new Map<string, Array<{ warehouseId: string; warehouseName: string; quantity: number }>>();
+    
+    for (const item of stockItems) {
+        const existing = stockByProduct.get(item.productId) || [];
+        existing.push({
+            warehouseId: item.warehouseId,
+            warehouseName: item.warehouse.name,
+            quantity: item.quantity,
+        });
+        stockByProduct.set(item.productId, existing);
+    }
+    
+    return {
+        products: products.map((p) => ({
+            id: p.id,
+            name: p.name,
+            sku: p.sku,
+            price: p.price,
+            minStock: p.minStock,
+            unit: p.unit,
+            categoryName: p.category?.name || null,
+            totalStock: p.stock,
+            stockByWarehouse: stockByProduct.get(p.id) || [],
+            isDeleted: p.isDeleted,
+        })),
+        warehouses: warehouses.map((w) => ({
+            id: w.id,
+            name: w.name,
+        })),
+    };
+}
+
+export async function updateMinStockAction(productId: string, minStock: number) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "adminProducts.manage")) {
+        return { error: "No tienes permisos para realizar esta acción" };
+    }
+
+    try {
+        await prisma.product.update({
+            where: { id: productId },
+            data: { minStock },
+        });
+        revalidatePath("/dashboard/administracion/productos");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating minStock:", error);
+        return { error: "Error al actualizar stock mínimo" };
+    }
+}
+
 export async function createProductAction(formData: FormData) {
     const user = await getCurrentUser();
     if (!user || !hasPermission(user, "inventory.manage")) {

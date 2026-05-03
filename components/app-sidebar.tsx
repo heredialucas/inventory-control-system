@@ -19,7 +19,8 @@ import {
     FolderOpen,
     FileCheck,
     ChevronDown,
-    ChevronRight
+    ChevronRight,
+    Boxes
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,12 @@ const sidebarGroups: SidebarGroup[] = [
                 href: "/dashboard/expedientes",
                 icon: FolderOpen,
                 permission: "expedientes.view",
+            },
+            {
+                title: "Productos",
+                href: "/dashboard/administracion/productos",
+                icon: Boxes,
+                permission: "adminProducts.view",
             },
         ],
     },

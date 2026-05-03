@@ -458,9 +458,9 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                                 }))
                             );
 
-                            // 2. Otros movimientos (Ajustes manuales, etc)
+                            // 2. Otros movimientos (Ajustes manuales, etc) - pero incluir ajustes de receipts (ediciones de remitos)
                             const otherMovements = expediente.movements
-                                .filter(m => m.sourceType !== "RECEIPT")
+                                .filter(m => m.sourceType !== "RECEIPT" || m.type === "ADJUSTMENT")
                                 .map(m => ({
                                     id: m.id,
                                     product: m.product,

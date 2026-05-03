@@ -67,6 +67,10 @@ async function main() {
         // Receipts
         { action: "receipts.manage", description: "Gestionar recibos de compra" },
         { action: "receipts.view", description: "Ver recibos de compra" },
+
+        // Admin Products (Gestión de stock mínimo desde Administración)
+        { action: "adminProducts.manage", description: "Gestionar productos: stock mínimo y configuración" },
+        { action: "adminProducts.view", description: "Ver lista de productos en administración" },
     ];
 
     for (const perm of permissions) {
@@ -172,19 +176,26 @@ async function main() {
     // ==================== CREATE DEFAULT WAREHOUSE ====================
     console.log("🏭 Creating default warehouse...");
 
-    const defaultWarehouse = await prisma.warehouse.upsert({
-        where: { code: "WH-MAIN" },
-        update: {},
-        create: {
-            name: "Depósito Principal",
-            code: "WH-MAIN",
-            description: "Depósito principal del sistema",
-            address: "Sede central",
-            isActive: true,
-        },
-    });
-
-    console.log(`✅ Default warehouse created: ${defaultWarehouse.name}`);
+    try {
+        const defaultWarehouse = await prisma.warehouse.upsert({
+            where: { code: "WH-MAIN" },
+            update: {},
+            create: {
+                name: "Depósito Principal",
+                code: "WH-MAIN",
+                description: "Depósito principal del sistema",
+                address: "Sede central",
+                isActive: true,
+            },
+        });
+        console.log(`✅ Default warehouse created/updated: ${defaultWarehouse.name}`);
+    } catch (error: any) {
+        if (error.code === "P2002") {
+            console.log("✅ Default warehouse already exists");
+        } else {
+            throw error;
+        }
+    }
 
     // ==================== CREATE USERS ====================
     const adminPassword = await bcrypt.hash("admin123", 10);
