@@ -176,6 +176,9 @@ model PurchaseOrder {
   updatedAt    DateTime            @updatedAt
   deletedAt    DateTime?
   expedienteId String?             @db.Uuid
+  invoiceUrl      String?
+  creditNoteUrl   String?
+  debitNoteUrl   String?
   items        PurchaseOrderItem[]
   createdBy    User                @relation(fields: [createdById], references: [id])
   expediente   Expediente?         @relation(fields: [expedienteId], references: [id])
@@ -401,9 +404,7 @@ enum TransferStatus {
 /// Status of purchase orders
 enum PurchaseOrderStatus {
   DRAFT
-  PENDING
   RECEIVED
-  PARTIAL
   CANCELLED
 }
 

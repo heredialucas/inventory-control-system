@@ -34,9 +34,9 @@ export default async function EditReceiptPage({ params }: { params: Promise<{ id
         price: Number(p.price)
     }));
 
-    // Only orders that are pending or partial, OR the one already linked
+    // Only orders that are draft or received, OR the one already linked
     const receivableOrders = allOrders.filter(o => 
-        o.status === "PENDING" || o.status === "PARTIAL" || o.id === receipt.purchaseOrderId
+        o.status === "DRAFT" || o.status === "RECEIVED" || o.id === receipt.purchaseOrderId
     );
 
     return (

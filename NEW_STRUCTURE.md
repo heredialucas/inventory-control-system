@@ -49,14 +49,17 @@ Organizaciones que:
 ### 4.1 Compras
 
 ```
-Orden de Compra → Recepción → Ingreso a Stock
+Orden de Compra → Documentos (Factura/Nota) → Cancelar si es necesario
 ```
 
-1. Se registra una orden de compra especificando productos, proveedor y depósito destino
-2. Cuando llegan los productos, se registra la recepción
-3. El stock se incrementa en el depósito correspondiente
+La gestión de compras es un flujo **independiente** del flujo de recepción de depósito:
 
-**Importante:** El stock solo se afecta cuando se registra la recepción, no al crear la orden.
+1. Se registra una orden de compra especificando productos, proveedor y almacén destino
+2. Se pueden adjuntar documentos: factura del proveedor, nota de crédito, nota de débito
+3. La orden se puede cancelar en cualquier momento (si está en estado DRAFT o activa)
+4. El usuario de compras **NO** carga remitos - eso es responsabilidad del depósito
+
+**La recepción (remito/ingreso) es un flujo separado** que realiza el usuario de depósito.
 
 ---
 

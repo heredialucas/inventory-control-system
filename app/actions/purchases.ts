@@ -134,3 +134,39 @@ export async function getPurchaseStats() {
         throw new Error("Failed to fetch purchase statistics");
     }
 }
+
+export async function updateOrderDocument(
+    orderId: string,
+    docType: "invoice" | "creditNote" | "debitNote",
+    base64Data: string | null
+) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "purchases.manage")) {
+        throw new Error("No tienes permisos para actualizar documentos");
+    }
+
+    try {
+        let documentUrl: string | null = null;
+        
+        if (base64Data) {
+            // Upload to Cloudinary using orders preset (allows images and PDFs)
+            const { uploadImage } = await import("./cloudinary");
+            const result = await uploadImage(base64Data, "orders");
+            
+            if (result.success && result.url) {
+                documentUrl = result.url;
+            } else {
+                throw new Error(result.error || "Error uploading document");
+            }
+        }
+
+        // Update the order with the document URL
+        await purchaseService.updateOrderDocument(orderId, docType, documentUrl);
+        
+        revalidatePath(`/dashboard/purchases/${orderId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error updating document:", error);
+        throw new Error(error.message || "Failed to update document");
+    }
+}

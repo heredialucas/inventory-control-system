@@ -185,6 +185,36 @@ export const purchaseService = {
         };
     },
 
+    /**
+     * Update order document URLs
+     */
+    async updateOrderDocument(
+        id: string,
+        docType: "invoice" | "creditNote" | "debitNote",
+        url: string | null
+    ) {
+        const updateData: Record<string, string | null> = {};
+        
+        switch (docType) {
+            case "invoice":
+                updateData.invoiceUrl = url;
+                break;
+            case "creditNote":
+                updateData.creditNoteUrl = url;
+                break;
+            case "debitNote":
+                updateData.debitNoteUrl = url;
+                break;
+        }
+
+        const order = await prisma.purchaseOrder.update({
+            where: { id },
+            data: updateData,
+        });
+        
+        return order;
+    },
+
 
 
     /**
@@ -231,7 +261,7 @@ export const purchaseService = {
 
         const submittedOrder = await prisma.purchaseOrder.update({
             where: { id },
-            data: { status: "PENDING" },
+            data: { status: "RECEIVED" },
         });
         return {
             ...submittedOrder,
@@ -243,13 +273,13 @@ export const purchaseService = {
      * Get purchase order statistics
      */
     async getPurchaseStats() {
-        const [totalOrders, totalSpent, pendingOrders, draftOrders] = await Promise.all([
+        const [totalOrders, totalSpent, receivedOrders, draftOrders] = await Promise.all([
             prisma.purchaseOrder.count({
                 where: { deletedAt: null }
             }),
             prisma.purchaseOrder.aggregate({
                 where: {
-                    status: { in: ["RECEIVED", "PARTIAL"] },
+                    status: "RECEIVED",
                     deletedAt: null,
                 },
                 _sum: {
@@ -257,7 +287,7 @@ export const purchaseService = {
                 },
             }),
             prisma.purchaseOrder.count({
-                where: { status: "PENDING", deletedAt: null },
+                where: { status: "RECEIVED", deletedAt: null },
             }),
             prisma.purchaseOrder.count({
                 where: { status: "DRAFT", deletedAt: null },
@@ -267,7 +297,7 @@ export const purchaseService = {
         return {
             totalOrders,
             totalSpent: Number(totalSpent._sum.totalAmount || 0),
-            pendingOrders,
+            receivedOrders,
             draftOrders,
         };
     },

@@ -62,12 +62,10 @@ export const analyticsService = {
                 },
             }),
 
-            // Pending purchase orders
+            // Purchase orders pending (draft only)
             prisma.purchaseOrder.count({
                 where: {
-                    status: {
-                        in: ["DRAFT", "PENDING"],
-                    },
+                    status: "DRAFT",
                 },
             }),
 

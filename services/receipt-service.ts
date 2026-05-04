@@ -257,14 +257,13 @@ export const receiptService = {
                     where: { purchaseOrderId },
                 });
 
-                const allReceived = updatedItems.every(item => item.receivedQty === item.quantity);
-                const partialReceived = updatedItems.some(item => item.receivedQty > 0);
+                const hasReceived = updatedItems.some(item => item.receivedQty > 0);
 
                 await tx.purchaseOrder.update({
                     where: { id: purchaseOrderId },
                     data: {
-                        status: allReceived ? "RECEIVED" : partialReceived ? "PARTIAL" : "PENDING",
-                        receivedDate: allReceived ? new Date() : order?.receivedDate,
+                        status: hasReceived ? "RECEIVED" : order?.status || "DRAFT",
+                        receivedDate: hasReceived ? new Date() : order?.receivedDate,
                     },
                 });
             }
@@ -506,13 +505,13 @@ export const receiptService = {
                 });
 
                 const allReceived = updatedItems.every(item => item.receivedQty === item.quantity && item.quantity > 0);
-                const partialReceived = updatedItems.some(item => item.receivedQty > 0);
+                const hasReceived = updatedItems.some(item => item.receivedQty > 0);
 
                 await tx.purchaseOrder.update({
                     where: { id: receipt.purchaseOrderId },
                     data: {
-                        status: allReceived ? "RECEIVED" : partialReceived ? "PARTIAL" : "PENDING",
-                        receivedDate: allReceived ? new Date() : (partialReceived ? receipt.purchaseOrder?.receivedDate : null),
+                        status: hasReceived ? "RECEIVED" : "DRAFT",
+                        receivedDate: hasReceived ? new Date() : null,
                     },
                 });
             }

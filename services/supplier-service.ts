@@ -149,7 +149,7 @@ export const supplierService = {
             prisma.purchaseOrder.aggregate({
                 where: {
                     supplierId: id,
-                    status: { in: ["RECEIVED", "PARTIAL"] },
+                    status: "RECEIVED",
                     deletedAt: null,
                 },
                 _sum: {
@@ -159,7 +159,7 @@ export const supplierService = {
             prisma.purchaseOrder.count({
                 where: {
                     supplierId: id,
-                    status: { in: ["DRAFT", "PENDING"] },
+                    status: "DRAFT",
                     deletedAt: null,
                 },
             }),

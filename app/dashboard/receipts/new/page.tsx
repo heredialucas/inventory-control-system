@@ -36,7 +36,7 @@ export default async function NewReceiptPage() {
     }));
 
     const receivableOrders = allOrders.filter(o => 
-        o.status === "PENDING" || o.status === "PARTIAL"
+        o.status === "DRAFT" || o.status === "RECEIVED" || o.status === "CANCELLED"
     );
 
     return (

@@ -12,7 +12,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Building2, MapPin, Calendar, XCircle, Send } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, Calendar, XCircle, FileText, Upload, File, CreditCard, Receipt } from "lucide-react";
+import { DocumentUpload } from "@/components/purchases/document-upload";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -21,12 +22,8 @@ const getPurchaseOrderStatusLabel = (status: string) => {
     switch (status) {
         case "DRAFT":
             return "Borrador";
-        case "PENDING":
-            return "Pendiente";
         case "RECEIVED":
-            return "Recibida";
-        case "PARTIAL":
-            return "Parcial";
+            return "Confirmada";
         case "CANCELLED":
             return "Cancelada";
         default:
@@ -53,12 +50,6 @@ export default async function PurchaseOrderDetailPage({
     if (!user) redirect("/login");
 
     // Server Actions for simple buttons
-    async function submitOrder() {
-        "use server";
-        await submitPurchaseOrder(id);
-        redirect(`/dashboard/purchases/${id}`); // Refresh page
-    }
-
     async function cancelOrder() {
         "use server";
         await cancelPurchaseOrder(id);
@@ -66,7 +57,6 @@ export default async function PurchaseOrderDetailPage({
     }
 
     const isDraft = order.status === "DRAFT";
-    const isReceivable = order.status === "PENDING" || order.status === "PARTIAL";
     const isCancelled = order.status === "CANCELLED";
     const canManage = hasPermission(user, "purchases.manage");
 
@@ -92,34 +82,19 @@ export default async function PurchaseOrderDetailPage({
                 </div>
                 <div className="flex flex-wrap gap-2 sm:ml-auto">
                     {canManage && isDraft && (
-                        <>
-                            <form action={cancelOrder}>
-                                <Button variant="destructive" size="sm" className="w-full sm:w-auto">
-                                    <XCircle className="mr-2 h-4 w-4" />
-                                    <span className="sm:hidden">Cancelar</span>
-                                </Button>
-                            </form>
-                            <form action={submitOrder}>
-                                <Button size="sm" className="w-full sm:w-auto">
-                                    <Send className="mr-2 h-4 w-4" />
-                                    <span className="sm:hidden">Enviar</span>
-                                    <span className="hidden sm:inline">Enviar Orden</span>
-                                </Button>
-                            </form>
-                        </>
-                    )}
-                    {canManage && isReceivable && (
-                        <Link href="/dashboard/receipts/new">
-                            <Button size="sm" className="w-full sm:w-auto">
-                                <Send className="mr-2 h-4 w-4" />
-                                <span className="sm:hidden">Remito</span>
-                                <span className="hidden sm:inline">Cargar Remito</span>
-                            </Button>
-                        </Link>
-                    )}
-                    {canManage && !isDraft && !isCancelled && !isReceivable && order.status !== "RECEIVED" && (
                         <form action={cancelOrder}>
-                            <Button variant="destructive" size="sm" className="w-full sm:w-auto">Cancelar</Button>
+                            <Button variant="destructive" size="sm" className="w-full sm:w-auto">
+                                <XCircle className="mr-2 h-4 w-4" />
+                                <span>Cancelar Orden</span>
+                            </Button>
+                        </form>
+                    )}
+                    {canManage && !isDraft && !isCancelled && (
+                        <form action={cancelOrder}>
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                <XCircle className="mr-2 h-4 w-4" />
+                                <span>Cancelar</span>
+                            </Button>
                         </form>
                     )}
                 </div>
@@ -270,6 +245,44 @@ export default async function PurchaseOrderDetailPage({
                     </CardContent>
                 </Card>
             )}
+
+            <Card className="shadow-md border-primary/10 overflow-hidden">
+                <div className="h-1 bg-primary" />
+                <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        Documentos de la Orden
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                        Adjunta los documentos asociados a esta orden de compra (factura, notas de crédito/débito).
+                    </p>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <DocumentUpload 
+                            label="Factura" 
+                            iconName="receipt"
+                            currentUrl={order.invoiceUrl || null}
+                            orderId={order.id}
+                            docType="invoice"
+                        />
+                        <DocumentUpload 
+                            label="Nota de Crédito" 
+                            iconName="creditCard"
+                            currentUrl={order.creditNoteUrl || null}
+                            orderId={order.id}
+                            docType="creditNote"
+                        />
+                        <DocumentUpload 
+                            label="Nota de Débito" 
+                            iconName="fileText"
+                            currentUrl={order.debitNoteUrl || null}
+                            orderId={order.id}
+                            docType="debitNote"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -22,12 +22,8 @@ const getPurchaseOrderStatusLabel = (status: string) => {
     switch (status) {
         case "DRAFT":
             return "Borrador";
-        case "PENDING":
-            return "Pendiente";
         case "RECEIVED":
-            return "Recibida";
-        case "PARTIAL":
-            return "Parcial";
+            return "Confirmada";
         case "CANCELLED":
             return "Cancelada";
         default:
@@ -42,9 +38,7 @@ export const metadata = {
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     DRAFT: "secondary",
-    PENDING: "default",
-    PARTIAL: "outline",
-    RECEIVED: "outline",
+    RECEIVED: "default",
     CANCELLED: "destructive",
 };
 
@@ -57,8 +51,7 @@ export default async function PurchasesPage() {
 
     const allOrders = await getPurchaseOrders();
     const draftOrders = allOrders.filter((o) => o.status === "DRAFT");
-    const pendingOrders = allOrders.filter((o) => o.status === "PENDING");
-    const receivedOrders = allOrders.filter((o) => o.status === "RECEIVED" || o.status === "PARTIAL");
+    const receivedOrders = allOrders.filter((o) => o.status === "RECEIVED");
     const canManage = hasPermission(user, "purchases.manage");
 
     return (
@@ -85,8 +78,7 @@ export default async function PurchasesPage() {
                     <TabsList className="inline-flex w-max">
                         <TabsTrigger value="all">Todas ({allOrders.length})</TabsTrigger>
                         <TabsTrigger value="draft">Borrador ({draftOrders.length})</TabsTrigger>
-                        <TabsTrigger value="pending">Pendiente ({pendingOrders.length})</TabsTrigger>
-                        <TabsTrigger value="received">Recibidas ({receivedOrders.length})</TabsTrigger>
+                        <TabsTrigger value="received">Confirmadas ({receivedOrders.length})</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -95,9 +87,6 @@ export default async function PurchasesPage() {
                 </TabsContent>
                 <TabsContent value="draft" className="mt-6">
                     <PurchaseOrderTable orders={draftOrders} />
-                </TabsContent>
-                <TabsContent value="pending" className="mt-6">
-                    <PurchaseOrderTable orders={pendingOrders} />
                 </TabsContent>
                 <TabsContent value="received" className="mt-6">
                     <PurchaseOrderTable orders={receivedOrders} />

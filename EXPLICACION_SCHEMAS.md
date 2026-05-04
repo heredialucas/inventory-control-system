@@ -201,7 +201,7 @@ Solicitud de compra a un proveedor.
 | `id` | UUID | Identificador único |
 | `orderNumber` | String | Número de orden único |
 | `supplierId` | UUID | Proveedor |
-| `warehouseId` | UUID | Depósito destino |
+| `warehouseId` | UUID | Almacén destino |
 | `status` | Enum | Estado (DRAFT, PENDING, RECEIVED, PARTIAL, CANCELLED) |
 | `orderDate` | DateTime | Fecha de la orden |
 | `expectedDate` | DateTime | Fecha esperada de recepción |
@@ -210,6 +210,9 @@ Solicitud de compra a un proveedor.
 | `totalAmount` | Decimal | Monto total de la orden |
 | `createdById` | UUID | Usuario que creó la orden |
 | `expedienteId` | UUID | Expediente asociado (opcional) |
+| `invoiceUrl` | String | URL de la factura del proveedor |
+| `creditNoteUrl` | String | URL de nota de crédito |
+| `debifNoteUrl` | String | URL de nota de débito |
 
 **Estados:**
 - `DRAFT`: Borrador
@@ -218,9 +221,14 @@ Solicitud de compra a un proveedor.
 - `PARTIAL`: Parcialmente recibida
 - `CANCELLED`: Cancelada
 
+**Nota importante:** La orden de compra es un flujo **independiente** de la recepción. El usuario de compras:
+- Crea y cancela órdenes de compra
+- Adjunta documentos (factura, notas de crédito/débito)
+- NO carga remitos - eso lo hace el usuario de depósito
+
 **Relaciones:**
 - Una orden pertenece a un proveedor (`Supplier`)
-- Una orden pertenece a un depósito (`Warehouse`)
+- Una orden pertenece a un almacén (`Warehouse`)
 - Una orden tiene muchos items (`PurchaseOrderItem`)
 - Una orden es creada por un usuario (`User`)
 - Una orden puede estar asociada a un expediente (`Expediente`)
@@ -445,15 +453,25 @@ Documento central que puede agrupar todas las operaciones relacionadas con una g
 
 ## 9. Flujo de Operaciones
 
-### Ciclo de Compras
+### Ciclo de Compras (Gestionado por usuario de COMPRAS)
 ```
-PurchaseOrder → (opcional) → PurchaseReceipt → StockMovement (IN)
+PurchaseOrder → Documentos (Factura/Nota) → (opcional) → Cancelar
 ```
 
 1. Se crea una **Orden de Compra** con los productos solicitados
-2. Cuando llegan los productos, se registra una **Recepción de Compra**
-3. La recepción genera un **Movimiento de Stock** de tipo IN (entrada)
-4. El stock se incrementa en el depósito destino
+2. Se adjuntan documentos: factura, nota de crédito, nota de débito
+3. La orden puede cancelarse en cualquier momento
+4. **La recepción de productos es un flujo separado** realizado por el usuario de depósito
+
+### Ciclo de Recepciones (Gestionado por usuario de DEPÓSITO)
+```
+PurchaseReceipt → StockMovement (IN)
+```
+
+1. El usuario de depósito registra la recepción (remito)
+2. La recepción genera un **Movimiento de Stock** de tipo IN (entrada)
+3. El stock se incrementa en el almacén destino
+4. La recepción puede vincularse a una orden de compra existente
 
 ### Ciclo de Entregas
 ```

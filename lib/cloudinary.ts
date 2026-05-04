@@ -37,6 +37,11 @@ export const uploadPresets = {
       { quality: 'auto', fetch_format: 'auto' }
     ] as any[],
   },
+  orders: {
+    folder: 'inventory-control/orders',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'pdf'] as string[],
+    resource_type: 'auto' as const,
+  },
 };
 
 export type UploadPresetType = keyof typeof uploadPresets;
