@@ -37,7 +37,7 @@ export async function createExpediente(data: {
     description?: string;
     status?: string;
 }) {
-    await verifyPermission(["expedientes.manage", "purchases.manage"]);
+    await verifyPermission(["expedientes.manage", "purchases.manage", "receipts.manage"]);
     const result = await expedienteService.createExpediente(data);
     revalidatePath("/dashboard/expedientes");
     return serializePrisma(result);

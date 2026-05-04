@@ -27,6 +27,17 @@ export async function getSupplier(id: string) {
     }
 }
 
+async function canCreateSupplier() {
+    const user = await getCurrentUser();
+    if (!user) return false;
+    
+    return hasPermission(user, "suppliers.manage") ||
+           hasPermission(user, "purchases.view") ||
+           hasPermission(user, "purchases.manage") ||
+           hasPermission(user, "receipts.view") ||
+           hasPermission(user, "receipts.manage");
+}
+
 export async function createSupplier(data: {
     name: string;
     code: string;
@@ -36,8 +47,7 @@ export async function createSupplier(data: {
     contactName?: string;
     notes?: string;
 }) {
-    const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "suppliers.manage")) {
+    if (!await canCreateSupplier()) {
         throw new Error("No tienes permisos para crear proveedores");
     }
 

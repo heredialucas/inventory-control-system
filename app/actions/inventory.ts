@@ -202,9 +202,10 @@ export async function quickCreateProductAction(data: {
     if (!user) {
         return { error: "Debes iniciar sesión" };
     }
-    // Allow if has inventory.manage OR (purchases.manage AND suppliers.manage)
+    // Allow if has inventory.manage OR (purchases.manage AND suppliers.manage) OR receipts.manage
     const canManage = hasPermission(user, "inventory.manage") || 
-        (hasPermission(user, "purchases.manage") && hasPermission(user, "suppliers.manage"));
+        (hasPermission(user, "purchases.manage") && hasPermission(user, "suppliers.manage")) ||
+        hasPermission(user, "receipts.manage");
     if (!canManage) {
         return { error: "No tienes permisos para realizar esta acción" };
     }
