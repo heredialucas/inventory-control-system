@@ -28,8 +28,6 @@ const getDeliveryStatusLabel = (status: string) => {
     switch (status) {
         case "DRAFT":
             return "En Camino";
-        case "CONFIRMED":
-            return "Confirmado";
         case "DELIVERED":
             return "Entregado";
         case "CANCELLED":
@@ -41,7 +39,6 @@ const getDeliveryStatusLabel = (status: string) => {
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     DRAFT: "default",
-    CONFIRMED: "secondary",
     DELIVERED: "outline",
     CANCELLED: "destructive",
 };

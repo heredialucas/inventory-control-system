@@ -3,9 +3,9 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, PackageCheck, XCircle } from "lucide-react";
+import { PackageCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { confirmDelivery, markAsDelivered, cancelDelivery } from "@/app/actions/deliveries";
+import { markAsDelivered, cancelDelivery } from "@/app/actions/deliveries";
 
 interface DeliveryActionsProps {
     deliveryId: string;
@@ -17,18 +17,6 @@ interface DeliveryActionsProps {
 export function DeliveryActions({ deliveryId, status, userId, variant = "icon" }: DeliveryActionsProps) {
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
-
-    const handleConfirm = () => {
-        startTransition(async () => {
-            try {
-                await confirmDelivery(deliveryId);
-                toast.success("Entrega confirmada");
-                router.refresh();
-            } catch (error: any) {
-                toast.error(error.message || "Error al confirmar entrega");
-            }
-        });
-    };
 
     const handleDeliver = () => {
         startTransition(async () => {
@@ -60,24 +48,14 @@ export function DeliveryActions({ deliveryId, status, userId, variant = "icon" }
     if (variant === "button") {
         return (
             <div className="flex flex-wrap gap-2">
-                {status === "DRAFT" && (
-                    <Button
-                        onClick={handleConfirm}
-                        disabled={isPending}
-                        className="bg-green-600 hover:bg-green-700"
-                    >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Confirmar Entrega
-                    </Button>
-                )}
-                {status === "CONFIRMED" && (
+                {(status === "DRAFT" || status === "CONFIRMED") && (
                     <Button
                         onClick={handleDeliver}
                         disabled={isPending}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-green-600 hover:bg-green-700"
                     >
                         <PackageCheck className="mr-2 h-4 w-4" />
-                        Confirmar como Entregado
+                        Entregado
                     </Button>
                 )}
                 {status !== "DELIVERED" && status !== "CANCELLED" && (
@@ -96,24 +74,13 @@ export function DeliveryActions({ deliveryId, status, userId, variant = "icon" }
 
     return (
         <div className="flex items-center gap-1">
-            {status === "DRAFT" && (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleConfirm}
-                    disabled={isPending}
-                    title="Confirmar entrega"
-                >
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                </Button>
-            )}
-            {status === "CONFIRMED" && (
+            {(status === "DRAFT" || status === "CONFIRMED") && (
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleDeliver}
                     disabled={isPending}
-                    title="Confirmar como entregado"
+                    title="Marcar como entregada"
                 >
                     <PackageCheck className="h-4 w-4 text-blue-600" />
                 </Button>
