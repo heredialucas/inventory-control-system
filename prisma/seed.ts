@@ -156,8 +156,6 @@ async function main() {
     const comprasActions = [
         "purchases.manage", "purchases.view",
         "suppliers.manage", "suppliers.view",
-        "receipts.manage", "receipts.view",
-        "movements.view",
         "users.view"
     ];
     await assignPermissions(comprasRole.id, comprasActions);
