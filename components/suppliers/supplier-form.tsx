@@ -23,12 +23,20 @@ import { Loader2 } from "lucide-react";
 interface SupplierFormProps {
     supplier?: Supplier;
     trigger?: React.ReactNode;
+    isOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export function SupplierForm({ supplier, trigger }: SupplierFormProps) {
-    const [open, setOpen] = useState(false);
+export function SupplierForm({ supplier, trigger, isOpen, onOpenChange }: SupplierFormProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+
+    const open = isOpen ?? internalOpen;
+    const setOpen = (value: boolean) => {
+        setInternalOpen(value);
+        onOpenChange?.(value);
+    };
 
     const [formData, setFormData] = useState({
         name: supplier?.name || "",

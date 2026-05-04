@@ -14,6 +14,7 @@ export const supplierService = {
                 _count: {
                     select: {
                         purchaseOrders: true,
+                        receipts: true,
                     },
                 },
             },
@@ -24,7 +25,7 @@ export const supplierService = {
      * Get a single supplier with details
      */
     async getSupplier(id: string) {
-        return await prisma.supplier.findUnique({
+        const supplier = await prisma.supplier.findUnique({
             where: { id, deletedAt: null },
             include: {
                 purchaseOrders: {
@@ -39,13 +40,37 @@ export const supplierService = {
                         },
                     },
                 },
+                receipts: {
+                    take: 10,
+                    orderBy: { date: "desc" },
+                    include: {
+                        warehouse: true,
+                        _count: {
+                            select: {
+                                items: true,
+                            },
+                        },
+                    },
+                },
                 _count: {
                     select: {
                         purchaseOrders: true,
+                        receipts: true,
                     },
                 },
             },
         });
+
+        if (supplier) {
+            return {
+                ...supplier,
+                receipts: supplier.receipts.map(r => ({
+                    ...r,
+                    totalAmount: r.totalAmount.toString(),
+                })),
+            };
+        }
+        return supplier;
     },
 
     /**

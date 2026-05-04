@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { getSupplier } from "@/app/actions/suppliers";
-import { getPurchaseOrders } from "@/app/actions/purchases";
 import { SupplierForm } from "@/components/suppliers/supplier-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +12,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Mail, Phone, MapPin, User } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, User, FileText, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
 const getPurchaseOrderStatusLabel = (status: string) => {
@@ -47,7 +46,8 @@ export default async function SupplierDetailPage({
         notFound();
     }
 
-    const purchaseOrders = await getPurchaseOrders({ supplierId: id });
+    const purchaseOrders = supplier.purchaseOrders || [];
+    const receipts = supplier.receipts || [];
 
     return (
         <div className="space-y-6">
@@ -121,7 +121,11 @@ export default async function SupplierDetailPage({
                     <CardContent className="space-y-3">
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-muted-foreground">Total de Pedidos</span>
-                            <span className="text-2xl font-bold">{purchaseOrders.length}</span>
+                            <span className="text-2xl font-bold">{supplier._count.purchaseOrders}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Total de Ingresos</span>
+                            <span className="text-2xl font-bold">{supplier._count.receipts}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -133,14 +137,14 @@ export default async function SupplierDetailPage({
                 </CardHeader>
                 <CardContent>
                     {purchaseOrders.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-8">
+                        <div className="text-sm text-muted-foreground text-center py-8">
                             No se encontraron órdenes de compra
-                        </p>
+                        </div>
                     ) : (
                         <>
                             {/* Vista móvil - Cards */}
                             <div className="md:hidden space-y-4">
-                                {purchaseOrders.map((order) => (
+                                {purchaseOrders.map((order: any) => (
                                     <Card key={order.id} className="p-4">
                                         <div className="space-y-3">
                                             <div className="flex items-center justify-between">
@@ -192,7 +196,7 @@ export default async function SupplierDetailPage({
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {purchaseOrders.map((order) => (
+                                            {purchaseOrders.map((order: any) => (
                                                 <TableRow key={order.id}>
                                                     <TableCell className="font-mono">
                                                         <Link
@@ -212,6 +216,102 @@ export default async function SupplierDetailPage({
                                                     </TableCell>
                                                     <TableCell className="text-sm text-muted-foreground">
                                                         {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true, locale: es })}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Ingresos (Remitos)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {receipts.length === 0 ? (
+                        <div className="text-sm text-muted-foreground text-center py-8">
+                            No se encontraron ingresos
+                        </div>
+                    ) : (
+                        <>
+                            {/* Vista móvil - Cards */}
+                            <div className="md:hidden space-y-4">
+                                {receipts.map((receipt: any) => (
+                                    <Card key={receipt.id} className="p-4">
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <Link
+                                                    href={`/dashboard/receipts/${receipt.id}`}
+                                                    className="font-mono text-sm font-semibold hover:underline"
+                                                >
+                                                    {receipt.receiptNumber}
+                                                </Link>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <p className="text-muted-foreground">Depósito</p>
+                                                    <p className="font-medium">{receipt.warehouse.name}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-muted-foreground">Artículos</p>
+                                                    <Badge variant="secondary" className="mt-1">{receipt._count.items}</Badge>
+                                                </div>
+                                                <div>
+                                                    <p className="text-muted-foreground">Fecha</p>
+                                                    <p className="text-xs">
+                                                        {format(new Date(receipt.date), "dd/MM/yyyy", { locale: es })}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-muted-foreground">Creado</p>
+                                                    <p className="text-xs">
+                                                        {formatDistanceToNow(new Date(receipt.createdAt), { addSuffix: true, locale: es })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+
+                            {/* Vista desktop - Tabla */}
+                            <div className="hidden md:block">
+                                <div className="rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Número de Remito</TableHead>
+                                                <TableHead>Depósito</TableHead>
+                                                <TableHead>Artículos</TableHead>
+                                                <TableHead>Fecha</TableHead>
+                                                <TableHead>Creado</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {receipts.map((receipt: any) => (
+                                                <TableRow key={receipt.id}>
+                                                    <TableCell className="font-mono">
+                                                        <Link
+                                                            href={`/dashboard/receipts/${receipt.id}`}
+                                                            className="hover:underline"
+                                                        >
+                                                            {receipt.receiptNumber}
+                                                        </Link>
+                                                    </TableCell>
+                                                    <TableCell>{receipt.warehouse.name}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="secondary">{receipt._count.items}</Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {format(new Date(receipt.date), "dd/MM/yyyy", { locale: es })}
+                                                    </TableCell>
+                                                    <TableCell className="text-sm text-muted-foreground">
+                                                        {formatDistanceToNow(new Date(receipt.createdAt), { addSuffix: true, locale: es })}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
