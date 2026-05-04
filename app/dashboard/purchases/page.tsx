@@ -13,7 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Eye, PackageCheck } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -131,19 +131,11 @@ function PurchaseOrderTable({ orders }: { orders: any[] }) {
                         <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                                 <div className="space-y-1">
-                                    <Link
-                                        href={`/dashboard/purchases/${order.id}`}
-                                        className="font-mono font-medium text-lg hover:underline"
-                                    >
+                                    <span className="font-mono font-medium text-lg">
                                         {order.orderNumber}
-                                    </Link>
+                                    </span>
                                     <div className="text-sm text-muted-foreground">
-                                        <Link
-                                            href={`/dashboard/suppliers/${order.supplier.id}`}
-                                            className="hover:underline"
-                                        >
-                                            {order.supplier.name}
-                                        </Link>
+                                        {order.supplier.name}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
                                         {order.warehouse.name}
@@ -164,6 +156,14 @@ function PurchaseOrderTable({ orders }: { orders: any[] }) {
                             <div className="mt-2 text-xs text-muted-foreground">
                                 {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true, locale: es })}
                             </div>
+                            <div className="flex gap-2 mt-3 pt-3 border-t">
+                                <Button variant="outline" size="sm" asChild className="flex-1">
+                                    <Link href={`/dashboard/purchases/${order.id}`}>
+                                        <Eye className="h-4 w-4 mr-1" />
+                                        Ver
+                                    </Link>
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 ))}
@@ -181,6 +181,7 @@ function PurchaseOrderTable({ orders }: { orders: any[] }) {
                             <TableHead>Total</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead>Creado</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -218,6 +219,13 @@ function PurchaseOrderTable({ orders }: { orders: any[] }) {
                                 </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">
                                     {formatDistanceToNow(new Date(order.createdAt), { addSuffix: true, locale: es })}
+                                </TableCell>
+                                <TableCell>
+                                    <Link href={`/dashboard/purchases/${order.id}`}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    </Link>
                                 </TableCell>
                             </TableRow>
                         ))}
