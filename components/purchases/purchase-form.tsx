@@ -13,30 +13,42 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, Save, ArrowLeft, Loader2 } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Trash2, Save, ArrowLeft, Loader2, ShoppingCart, Package, FileText, Building2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { createPurchaseOrder } from "@/app/actions/purchases";
 import Link from "next/link";
+import { QuickProductDialog } from "@/components/inventory/quick-product-dialog";
+import { QuickSupplierDialog } from "@/components/suppliers/quick-supplier-dialog";
+import { QuickExpedienteDialog } from "@/components/expedientes/quick-expediente-dialog";
 
 interface PurchaseOrderFormProps {
     suppliers: any[];
     warehouses: any[];
     products: any[];
+    categories?: any[];
     expedientes: any[];
     userId: string;
 }
 
 interface OrderItem {
-    id: string; // Temporary ID for list management
+    id: string;
     productId: string;
+    productName: string;
+    productSku: string;
     quantity: number;
     unitPrice: number;
 }
 
-export function PurchaseOrderForm({ suppliers, warehouses, products, expedientes = [], userId }: PurchaseOrderFormProps) {
+export function PurchaseOrderForm({ suppliers: initialSuppliers, warehouses, products: initialProducts, categories = [], expedientes: initialExpedientes, userId }: PurchaseOrderFormProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+
+    const [allProducts, setAllProducts] = useState(initialProducts);
+    const [allSuppliers, setAllSuppliers] = useState(initialSuppliers);
+    const [allExpedientes, setAllExpedientes] = useState(initialExpedientes);
+    const [allCategories, setAllCategories] = useState(categories);
 
     const [formData, setFormData] = useState({
         supplierId: "",
@@ -46,15 +58,50 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, expedientes
         notes: "",
     });
 
-    const [items, setItems] = useState<OrderItem[]>([
-        { id: "1", productId: "", quantity: 1, unitPrice: 0 },
-    ]);
+    const [selectedProductId, setSelectedProductId] = useState("");
+    const [items, setItems] = useState<OrderItem[]>([]);
 
-    const handleAddItem = () => {
-        setItems([
-            ...items,
-            { id: crypto.randomUUID(), productId: "", quantity: 1, unitPrice: 0 },
-        ]);
+    const handleProductCreated = (newProduct: any) => {
+        setAllProducts(prev => [...prev, newProduct]);
+        setItems(prev => [...prev, {
+            id: crypto.randomUUID(),
+            productId: newProduct.id,
+            productName: newProduct.name,
+            productSku: newProduct.sku,
+            quantity: 1,
+            unitPrice: Number(newProduct.price) || 0
+        }]);
+        toast.success(`${newProduct.name} creado e incorporado a la orden`);
+    };
+
+    const handleSupplierCreated = (newSupplier: any) => {
+        setAllSuppliers(prev => [...prev, newSupplier]);
+        setFormData(prev => ({ ...prev, supplierId: newSupplier.id }));
+    };
+
+    const handleExpedienteCreated = (newExpediente: any) => {
+        setAllExpedientes(prev => [...prev, newExpediente]);
+        setFormData(prev => ({ ...prev, expedienteId: newExpediente.id }));
+    };
+
+    const handleAddProduct = (productId: string) => {
+        const product = allProducts.find(p => p.id === productId);
+        if (!product) return;
+
+        if (items.find(i => i.productId === productId)) {
+            toast.error("Este producto ya está en la lista");
+            return;
+        }
+
+        setItems(prev => [...prev, {
+            id: crypto.randomUUID(),
+            productId: product.id,
+            productName: product.name,
+            productSku: product.sku,
+            quantity: 1,
+            unitPrice: Number(product.price) || 0
+        }]);
+        setSelectedProductId("");
     };
 
     const handleRemoveItem = (id: string) => {
@@ -65,12 +112,12 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, expedientes
         setItems(items.filter((item) => item.id !== id));
     };
 
-    const handleItemChange = (id: string, field: keyof OrderItem, value: any) => {
-        setItems(
-            items.map((item) =>
-                item.id === id ? { ...item, [field]: value } : item
-            )
-        );
+    const updateItemQty = (id: string, quantity: number) => {
+        setItems(items.map(item => item.id === id ? { ...item, quantity } : item));
+    };
+
+    const updateItemPrice = (id: string, unitPrice: number) => {
+        setItems(items.map(item => item.id === id ? { ...item, unitPrice } : item));
     };
 
     const calculateTotal = () => {
@@ -81,21 +128,18 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, expedientes
         e.preventDefault();
 
         if (!formData.supplierId || !formData.warehouseId) {
-            toast.error("Por favor selecciona un proveedor y almacén");
+            toast.error("Selecciona un proveedor y almacén");
             return;
         }
 
-        const validItems = items.filter(
-            (item) => item.productId && item.quantity > 0 && item.unitPrice >= 0
-        );
-
-        if (validItems.length === 0) {
-            toast.error("Por favor agrega al menos un artículo válido");
+        if (items.length === 0) {
+            toast.error("Agrega al menos un producto");
             return;
         }
 
+        const validItems = items.filter(item => item.productId && item.quantity > 0 && item.unitPrice >= 0);
         if (validItems.length !== items.length) {
-            toast.error("Algunos artículos son inválidos (falta producto o cantidad inválida)");
+            toast.error("Algunos artículos son inválidos");
             return;
         }
 
@@ -123,184 +167,280 @@ export function PurchaseOrderForm({ suppliers, warehouses, products, expedientes
     };
 
     return (
-        <form onSubmit={handleSubmit} className="maximum-w-5xl mx-auto space-y-6">
-            <div className="flex items-center gap-4">
-                <Link href="/dashboard/purchases">
-                    <Button variant="ghost" size="icon" type="button">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <div>
-                    <h1 className="text-2xl font-bold">Nueva Orden de Compra</h1>
-                    <p className="text-muted-foreground text-sm">Crear una nueva orden para un proveedor</p>
+        <form onSubmit={handleSubmit} className="max-w-[1200px] mx-auto space-y-8 pb-20">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b pb-6">
+                <div className="flex items-center gap-4">
+                    <Link href="/dashboard/purchases">
+                        <Button variant="ghost" size="icon" type="button" className="rounded-full">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                    </Link>
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Nueva Orden de Compra</h1>
+                        <p className="text-muted-foreground">Crear una nueva orden para un proveedor</p>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base">Detalles de la Orden</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="supplier">Proveedor</Label>
-                            <Select
-                                onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar proveedor" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {suppliers.map((s) => (
-                                        <SelectItem key={s.id} value={s.id}>
-                                            {s.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="warehouse">Almacén Destino</Label>
-                            <Select
-                                onValueChange={(value) => setFormData({ ...formData, warehouseId: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar almacén" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {warehouses.map((w) => (
-                                        <SelectItem key={w.id} value={w.id}>
-                                            {w.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="expediente">Expediente (Opcional)</Label>
-                            <Select
-                                onValueChange={(value) => setFormData({ ...formData, expedienteId: value === "none" ? "" : value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar expediente..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">Sin expediente</SelectItem>
-                                    {expedientes.map((e) => (
-                                        <SelectItem key={e.id} value={e.id}>
-                                            {e.number}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="expectedDate">Fecha Esperada</Label>
-                            <Input
-                                id="expectedDate"
-                                type="date"
-                                value={formData.expectedDate}
-                                onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="notes">Notas</Label>
-                            <Textarea
-                                id="notes"
-                                placeholder="Notas adicionales..."
-                                value={formData.notes}
-                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="md:h-fit">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-base">Resumen de la Orden</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">${calculateTotal().toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Costo total estimado incluyendo todos los {items.length} artículos
-                        </p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button className="w-full" type="submit" disabled={isPending}>
-                            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            {isPending ? "Creando..." : "Crear Orden"}
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">Artículos de la Orden</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {items.map((item, index) => (
-                        <div key={item.id} className="flex flex-col gap-4 sm:flex-row sm:items-end border-b pb-4 last:border-0 last:pb-0">
-                            <div className="flex-1 space-y-2">
-                                <Label>Producto</Label>
+            <div className="grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-8">
+                    <Card className="shadow-md border-primary/10 overflow-hidden">
+                        <div className="h-1 bg-primary" />
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2">
+                                <ShoppingCart className="h-5 w-5 text-primary" />
+                                Datos de la Orden
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="supplier">Proveedor *</Label>
+                                    <QuickSupplierDialog onSupplierCreated={handleSupplierCreated} />
+                                </div>
                                 <Select
-                                    value={item.productId}
-                                    onValueChange={(value) => handleItemChange(item.id, "productId", value)}
+                                    value={formData.supplierId}
+                                    onValueChange={(value) => setFormData({ ...formData, supplierId: value })}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar producto" />
+                                    <SelectTrigger className="bg-background">
+                                        <SelectValue placeholder="Seleccionar proveedor..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {products.map((p) => (
-                                            <SelectItem key={p.id} value={p.id}>
-                                                {p.sku} - {p.name}
-                                            </SelectItem>
+                                        {allSuppliers.map((s) => (
+                                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="w-full sm:w-24 space-y-2">
-                                <Label>Cantidad</Label>
-                                <Input
-                                    type="number"
-                                    min="1"
-                                    value={item.quantity}
-                                    onChange={(e) => handleItemChange(item.id, "quantity", Number(e.target.value))}
-                                />
+                            <div className="space-y-2">
+                                <Label htmlFor="warehouse">Almacén Destino *</Label>
+                                <Select
+                                    value={formData.warehouseId}
+                                    onValueChange={(value) => setFormData({ ...formData, warehouseId: value })}
+                                >
+                                    <SelectTrigger className="bg-background">
+                                        <SelectValue placeholder="Seleccionar almacén..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {warehouses.map((w) => (
+                                            <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <div className="w-full sm:w-32 space-y-2">
-                                <Label>Precio Unitario</Label>
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={item.unitPrice}
-                                    onChange={(e) => handleItemChange(item.id, "unitPrice", Number(e.target.value))}
-                                />
-                            </div>
-                            <div className="w-full sm:w-32 space-y-2">
-                                <Label>Total</Label>
-                                <div className="h-10 flex items-center px-3 border rounded-md bg-muted/50 text-sm">
-                                    ${(item.quantity * item.unitPrice).toFixed(2)}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="expediente">Expediente</Label>
+                                    <QuickExpedienteDialog onExpedienteCreated={handleExpedienteCreated} />
                                 </div>
+                                <Select
+                                    value={formData.expedienteId}
+                                    onValueChange={(value) => setFormData({ ...formData, expedienteId: value === "none" ? "" : value })}
+                                >
+                                    <SelectTrigger className="bg-background">
+                                        <SelectValue placeholder="Seleccionar expediente..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Sin expediente</SelectItem>
+                                        {allExpedientes.map((e: any) => (
+                                            <SelectItem key={e.id} value={e.id}>{e.number} ({e.year})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="expectedDate">Fecha Esperada</Label>
+                                <Input
+                                    id="expectedDate"
+                                    type="date"
+                                    value={formData.expectedDate}
+                                    onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="notes">Notas</Label>
+                                <Textarea
+                                    id="notes"
+                                    placeholder="Notas adicionales..."
+                                    value={formData.notes}
+                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                    className="min-h-[80px]"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-md border-primary/10">
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2">
+                                <Package className="h-5 w-5 text-primary" />
+                                Artículos a Solicitar
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex flex-col sm:flex-row gap-3 bg-muted/40 p-4 rounded-lg border">
+                                <div className="flex-1">
+                                    <Select
+                                        value={selectedProductId}
+                                        onValueChange={(val) => {
+                                            if (val && val !== "placeholder") {
+                                                handleAddProduct(val);
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="bg-background h-12 text-base">
+                                            <SelectValue placeholder="Buscar y agregar producto..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {allProducts.length === 0 ? (
+                                                <SelectItem value="placeholder" disabled>No hay productos cargados</SelectItem>
+                                            ) : (
+                                                allProducts.map((p: any) => (
+                                                    <SelectItem key={p.id} value={p.id}>
+                                                        <div className="flex flex-col w-full">
+                                                            <span>{p.name}</span>
+                                                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                                                <span className="font-mono">{p.sku}</span>
+                                                                <span>${Number(p.price || 0).toFixed(2)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <QuickProductDialog
+                                    categories={allCategories}
+                                    onProductCreated={handleProductCreated}
+                                />
+                            </div>
+
+                            <div className="rounded-xl border overflow-hidden">
+                                <Table>
+                                    <TableHeader className="bg-muted/80">
+                                        <TableRow>
+                                            <TableHead className="font-bold">Producto</TableHead>
+                                            <TableHead className="w-[100px] text-center font-bold">Cantidad</TableHead>
+                                            <TableHead className="w-[100px] text-center font-bold">Precio Unit.</TableHead>
+                                            <TableHead className="w-[100px] text-center font-bold">Total</TableHead>
+                                            <TableHead className="w-[50px]"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {items.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center py-16 text-muted-foreground">
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <Package className="h-10 w-10 opacity-20" />
+                                                        <p>La lista está vacía</p>
+                                                        <p className="text-xs">Usa el buscador superior para agregar productos</p>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            items.map((item) => (
+                                                <TableRow key={item.id} className="hover:bg-muted/20">
+                                                    <TableCell>
+                                                        <div className="font-semibold text-primary">{item.productName}</div>
+                                                        <div className="text-xs text-muted-foreground font-mono">{item.productSku}</div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Input
+                                                            type="number"
+                                                            min="1"
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateItemQty(item.id, parseInt(e.target.value) || 0)}
+                                                            className="text-right font-bold"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.01"
+                                                            value={item.unitPrice}
+                                                            onChange={(e) => updateItemPrice(item.id, parseFloat(e.target.value) || 0)}
+                                                            className="text-right"
+                                                            placeholder="0.00"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-bold">
+                                                        ${(item.quantity * item.unitPrice).toFixed(2)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleRemoveItem(item.id)}
+                                                            className="text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="space-y-8">
+                    <Card className="shadow-md border-primary/10">
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-primary" />
+                                Resumen de la Orden
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Artículos:</span>
+                                <span className="font-semibold">{items.length}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Total Estimado:</span>
+                                <span className="text-2xl font-bold text-primary">${calculateTotal().toFixed(2)}</span>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
                             <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive"
-                                onClick={() => handleRemoveItem(item.id)}
+                                type="submit"
+                                size="lg"
+                                className="w-full h-14 text-lg font-black shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                disabled={isPending || items.length === 0 || !formData.supplierId || !formData.warehouseId}
                             >
-                                <Trash2 className="h-4 w-4" />
+                                {isPending ? (
+                                    <div className="flex flex-col items-center">
+                                        <Loader2 className="h-5 w-5 animate-spin mb-1" />
+                                        <span className="text-xs font-normal">Creando...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <Save className="h-5 w-5" />
+                                        CREAR ORDEN
+                                    </div>
+                                )}
                             </Button>
-                        </div>
-                    ))}
-                    <Button type="button" variant="outline" onClick={handleAddItem} className="w-full sm:w-auto">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Agregar Artículo
-                    </Button>
-                </CardContent>
-            </Card>
+                        </CardFooter>
+                    </Card>
+
+                    <Card className="shadow-md border-primary/10">
+                        <CardHeader>
+                            <CardTitle className="text-sm font-medium">Ayuda</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-sm text-muted-foreground space-y-2">
+                            <p>• Puedes crear productos, proveedores o expedientes sin salir del formulario</p>
+                            <p>• Los productos creados se agregarán automáticamente a la lista</p>
+                            <p>• Una vez creada la orden, podrás recibirla parcialmente</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </form>
     );
 }
