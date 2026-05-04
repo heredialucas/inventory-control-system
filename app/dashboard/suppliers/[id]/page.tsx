@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Mail, Phone, MapPin, User, FileText, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, User } from "lucide-react";
 import Link from "next/link";
 import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -245,12 +245,9 @@ export default async function SupplierDetailPage({
                                     <Card key={receipt.id} className="p-4">
                                         <div className="space-y-3">
                                             <div className="flex items-center justify-between">
-                                                <Link
-                                                    href={`/dashboard/receipts/${receipt.id}`}
-                                                    className="font-mono text-sm font-semibold hover:underline"
-                                                >
+                                                <span className="font-mono text-sm font-semibold">
                                                     {receipt.receiptNumber}
-                                                </Link>
+                                                </span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-4 text-sm">
                                                 <div>
@@ -296,12 +293,7 @@ export default async function SupplierDetailPage({
                                             {receipts.map((receipt: any) => (
                                                 <TableRow key={receipt.id}>
                                                     <TableCell className="font-mono">
-                                                        <Link
-                                                            href={`/dashboard/receipts/${receipt.id}`}
-                                                            className="hover:underline"
-                                                        >
-                                                            {receipt.receiptNumber}
-                                                        </Link>
+                                                        {receipt.receiptNumber}
                                                     </TableCell>
                                                     <TableCell>{receipt.warehouse.name}</TableCell>
                                                     <TableCell>
