@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getDelivery, markAsDelivered, cancelDelivery } from "@/app/actions/deliveries";
+import { getDelivery, confirmDelivery, markAsDelivered, cancelDelivery } from "@/app/actions/deliveries";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { ArrowLeft, CheckCircle2, XCircle, Truck, Building2, Package, User, Calendar, FileText, UserCog } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Truck, Building2, Package, User, Calendar, FileText, UserCog, CheckCircle, PackageCheck } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 
@@ -46,7 +46,14 @@ export default async function DeliveryDetailPage({
         redirect(`/dashboard/deliveries/${id}`);
     }
 
+    async function handleConfirm() {
+        "use server";
+        await confirmDelivery(id);
+        redirect(`/dashboard/deliveries/${id}`);
+    }
+
     const isDraft = delivery.status === "DRAFT";
+    const isConfirmed = delivery.status === "CONFIRMED";
     const isDelivered = delivery.status === "DELIVERED";
     const isCancelled = delivery.status === "CANCELLED";
     const canManage = hasPermission(user, "deliveries.manage");
@@ -78,8 +85,17 @@ export default async function DeliveryDetailPage({
                     </div>
                 </div>
                 <div className="flex gap-2 flex-wrap sm:ml-auto">
-                    {canManage && isDraft && (
+                    {canManage && (isDraft || isConfirmed) && (
                         <>
+                            {isDraft && (
+                                <form action={handleConfirm}>
+                                    <Button type="submit" className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
+                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                        <span className="sm:hidden">Confirmar</span>
+                                        <span className="hidden sm:inline">Confirmar Entrega</span>
+                                    </Button>
+                                </form>
+                            )}
                             <form action={handleCancel}>
                                 <Button variant="outline" type="submit" className="w-full sm:w-auto">
                                     <XCircle className="mr-2 h-4 w-4" />
@@ -87,13 +103,15 @@ export default async function DeliveryDetailPage({
                                     <span className="hidden sm:inline">Cancelar</span>
                                 </Button>
                             </form>
-                            <form action={handleMarkDelivered}>
-                                <Button type="submit" className="w-full sm:w-auto">
-                                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                                    <span className="sm:hidden">Entregar</span>
-                                    <span className="hidden sm:inline">Marcar como Entregado</span>
-                                </Button>
-                            </form>
+                            {(isDraft || isConfirmed) && (
+                                <form action={handleMarkDelivered}>
+                                    <Button type="submit" className="w-full sm:w-auto">
+                                        <PackageCheck className="mr-2 h-4 w-4" />
+                                        <span className="sm:hidden">Entregar</span>
+                                        <span className="hidden sm:inline">Marcar como Entregado</span>
+                                    </Button>
+                                </form>
+                            )}
                         </>
                     )}
                 </div>

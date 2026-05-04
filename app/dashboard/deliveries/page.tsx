@@ -175,6 +175,7 @@ function DeliveryTable({ deliveries, canManage, userId }: { deliveries: any[]; c
                                         deliveryId={delivery.id}
                                         status={delivery.status}
                                         userId={userId}
+                                        variant="button"
                                     />
                                 )}
                             </div>

@@ -110,7 +110,13 @@ async function main() {
         create: { name: "DEPOSITO", description: "Personal del departamento de Depósito" },
     });
 
-    console.log("✅ Seeded roles: ADMIN, ENCARGADO, COMPRAS, DEPOSITO");
+    const tecnicoRole = await prisma.role.upsert({
+        where: { name: "TECNICO" },
+        update: {},
+        create: { name: "TECNICO", description: "Técnico con acceso solo a entregas" },
+    });
+
+    console.log("✅ Seeded roles: ADMIN, ENCARGADO, COMPRAS, DEPOSITO, TECNICO");
 
     console.log("✅ Seeded 4 roles");
 
@@ -169,7 +175,11 @@ async function main() {
     ];
     await assignPermissions(depositoRole.id, depositoActions);
 
-    console.log("✅ Assigned permissions to roles");
+    // TECNICO permissions (only deliveries)
+    const tecnicoActions = [
+        "deliveries.manage", "deliveries.view",
+    ];
+    await assignPermissions(tecnicoRole.id, tecnicoActions);
 
     console.log("✅ Assigned permissions to roles");
 
@@ -202,6 +212,7 @@ async function main() {
     const encargadoPassword = await bcrypt.hash("encargado123", 10);
     const comprasPassword = await bcrypt.hash("compras123", 10);
     const depositoPassword = await bcrypt.hash("deposito123", 10);
+    const tecnicoPassword = await bcrypt.hash("tecnico123", 10);
 
     const usersToCreate = [
         {
@@ -235,6 +246,14 @@ async function main() {
             lastName: "Depósito",
             password: depositoPassword,
             role: depositoRole
+        },
+        {
+            email: "tecnico@gmail.com",
+            username: "tecnico",
+            firstName: "Técnico",
+            lastName: "Mantenimiento",
+            password: tecnicoPassword,
+            role: tecnicoRole
         }
     ];
 

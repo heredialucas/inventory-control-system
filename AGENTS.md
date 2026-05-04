@@ -5,11 +5,16 @@
 ```bash
 pnpm dev          # Start dev server
 pnpm build        # Run prisma generate + next build (order matters)
-pnpm lint         # ESLint
 pnpm migrate      # prisma generate + prisma migrate dev
 ```
 
 No test suite configured.
+
+## IMPORTANT: Never do these
+
+- **NEVER run `prisma db push --force-reset`** - This wipes all data from the database
+- **NEVER run `pnpm lint`** - It times out and is not needed
+- Only run `pnpm build` to verify no errors
 
 ## Architecture
 

@@ -11,9 +11,10 @@ interface DeliveryActionsProps {
     deliveryId: string;
     status: string;
     userId: string;
+    variant?: "icon" | "button";
 }
 
-export function DeliveryActions({ deliveryId, status, userId }: DeliveryActionsProps) {
+export function DeliveryActions({ deliveryId, status, userId, variant = "icon" }: DeliveryActionsProps) {
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
@@ -56,15 +57,63 @@ export function DeliveryActions({ deliveryId, status, userId }: DeliveryActionsP
         });
     };
 
+    if (variant === "button") {
+        return (
+            <div className="flex flex-wrap gap-2">
+                {status === "DRAFT" && (
+                    <Button
+                        onClick={handleConfirm}
+                        disabled={isPending}
+                        className="bg-green-600 hover:bg-green-700"
+                    >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Confirmar Entrega
+                    </Button>
+                )}
+                {status === "CONFIRMED" && (
+                    <Button
+                        onClick={handleDeliver}
+                        disabled={isPending}
+                        className="bg-blue-600 hover:bg-blue-700"
+                    >
+                        <PackageCheck className="mr-2 h-4 w-4" />
+                        Confirmar como Entregado
+                    </Button>
+                )}
+                {status !== "DELIVERED" && status !== "CANCELLED" && (
+                    <Button
+                        variant="destructive"
+                        onClick={handleCancel}
+                        disabled={isPending}
+                    >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Eliminar
+                    </Button>
+                )}
+            </div>
+        );
+    }
+
     return (
         <div className="flex items-center gap-1">
-            {(status === "CONFIRMED" || status === "DRAFT") && (
+            {status === "DRAFT" && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleConfirm}
+                    disabled={isPending}
+                    title="Confirmar entrega"
+                >
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                </Button>
+            )}
+            {status === "CONFIRMED" && (
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleDeliver}
                     disabled={isPending}
-                    title="Marcar como entregada"
+                    title="Confirmar como entregado"
                 >
                     <PackageCheck className="h-4 w-4 text-blue-600" />
                 </Button>

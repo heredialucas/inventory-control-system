@@ -231,7 +231,7 @@ model Delivery {
   deliveryNumber String         @unique
   institutionId  String         @db.Uuid
   warehouseId    String         @db.Uuid
-  status         DeliveryStatus @default(CONFIRMED)
+  status         DeliveryStatus @default(DRAFT)
   deliveryDate   DateTime?
   receivedBy     String?
   notes          String?
