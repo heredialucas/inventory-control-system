@@ -10,6 +10,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +22,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Trash2, Package } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { MoreHorizontal, Eye, Edit, Trash2, Package, Search } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { deleteWarehouse } from "@/app/actions/warehouses";
@@ -55,6 +63,8 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
     const router = useRouter();
     const [editingWarehouse, setEditingWarehouse] = useState<WarehouseWithCounts | null>(null);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const [typeFilter, setTypeFilter] = useState<string>("all");
 
     // Open dialog when warehouse is set for editing
     useEffect(() => {
@@ -62,6 +72,14 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
             setEditDialogOpen(true);
         }
     }, [editingWarehouse]);
+
+    const filteredWarehouses = warehouses.filter((w) => {
+        const matchSearch =
+            w.name.toLowerCase().includes(search.toLowerCase()) ||
+            w.code.toLowerCase().includes(search.toLowerCase());
+        const matchType = typeFilter === "all" || w.type === typeFilter;
+        return matchSearch && matchType;
+    });
 
     const handleDelete = (id: string, name: string) => {
         if (!confirm(`¿Estás seguro de que quieres eliminar el depósito "${name}"?`)) {
@@ -79,7 +97,7 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
         });
     };
 
-    if (warehouses.length === 0) {
+    if (filteredWarehouses.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Package className="h-12 w-12 text-muted-foreground mb-4" />
@@ -95,6 +113,29 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
 
     return (
         <>
+            {/* Filtros */}
+            <div className="flex flex-wrap gap-4 items-center mb-4">
+                <div className="relative max-w-xs flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar..."
+                        className="pl-8"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[160px]">
+                        <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los tipos</SelectItem>
+                        <SelectItem value="DEPOSIT">Depósitos</SelectItem>
+                        <SelectItem value="OFFICE">Oficinas</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
             {hasWarehouseWithStock && (
                 <div className="bg-destructive/10 border border-destructive/30 text-destructive rounded-md p-3 text-sm mb-4">
                     <strong>Nota:</strong> Los depósitos con productos no pueden ser eliminados. 
@@ -109,6 +150,7 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                         <TableRow>
                             <TableHead>Código</TableHead>
                             <TableHead>Nombre</TableHead>
+                            <TableHead>Tipo</TableHead>
                             <TableHead>Dirección</TableHead>
                             <TableHead>Productos</TableHead>
                             <TableHead>Estado</TableHead>
@@ -116,7 +158,7 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {warehouses.map((warehouse) => (
+                        {filteredWarehouses.map((warehouse) => (
                             <TableRow key={warehouse.id}>
                                 <TableCell className="font-mono font-semibold">{warehouse.code}</TableCell>
                                 <TableCell>
@@ -128,6 +170,11 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                                             </div>
                                         )}
                                     </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant={warehouse.type === "OFFICE" ? "default" : "outline"}>
+                                        {warehouse.type === "OFFICE" ? "Oficina" : "Depósito"}
+                                    </Badge>
                                 </TableCell>
                                 <TableCell className="text-sm text-muted-foreground">
                                     {warehouse.address || "-"}
@@ -177,7 +224,7 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
 
             {/* Vista de cards para móviles */}
             <div className="md:hidden space-y-4">
-                {warehouses.map((warehouse) => (
+                {filteredWarehouses.map((warehouse) => (
                     <Card key={warehouse.id}>
                         <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-3">
