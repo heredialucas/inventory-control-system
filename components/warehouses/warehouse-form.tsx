@@ -15,6 +15,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { createWarehouse, updateWarehouse } from "@/app/actions/warehouses";
 import { Warehouse } from "@prisma/client";
@@ -43,6 +50,7 @@ export function WarehouseForm({ warehouse, trigger, isOpen, onOpenChange }: Ware
         code: warehouse?.code || "",
         description: warehouse?.description || "",
         address: warehouse?.address || "",
+        type: (warehouse as any)?.type || "DEPOSIT",
     });
 
     // Sync form data when warehouse changes or dialog opens
@@ -53,6 +61,7 @@ export function WarehouseForm({ warehouse, trigger, isOpen, onOpenChange }: Ware
                 code: warehouse.code || "",
                 description: warehouse.description || "",
                 address: warehouse.address || "",
+                type: (warehouse as any)?.type || "DEPOSIT",
             });
         }
     }, [warehouse, open]);
@@ -135,6 +144,26 @@ export function WarehouseForm({ warehouse, trigger, isOpen, onOpenChange }: Ware
                                 placeholder="Descripción opcional..."
                                 rows={3}
                             />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="type">Tipo *</Label>
+                            <Select
+                                value={formData.type}
+                                onValueChange={(value: "DEPOSIT" | "OFFICE") =>
+                                    setFormData({ ...formData, type: value })
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar tipo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="DEPOSIT">Depósito</SelectItem>
+                                    <SelectItem value="OFFICE">Oficina</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                                Los depósitos almacenan stock, las oficinas son ubicaciones para bienes asignados
+                            </p>
                         </div>
                     </div>
                     <DialogFooter className="gap-2">

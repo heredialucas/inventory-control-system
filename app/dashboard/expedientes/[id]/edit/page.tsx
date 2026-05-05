@@ -1,7 +1,7 @@
 import { getCurrentUser, hasPermission } from "@/lib/auth";
+import { getExpedienteCategories, getExpediente } from "@/app/actions/expedientes";
 import { ExpedienteForm } from "@/components/expedientes/expediente-form";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
-import { getExpediente } from "@/app/actions/expedientes";
 import { notFound, redirect } from "next/navigation";
 
 export const metadata = {
@@ -23,7 +23,10 @@ export default async function EditExpedientePage({ params }: EditExpedientePageP
         return <UnauthorizedAccess action="editar" resource="expedientes" />;
     }
 
-    const expediente = await getExpediente(id);
+    const [expediente, categories] = await Promise.all([
+        getExpediente(id),
+        getExpedienteCategories()
+    ]);
 
     if (!expediente) {
         notFound();
@@ -31,7 +34,7 @@ export default async function EditExpedientePage({ params }: EditExpedientePageP
 
     return (
         <div className="space-y-6">
-            <ExpedienteForm userId={user.id} expediente={expediente} />
+            <ExpedienteForm userId={user.id} expediente={expediente} categories={categories} />
         </div>
     );
 }

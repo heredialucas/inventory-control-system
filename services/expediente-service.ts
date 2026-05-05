@@ -2,6 +2,42 @@ import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 export const expedienteService = {
+    // ==================== CATEGORÍAS DE EXPEDIENTE ====================
+
+    async getExpedienteCategories() {
+        return await prisma.expedienteCategory.findMany({
+            where: { deletedAt: null },
+            orderBy: { name: "asc" },
+            include: {
+                _count: {
+                    select: { expedientes: true },
+                },
+            },
+        });
+    },
+
+    async createExpedienteCategory(name: string, description?: string) {
+        return await prisma.expedienteCategory.create({
+            data: { name, description },
+        });
+    },
+
+    async updateExpedienteCategory(id: string, name: string, description?: string) {
+        return await prisma.expedienteCategory.update({
+            where: { id },
+            data: { name, description },
+        });
+    },
+
+    async deleteExpedienteCategory(id: string) {
+        return await prisma.expedienteCategory.update({
+            where: { id },
+            data: { deletedAt: new Date() }
+        });
+    },
+
+    // ==================== EXPEDIENTES ====================
+
     /**
      * Get all expedientes with optional filters
      */
@@ -114,6 +150,7 @@ export const expedienteService = {
         origin?: string;
         description?: string;
         status?: string;
+        categoryId?: string;
     }) {
         // Use provided number or generate one (e.g. EXP-000001)
         let number = data.number;
@@ -130,6 +167,7 @@ export const expedienteService = {
                 origin: data.origin,
                 description: data.description,
                 status: data.status || "ABIERTO",
+                categoryId: data.categoryId,
             },
         });
     },
@@ -146,6 +184,7 @@ export const expedienteService = {
             origin?: string;
             description?: string;
             status?: string;
+            categoryId?: string;
         }
     ) {
         return await prisma.expediente.update({

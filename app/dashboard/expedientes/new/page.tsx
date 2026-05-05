@@ -1,4 +1,5 @@
 import { getCurrentUser, hasPermission } from "@/lib/auth";
+import { getExpedienteCategories } from "@/app/actions/expedientes";
 import { ExpedienteForm } from "@/components/expedientes/expediente-form";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { redirect } from "next/navigation";
@@ -17,9 +18,11 @@ export default async function NewExpedientePage() {
         return <UnauthorizedAccess action="crear" resource="expedientes" />;
     }
 
+    const categories = await getExpedienteCategories();
+
     return (
         <div className="space-y-6">
-            <ExpedienteForm userId={user.id} />
+            <ExpedienteForm userId={user.id} categories={categories} />
         </div>
     );
 }

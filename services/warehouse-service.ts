@@ -7,9 +7,13 @@ export const warehouseService = {
     /**
      * Obtener todos los depósitos con resumen de stock
      */
-    async getWarehouses() {
+    async getWarehouses(type?: "DEPOSIT" | "OFFICE") {
+        const where: any = { deletedAt: null };
+        if (type) {
+            where.type = type;
+        }
         return await prisma.warehouse.findMany({
-            where: { deletedAt: null },
+            where,
             orderBy: { name: "asc" },
             include: {
                 _count: {
@@ -68,6 +72,7 @@ export const warehouseService = {
         code: string;
         description?: string;
         address?: string;
+        type?: "DEPOSIT" | "OFFICE";
     }) {
         return await prisma.warehouse.create({
             data,
@@ -84,6 +89,7 @@ export const warehouseService = {
             code?: string;
             description?: string;
             address?: string;
+            type?: "DEPOSIT" | "OFFICE";
         }
     ) {
         return await prisma.warehouse.update({

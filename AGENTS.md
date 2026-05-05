@@ -32,11 +32,17 @@ No test suite configured.
 
 ## Database Schema
 
-Models: User, Role, Permission, UserRole, RolePermission, Warehouse, WarehouseStock, Product, Category, Supplier, PurchaseOrder, PurchaseOrderItem, StockMovement, Delivery, DeliveryItem, Institution, Expediente, PurchaseReceipt, PurchaseReceiptItem.
+Models: User, Role, Permission, UserRole, RolePermission, Warehouse, WarehouseStock, Product, Category, Supplier, PurchaseOrder, PurchaseOrderItem, StockMovement, Delivery, DeliveryItem, Institution, Expediente, ExpedienteCategory, PurchaseReceipt, PurchaseReceiptItem.
+
+### Nuevos Modelos
+
+- **WarehouseType** enum: `DEPOSIT` | `OFFICE`
+- **Warehouse.type**: Campo para diferenciar depósitos de oficinas
+- **ExpedienteCategory**: Categorías dinámicas para expedientes
 
 Flow: `PurchaseOrder → PurchaseReceipt → StockMovement (IN) → Delivery → StockMovement (OUT)`
 
-Expediente (case file) optionally links to purchases, receipts, deliveries, transfers, movements.
+Expediente (case file) opcionalmente 링크 a purchases, receipts, deliveries, transfers, movements.
 
 ## Env Requirements
 
@@ -56,3 +62,4 @@ JWT_SECRET     # Auth signing
 - `npm run build` runs `prisma generate` first; don't run just `next build`
 - Prisma adapter requires `DIRECT_URL` for migrations, separate from app `DATABASE_URL`
 - No TypeScript strict mode; ESLint extends `next/core-web-vitals` + `next/typescript`
+- Always run `pnpm prisma generate` after modifying schema.prisma

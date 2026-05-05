@@ -12,12 +12,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Search, AlertTriangle, Package } from "lucide-react";
 import { updateMinStockAction } from "@/app/actions/inventory";
 
 interface StockByWarehouse {
     warehouseId: string;
     warehouseName: string;
+    warehouseType: string;
     quantity: number;
 }
 
@@ -34,24 +42,54 @@ interface Product {
     isDeleted: boolean;
 }
 
+interface Warehouse {
+    id: string;
+    name: string;
+    type: string;
+}
+
 interface AdminProductListProps {
     products: Product[];
-    warehouses: { id: string; name: string }[];
+    warehouses: Warehouse[];
     canManage: boolean;
 }
 
 export function AdminProductList({ products, warehouses, canManage }: AdminProductListProps) {
     const [search, setSearch] = useState("");
+    const [locationFilter, setLocationFilter] = useState<string>("all");
+    const [categoryFilter, setCategoryFilter] = useState<string>("all");
     const [editingId, setEditingId] = useState<string | null>(null);
     const [minStockValue, setMinStockValue] = useState<number>(0);
     const [loading, setLoading] = useState<string | null>(null);
 
-    const filtered = products.filter(
-        (p) =>
+    const uniqueCategories = Array.from(
+        new Set(products.map((p) => p.categoryName).filter(Boolean))
+    ) as string[];
+
+    const filtered = products.filter((p) => {
+        const matchSearch =
             p.name.toLowerCase().includes(search.toLowerCase()) ||
             p.sku.toLowerCase().includes(search.toLowerCase()) ||
-            p.categoryName?.toLowerCase().includes(search.toLowerCase())
-    );
+            p.categoryName?.toLowerCase().includes(search.toLowerCase());
+
+        const hasStockInDeposits = p.stockByWarehouse.some(
+            (sw) => sw.warehouseType === "DEPOSIT" && sw.quantity > 0
+        );
+        const hasStockInOffices = p.stockByWarehouse.some(
+            (sw) => sw.warehouseType === "OFFICE" && sw.quantity > 0
+        );
+
+        let matchLocation = true;
+        if (locationFilter === "deposits") matchLocation = hasStockInDeposits;
+        else if (locationFilter === "offices") matchLocation = hasStockInOffices;
+
+        let matchCategory = true;
+        if (categoryFilter !== "all") {
+            matchCategory = p.categoryName === categoryFilter;
+        }
+
+        return matchSearch && matchLocation && matchCategory;
+    });
 
     const activeProducts = filtered.filter((p) => !p.isDeleted);
     const deletedProducts = filtered.filter((p) => p.isDeleted);
@@ -83,15 +121,22 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
     const getStockByWarehouse = (stockByWarehouse: StockByWarehouse[]) => {
         if (stockByWarehouse.length === 0) return "-";
         
+        const withStock = stockByWarehouse.filter((sw) => sw.quantity > 0);
+        if (withStock.length === 0) return "-";
+        
         return (
             <div className="flex flex-wrap gap-1">
-                {stockByWarehouse.map((sw) => (
+                {withStock.map((sw) => (
                     <Badge
                         key={sw.warehouseId}
-                        variant={sw.quantity > 0 ? "outline" : "destructive"}
-                        className="text-[10px] py-0 px-1.5"
+                        variant={sw.warehouseType === "OFFICE" ? "default" : "outline"}
+                        className={`text-[10px] py-0 px-1.5 ${
+                            sw.warehouseType === "OFFICE"
+                                ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                : ""
+                        }`}
                     >
-                        {sw.warehouseName}: {sw.quantity}
+                        {sw.warehouseName} ({sw.warehouseType === "OFFICE" ? "Oficina" : "Depósito"})
                     </Badge>
                 ))}
             </div>
@@ -100,14 +145,39 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center relative max-w-md">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Buscar productos..."
-                    className="pl-8"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
+            <div className="flex flex-wrap gap-4 items-center">
+                <div className="relative max-w-md flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar productos..."
+                        className="pl-8"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Ubicación" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todas las ubicaciones</SelectItem>
+                        <SelectItem value="deposits">En Depósitos</SelectItem>
+                        <SelectItem value="offices">En Oficinas</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todas las categorías</SelectItem>
+                        {uniqueCategories.map((cat) => (
+                            <SelectItem key={cat} value={cat!}>
+                                {cat}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             <div className="border rounded-md">
@@ -118,7 +188,7 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
                             <TableHead>Producto</TableHead>
                             <TableHead>Categoría</TableHead>
                             <TableHead className="text-center">Total</TableHead>
-                            <TableHead>Stock por Depósito</TableHead>
+                            <TableHead>Ubicación</TableHead>
                             <TableHead className="text-center">Mín</TableHead>
                             <TableHead className="text-center">Acciones</TableHead>
                         </TableRow>
@@ -233,7 +303,7 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
                                     <TableHead>Producto</TableHead>
                                     <TableHead>Categoría</TableHead>
                                     <TableHead className="text-center">Stock Total</TableHead>
-                                    <TableHead>Stock por Depósito</TableHead>
+                                    <TableHead>Ubicación</TableHead>
                                     <TableHead className="text-center">Mín</TableHead>
                                 </TableRow>
                             </TableHeader>

@@ -8,14 +8,14 @@ import { TransferStatus } from "@prisma/client";
 
 // ==================== WAREHOUSE CRUD ====================
 
-export async function getWarehouses() {
+export async function getWarehouses(type?: "DEPOSIT" | "OFFICE") {
     const user = await getCurrentUser();
     if (!user) {
         return [];
     }
 
     try {
-        return await warehouseService.getWarehouses();
+        return await warehouseService.getWarehouses(type);
     } catch (error) {
         console.error("Error obteniendo depósitos:", error);
         throw new Error("Error al obtener depósitos");
@@ -41,6 +41,7 @@ export async function createWarehouse(data: {
     code: string;
     description?: string;
     address?: string;
+    type?: "DEPOSIT" | "OFFICE";
 }) {
     const user = await getCurrentUser();
     if (!user || !hasPermission(user, "warehouses.manage")) {
@@ -67,6 +68,7 @@ export async function updateWarehouse(
         code?: string;
         description?: string;
         address?: string;
+        type?: "DEPOSIT" | "OFFICE";
     }
 ) {
     const user = await getCurrentUser();

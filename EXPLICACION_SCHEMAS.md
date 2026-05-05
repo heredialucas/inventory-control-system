@@ -130,28 +130,41 @@ Representa los artículos que se manejan en el inventario. El stock se gestiona 
 
 ---
 
-## 3. Gestión de Depósitos
+## 3. Gestión de Depósitos y Oficinas
 
-### Warehouse (Depósito)
-Ubicaciones físicas donde se almacena el inventario.
+### WarehouseType (Enum)
+Define el tipo de ubicación para organizar inventario.
+
+| Valor | Descripción |
+|-------|-------------|
+| `DEPOSIT` | Depósito tradicional (para stock) |
+| `OFFICE` | Oficina/departamento (para bienes asignados) |
+
+### Warehouse (Depósito/Oficina)
+Ubiciones físicas donde se almacena el inventario. Ahora puede ser un depósito tradicional o una oficina.
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | `id` | UUID | Identificador único |
-| `name` | String | Nombre del depósito |
-| `code` | String | Código corto (ej: "WH-01", "DEP-A") |
+| `name` | String | Nombre del depósito/oficina |
+| `code` | String | Código corto (ej: "WH-01", "OF-COMPRAS") |
 | `description` | String | Descripción |
 | `address` | String | Dirección |
-| `isActive` | Boolean | Si el depósito está activo |
+| `type` | Enum | Tipo (DEPOSIT u OFFICE) |
+| `isActive` | Boolean | Si está activo |
+
+**Uso:**
+- **DEPOSIT**: Depósitos tradicionales para stock de inventario
+- **OFFICE**: Oficinas/departamentos para bienes de capital asignados
 
 **Relaciones:**
-- Un depósito tiene muchos items de stock (`WarehouseStock`)
-- Un depósito tiene muchos movimientos (`StockMovement`)
-- Un depósito puede ser origen de transferencias (`WarehouseTransfer` como `fromWarehouse`)
-- Un depósito puede ser destino de transferencias (`WarehouseTransfer` como `toWarehouse`)
-- Un depósito recibe órdenes de compra (`PurchaseOrder`)
-- Un depósito tiene entregas (`Delivery`)
-- Un depósito puede tener recepciones (`PurchaseReceipt`)
+- Un depósito/oficina tiene muchos items de stock (`WarehouseStock`)
+- Un depósito/oficina tiene muchos movimientos (`StockMovement`)
+- Un dépôt/oficina puede ser origen de transferencias (`WarehouseTransfer` como `fromWarehouse`)
+- Un dépôt/oficina puede ser destino de transferencias (`WarehouseTransfer` como `toWarehouse`)
+- Un dépôt/oficina recibe órdenes de compra (`PurchaseOrder`)
+- Un dépôt/oficina tiene entregas (`Delivery`)
+- Un dépôt/oficina puede tener recepciones (`PurchaseReceipt`)
 
 ---
 
@@ -427,6 +440,19 @@ Movimiento de productos entre depósitos.
 
 ## 8. Expedientes
 
+### ExpedienteCategory (Categoría de Expediente)
+Categorías dinámicas para clasificar expedientes.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | Identificador único |
+| `name` | String | Nombre de la categoría (único) |
+| `description` | String | Descripción |
+
+**Uso:**
+- Clasificar expedientes por tipo (Compra, Transferencia, Bienes de Capital, etc.)
+- Filtrar y buscar expedientes por categoría
+
 ### Expediente (Case File)
 Documento central que puede agrupar todas las operaciones relacionadas con una gestión específica.
 
@@ -439,6 +465,7 @@ Documento central que puede agrupar todas las operaciones relacionadas con una g
 | `origin` | String | Origen del expediente |
 | `description` | String | Descripción |
 | `status` | String | Estado |
+| `categoryId` | UUID | Categoría del expediente (opcional) |
 
 **Nota:** El expediente es **opcional** en todas las operaciones. Se puede trabajar sin expediente.
 
@@ -448,6 +475,7 @@ Documento central que puede agrupar todas las operaciones relacionadas con una g
 - Un expediente puede tener muchas transferencias (`WarehouseTransfer`)
 - Un expediente puede tener muchos movimientos (`StockMovement`)
 - Un expediente puede tener muchas recepciones (`PurchaseReceipt`)
+- Un expediente puede tener una categoría (`ExpedienteCategory`)
 
 ---
 
@@ -518,6 +546,7 @@ Warehouse
   ├── PurchaseOrder
   ├── Delivery
   └── PurchaseReceipt
+  └── type: DEPOSIT | OFFICE
 
 Product
   ├── Category
@@ -536,10 +565,11 @@ Supplier
 Institution
   └── Delivery
 
-Expediente (opcional)
+Expediente
   ├── PurchaseOrder
   ├── PurchaseReceipt
   ├── Delivery
   ├── WarehouseTransfer
-  └── StockMovement
+  ├── StockMovement
+  └── ExpedienteCategory
 ```

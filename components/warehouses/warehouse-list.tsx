@@ -33,6 +33,7 @@ type WarehouseWithCounts = {
     code: string;
     description: string | null;
     address: string | null;
+    type: "DEPOSIT" | "OFFICE";
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -193,6 +194,9 @@ export function WarehouseList({ warehouses, canManage = false }: WarehouseListPr
                                 </div>
                                 <Badge variant={warehouse.isActive ? "default" : "secondary"}>
                                     {warehouse.isActive ? "Activo" : "Inactivo"}
+                                </Badge>
+                                <Badge variant={warehouse.type === "OFFICE" ? "default" : "outline"}>
+                                    {warehouse.type === "OFFICE" ? "Oficina" : "Depósito"}
                                 </Badge>
                             </div>
 

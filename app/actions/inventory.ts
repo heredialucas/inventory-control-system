@@ -58,18 +58,19 @@ export async function getProductsWithWarehouseStock() {
     const stockItems = await prisma.warehouseStock.findMany({
         include: {
             warehouse: {
-                select: { id: true, name: true },
+                select: { id: true, name: true, type: true },
             },
         },
     });
     
-    const stockByProduct = new Map<string, Array<{ warehouseId: string; warehouseName: string; quantity: number }>>();
+    const stockByProduct = new Map<string, Array<{ warehouseId: string; warehouseName: string; warehouseType: string; quantity: number }>>();
     
     for (const item of stockItems) {
         const existing = stockByProduct.get(item.productId) || [];
         existing.push({
             warehouseId: item.warehouseId,
             warehouseName: item.warehouse.name,
+            warehouseType: item.warehouse.type,
             quantity: item.quantity,
         });
         stockByProduct.set(item.productId, existing);
@@ -91,6 +92,7 @@ export async function getProductsWithWarehouseStock() {
         warehouses: warehouses.map((w) => ({
             id: w.id,
             name: w.name,
+            type: w.type,
         })),
     };
 }

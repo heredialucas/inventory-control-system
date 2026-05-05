@@ -16,9 +16,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface ExpedienteFormProps {
     userId: string;
     expediente?: any;
+    categories?: Category[];
 }
 
-export function ExpedienteForm({ userId, expediente }: ExpedienteFormProps) {
+interface Category {
+    id: string;
+    name: string;
+}
+
+export function ExpedienteForm({ userId, expediente, categories = [] }: ExpedienteFormProps) {
     const isEditing = !!expediente;
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -29,6 +35,7 @@ export function ExpedienteForm({ userId, expediente }: ExpedienteFormProps) {
     const [origin, setOrigin] = useState(expediente?.origin || "");
     const [description, setDescription] = useState(expediente?.description || "");
     const [status, setStatus] = useState(expediente?.status || "ABIERTO");
+    const [categoryId, setCategoryId] = useState(expediente?.categoryId || "");
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,7 +49,8 @@ export function ExpedienteForm({ userId, expediente }: ExpedienteFormProps) {
                         type,
                         origin,
                         description,
-                        status
+                        status,
+                        categoryId: categoryId || undefined
                     });
                     toast.success("Expediente actualizado correctamente");
                 } else {
@@ -52,7 +60,8 @@ export function ExpedienteForm({ userId, expediente }: ExpedienteFormProps) {
                         type,
                         origin,
                         description,
-                        status
+                        status,
+                        categoryId: categoryId || undefined
                     });
                     toast.success("Expediente creado correctamente");
                 }
@@ -117,6 +126,22 @@ export function ExpedienteForm({ userId, expediente }: ExpedienteFormProps) {
                                 <SelectItem value="CONTRATACION">Contratación Directa</SelectItem>
                                 <SelectItem value="DONACION">Donación</SelectItem>
                                 <SelectItem value="OTROS">Otros</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="category">Categoría</Label>
+                        <Select value={categoryId} onValueChange={setCategoryId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="">Sin categoría</SelectItem>
+                                {categories.map((cat) => (
+                                    <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

@@ -1,5 +1,5 @@
 import { getCurrentUser, hasPermission } from "@/lib/auth";
-import { getExpedientes } from "@/app/actions/expedientes";
+import { getExpedientes, getExpedienteCategories } from "@/app/actions/expedientes";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Plus } from "lucide-react";
@@ -18,7 +18,10 @@ export default async function ExpedientesPage() {
         return <UnauthorizedAccess action="ver" resource="expedientes" />;
     }
 
-    const expedientes = await getExpedientes();
+    const [expedientes, categories] = await Promise.all([
+        getExpedientes(),
+        getExpedienteCategories()
+    ]);
     const canManage = hasPermission(user, "expedientes.manage");
 
     return (
@@ -42,7 +45,11 @@ export default async function ExpedientesPage() {
                 )}
             </div>
 
-            <ExpedienteList expedientes={expedientes} canManage={canManage} />
+            <ExpedienteList 
+                expedientes={expedientes} 
+                canManage={canManage}
+                categories={categories}
+            />
         </div>
     );
 }

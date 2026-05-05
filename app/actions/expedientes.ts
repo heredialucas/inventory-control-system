@@ -17,6 +17,43 @@ async function verifyPermission(permissions: string | string[]) {
     }
 }
 
+// ==================== CATEGORÍAS DE EXPEDIENTE ====================
+
+export async function getExpedienteCategories() {
+    await verifyPermission(["expedientes.view", "expedientes.manage"]);
+    const categories = await expedienteService.getExpedienteCategories();
+    return serializePrisma(categories);
+}
+
+export async function createExpedienteCategory(data: {
+    name: string;
+    description?: string;
+}) {
+    await verifyPermission("expedientes.manage");
+    const result = await expedienteService.createExpedienteCategory(data.name, data.description);
+    revalidatePath("/dashboard/expedientes");
+    return serializePrisma(result);
+}
+
+export async function updateExpedienteCategory(id: string, data: {
+    name: string;
+    description?: string;
+}) {
+    await verifyPermission("expedientes.manage");
+    const result = await expedienteService.updateExpedienteCategory(id, data.name, data.description);
+    revalidatePath("/dashboard/expedientes");
+    return serializePrisma(result);
+}
+
+export async function deleteExpedienteCategory(id: string) {
+    await verifyPermission("expedientes.manage");
+    const result = await expedienteService.deleteExpedienteCategory(id);
+    revalidatePath("/dashboard/expedientes");
+    return serializePrisma(result);
+}
+
+// ==================== EXPEDIENTES ====================
+
 export async function getExpedientes(filters?: { status?: string }) {
     await verifyPermission(["expedientes.view", "receipts.view", "receipts.manage", "purchases.view", "purchases.manage"]);
     const expedientes = await expedienteService.getExpedientes(filters);
@@ -36,6 +73,7 @@ export async function createExpediente(data: {
     origin?: string;
     description?: string;
     status?: string;
+    categoryId?: string;
 }) {
     await verifyPermission(["expedientes.manage", "purchases.manage", "receipts.manage"]);
     const result = await expedienteService.createExpediente(data);
@@ -50,6 +88,7 @@ export async function updateExpediente(id: string, data: {
     origin?: string;
     description?: string;
     status?: string;
+    categoryId?: string;
 }) {
     await verifyPermission("expedientes.manage");
     const result = await expedienteService.updateExpediente(id, data);
