@@ -63,6 +63,7 @@ export async function updateReceipt(id: string, data: {
     date?: Date;
     imageUrl?: string;
     warehouseId?: string;
+    purchaseOrderId?: string;
     expedienteId?: string;
     supplierId?: string;
     userId: string;

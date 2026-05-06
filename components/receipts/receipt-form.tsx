@@ -142,6 +142,7 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                         date: new Date(date),
                         imageUrl: finalImageUrl,
                         warehouseId,
+                        purchaseOrderId: purchaseOrderId && purchaseOrderId !== "none" ? purchaseOrderId : undefined,
                         expedienteId: expedienteId && expedienteId !== "none" ? expedienteId : undefined,
                         supplierId: supplierId && supplierId !== "none" ? supplierId : undefined,
                         userId,

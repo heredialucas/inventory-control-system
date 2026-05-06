@@ -162,7 +162,7 @@ export const receiptService = {
                     receiptNumber,
                     date,
                     imageUrl,
-                    totalAmount: receiptTotalAmount,
+                    totalAmount: 0,
                     expedienteId: expedienteId || order?.expedienteId || null,
                     supplierId: supplierId || order?.supplierId || null,
                     items: {
@@ -180,6 +180,15 @@ export const receiptService = {
                 include: {
                     items: true
                 }
+            });
+
+            const calculatedTotal = receipt.items.reduce((sum, item) => {
+                return sum + (item.quantity * Number(item.unitPrice));
+            }, 0);
+
+            await tx.purchaseReceipt.update({
+                where: { id: receipt.id },
+                data: { totalAmount: calculatedTotal },
             });
 
             // 3. Create price history records and process stock
@@ -299,6 +308,7 @@ export const receiptService = {
         date?: Date;
         imageUrl?: string;
         warehouseId?: string;
+        purchaseOrderId?: string;
         expedienteId?: string;
         supplierId?: string;
         items?: Array<{
@@ -308,7 +318,7 @@ export const receiptService = {
         }>;
         userId: string;
     }) {
-        const { receiptNumber, date, imageUrl, warehouseId, expedienteId, supplierId, items, userId } = data;
+        const { receiptNumber, date, imageUrl, warehouseId, purchaseOrderId, expedienteId, supplierId, items, userId } = data;
 
         return await prisma.$transaction(async (tx) => {
             const oldReceipt = await tx.purchaseReceipt.findUnique({
@@ -345,20 +355,13 @@ export const receiptService = {
                 });
             }
 
-            // 3. Calculate new total amount
+            // 3. Calculate new total amount using item's own unitPrice
             let receiptTotalAmount = Number(oldReceipt.totalAmount);
             if (items) {
                 receiptTotalAmount = 0;
-                const productIds = items.map(i => i.productId);
-                const products = await tx.product.findMany({
-                    where: { id: { in: productIds } }
-                });
-
                 for (const item of items) {
-                    const product = products.find(p => p.id === item.productId);
-                    if (product) {
-                        receiptTotalAmount += item.quantity * Number(product.price);
-                    }
+                    const unitPrice = item.unitPrice ?? 0;
+                    receiptTotalAmount += item.quantity * unitPrice;
                 }
             }
 
@@ -370,6 +373,7 @@ export const receiptService = {
                     date: date ?? oldReceipt.date,
                     imageUrl: imageUrl ?? oldReceipt.imageUrl,
                     warehouseId: warehouseId ?? oldReceipt.warehouseId,
+                    purchaseOrderId: purchaseOrderId !== undefined ? (purchaseOrderId === "none" ? null : purchaseOrderId) : oldReceipt.purchaseOrderId,
                     expedienteId: expedienteId !== undefined ? (expedienteId === "none" ? null : expedienteId) : oldReceipt.expedienteId,
                     supplierId: supplierId !== undefined ? (supplierId === "none" ? null : supplierId) : oldReceipt.supplierId,
                     totalAmount: receiptTotalAmount,
@@ -377,6 +381,7 @@ export const receiptService = {
                         create: items.map(item => ({
                             productId: item.productId,
                             quantity: item.quantity,
+                            unitPrice: item.unitPrice ?? 0,
                         }))
                     } : undefined
                 }
