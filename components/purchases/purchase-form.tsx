@@ -168,22 +168,22 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, warehouses, pro
 
     return (
         <form onSubmit={handleSubmit} className="max-w-[1200px] mx-auto space-y-8 pb-20">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b pb-6">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b pb-4 md:pb-6">
+                <div className="flex items-center gap-3">
                     <Link href="/dashboard/purchases">
-                        <Button variant="ghost" size="icon" type="button" className="rounded-full">
+                        <Button variant="ghost" size="icon" type="button" className="rounded-full h-10 w-10">
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Nueva Orden de Compra</h1>
-                        <p className="text-muted-foreground">Crear una nueva orden para un proveedor</p>
+                        <h1 className="text-xl md:text-3xl font-bold tracking-tight">Nueva Orden de Compra</h1>
+                        <p className="text-muted-foreground text-sm">Crear una nueva orden para un proveedor</p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2 space-y-8">
+            <div className="grid gap-6 lg:grid-cols-3 grid-cols-1">
+                <div className="lg:col-span-2 space-y-6">
                     <Card className="shadow-md border-primary/10 overflow-hidden">
                         <div className="h-1 bg-primary" />
                         <CardHeader>
@@ -278,7 +278,7 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, warehouses, pro
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="flex flex-col sm:flex-row gap-3 bg-muted/40 p-4 rounded-lg border">
+                            <div className="flex flex-col sm:flex-row gap-3 bg-muted/40 p-3 sm:p-4 rounded-lg border">
                                 <div className="flex-1">
                                     <Select
                                         value={selectedProductId}
@@ -317,73 +317,134 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, warehouses, pro
                             </div>
 
                             <div className="rounded-xl border overflow-hidden">
-                                <Table>
-                                    <TableHeader className="bg-muted/80">
-                                        <TableRow>
-                                            <TableHead className="font-bold">Producto</TableHead>
-                                            <TableHead className="w-[100px] text-center font-bold">Cantidad</TableHead>
-                                            <TableHead className="w-[100px] text-center font-bold">Precio Unit.</TableHead>
-                                            <TableHead className="w-[100px] text-center font-bold">Total</TableHead>
-                                            <TableHead className="w-[50px]"></TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {items.length === 0 ? (
+                                <div className="hidden md:block">
+                                    <Table>
+                                        <TableHeader className="bg-muted/80">
                                             <TableRow>
-                                                <TableCell colSpan={5} className="text-center py-16 text-muted-foreground">
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <Package className="h-10 w-10 opacity-20" />
-                                                        <p>La lista está vacía</p>
-                                                        <p className="text-xs">Usa el buscador superior para agregar productos</p>
-                                                    </div>
-                                                </TableCell>
+                                                <TableHead className="font-bold">Producto</TableHead>
+                                                <TableHead className="w-[100px] text-center font-bold">Cantidad</TableHead>
+                                                <TableHead className="w-[100px] text-center font-bold">Precio Unit.</TableHead>
+                                                <TableHead className="w-[100px] text-center font-bold">Total</TableHead>
+                                                <TableHead className="w-[50px]"></TableHead>
                                             </TableRow>
-                                        ) : (
-                                            items.map((item) => (
-                                                <TableRow key={item.id} className="hover:bg-muted/20">
-                                                    <TableCell>
-                                                        <div className="font-semibold text-primary">{item.productName}</div>
-                                                        <div className="text-xs text-muted-foreground font-mono">{item.productSku}</div>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {items.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="text-center py-16 text-muted-foreground">
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <Package className="h-10 w-10 opacity-20" />
+                                                            <p>La lista está vacía</p>
+                                                            <p className="text-xs">Usa el buscador superior para agregar productos</p>
+                                                        </div>
                                                     </TableCell>
-                                                    <TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                items.map((item) => (
+                                                    <TableRow key={item.id} className="hover:bg-muted/20">
+                                                        <TableCell>
+                                                            <div className="font-semibold text-primary">{item.productName}</div>
+                                                            <div className="text-xs text-muted-foreground font-mono">{item.productSku}</div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Input
+                                                                type="number"
+                                                                min="1"
+                                                                value={item.quantity}
+                                                                onChange={(e) => updateItemQty(item.id, parseInt(e.target.value) || 0)}
+                                                                className="text-right font-bold"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Input
+                                                                type="number"
+                                                                min="0"
+                                                                step="0.01"
+                                                                value={item.unitPrice}
+                                                                onChange={(e) => updateItemPrice(item.id, parseFloat(e.target.value) || 0)}
+                                                                className="text-right"
+                                                                placeholder="0.00"
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell className="text-right font-bold">
+                                                            ${(item.quantity * item.unitPrice).toFixed(2)}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => handleRemoveItem(item.id)}
+                                                                className="text-destructive hover:bg-destructive/10"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                <div className="md:hidden space-y-3 p-3">
+                                    {items.length === 0 ? (
+                                        <div className="text-center py-12 text-muted-foreground">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Package className="h-10 w-10 opacity-20" />
+                                                <p>La lista está vacía</p>
+                                                <p className="text-xs">Usa el buscador para agregar productos</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        items.map((item) => (
+                                            <div key={item.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-semibold text-primary text-sm truncate">{item.productName}</div>
+                                                        <div className="text-xs text-muted-foreground font-mono">{item.productSku}</div>
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        className="text-destructive hover:bg-destructive/10 h-8 w-8 shrink-0"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div className="space-y-1">
+                                                        <Label className="text-xs text-muted-foreground">Cantidad</Label>
                                                         <Input
                                                             type="number"
                                                             min="1"
                                                             value={item.quantity}
                                                             onChange={(e) => updateItemQty(item.id, parseInt(e.target.value) || 0)}
-                                                            className="text-right font-bold"
+                                                            className="text-right font-bold h-9"
                                                         />
-                                                    </TableCell>
-                                                    <TableCell>
+                                                    </div>
+                                                    <div className="space-y-1 col-span-2">
+                                                        <Label className="text-xs text-muted-foreground">Precio Unit.</Label>
                                                         <Input
                                                             type="number"
                                                             min="0"
                                                             step="0.01"
                                                             value={item.unitPrice}
                                                             onChange={(e) => updateItemPrice(item.id, parseFloat(e.target.value) || 0)}
-                                                            className="text-right"
+                                                            className="text-right h-9"
                                                             placeholder="0.00"
                                                         />
-                                                    </TableCell>
-                                                    <TableCell className="text-right font-bold">
-                                                        ${(item.quantity * item.unitPrice).toFixed(2)}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleRemoveItem(item.id)}
-                                                            className="text-destructive hover:bg-destructive/10"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Total:</span>
+                                                    <span className="font-bold text-primary">${(item.quantity * item.unitPrice).toFixed(2)}</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

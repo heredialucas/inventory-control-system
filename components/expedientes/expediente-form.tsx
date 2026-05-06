@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Save, Loader2, ArrowLeft } from "lucide-react";
+import { Save, Loader2, ArrowLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { createExpediente, updateExpediente } from "@/app/actions/expedientes";
+import { createExpediente, updateExpediente, createExpedienteCategory } from "@/app/actions/expedientes";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -36,6 +36,27 @@ export function ExpedienteForm({ userId, expediente, categories = [] }: Expedien
     const [description, setDescription] = useState(expediente?.description || "");
     const [status, setStatus] = useState(expediente?.status || "ABIERTO");
     const [categoryId, setCategoryId] = useState(expediente?.categoryId || "");
+    const [newCategoryName, setNewCategoryName] = useState("");
+    const [showCategoryForm, setShowCategoryForm] = useState(false);
+    const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) return;
+        setIsCreatingCategory(true);
+        try {
+            const newCat = await createExpedienteCategory({ name: newCategoryName });
+            setLocalCategories([...localCategories, newCat]);
+            setCategoryId(newCat.id);
+            setNewCategoryName("");
+            setShowCategoryForm(false);
+            toast.success("Categoría creada correctamente");
+        } catch (error: any) {
+            toast.error(error.message || "Error al crear categoría");
+        } finally {
+            setIsCreatingCategory(false);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,7 +71,7 @@ export function ExpedienteForm({ userId, expediente, categories = [] }: Expedien
                         origin,
                         description,
                         status,
-                        categoryId: categoryId || undefined
+                        categoryId: categoryId === "none" ? undefined : categoryId || undefined
                     });
                     toast.success("Expediente actualizado correctamente");
                 } else {
@@ -61,7 +82,7 @@ export function ExpedienteForm({ userId, expediente, categories = [] }: Expedien
                         origin,
                         description,
                         status,
-                        categoryId: categoryId || undefined
+                        categoryId: categoryId === "none" ? undefined : categoryId || undefined
                     });
                     toast.success("Expediente creado correctamente");
                 }
@@ -130,20 +151,48 @@ export function ExpedienteForm({ userId, expediente, categories = [] }: Expedien
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="category">Categoría</Label>
-                        <Select value={categoryId} onValueChange={setCategoryId}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar categoría" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="">Sin categoría</SelectItem>
-                                {categories.map((cat) => (
-                                    <SelectItem key={cat.id} value={cat.id}>
-                                        {cat.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="category">Categoría</Label>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowCategoryForm(!showCategoryForm)}
+                            >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Nueva
+                            </Button>
+                        </div>
+                        {showCategoryForm ? (
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Nombre de la categoría..."
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                />
+                                <Button
+                                    size="sm"
+                                    onClick={handleCreateCategory}
+                                    disabled={isCreatingCategory || !newCategoryName.trim()}
+                                >
+                                    {isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : "Crear"}
+                                </Button>
+                            </div>
+                        ) : (
+                            <Select value={categoryId} onValueChange={setCategoryId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Seleccionar categoría" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Sin categoría</SelectItem>
+                                    {localCategories.map((cat) => (
+                                        <SelectItem key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="status">Estado Inicial</Label>

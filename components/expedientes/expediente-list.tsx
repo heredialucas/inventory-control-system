@@ -20,11 +20,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, Eye, Pencil, Plus } from "lucide-react";
+import { Search, Eye, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
-    createExpedienteCategory,
     deleteExpedienteCategory,
 } from "@/app/actions/expedientes";
 import { toast } from "sonner";
@@ -45,8 +44,6 @@ interface ExpedienteListProps {
 export function ExpedienteList({ expedientes, canManage, categories = [] }: ExpedienteListProps) {
     const [search, setSearch] = useState("");
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
-    const [newCategoryName, setNewCategoryName] = useState("");
-    const [showCategoryForm, setShowCategoryForm] = useState(false);
 
     const filtered = expedientes.filter((e) => {
         const matchSearch =
@@ -56,19 +53,6 @@ export function ExpedienteList({ expedientes, canManage, categories = [] }: Expe
             categoryFilter === "all" || e.categoryId === categoryFilter;
         return matchSearch && matchCategory;
     });
-
-    const handleCreateCategory = async () => {
-        if (!newCategoryName.trim()) return;
-        try {
-            await createExpedienteCategory({ name: newCategoryName });
-            toast.success("Categoría creada correctamente");
-            setNewCategoryName("");
-            setShowCategoryForm(false);
-            window.location.reload();
-        } catch (error: any) {
-            toast.error(error.message || "Error al crear categoría");
-        }
-    };
 
     const handleDeleteCategory = async (id: string) => {
         try {
@@ -105,31 +89,7 @@ export function ExpedienteList({ expedientes, canManage, categories = [] }: Expe
                         ))}
                     </SelectContent>
                 </Select>
-                {canManage && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowCategoryForm(!showCategoryForm)}
-                    >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Nueva Categoría
-                    </Button>
-                )}
             </div>
-
-            {showCategoryForm && (
-                <div className="flex gap-2 p-4 border rounded-lg bg-muted/50">
-                    <Input
-                        placeholder="Nombre de la categoría..."
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                        className="max-w-xs"
-                    />
-                    <Button size="sm" onClick={handleCreateCategory}>
-                        Crear
-                    </Button>
-                </div>
-            )}
 
             <div className="flex flex-wrap gap-2">
                 {categories.map((cat) => (
