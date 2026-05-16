@@ -13,8 +13,8 @@ export const supplierService = {
             include: {
                 _count: {
                     select: {
-                        purchaseOrders: true,
-                        receipts: true,
+                        purchaseOrders: { where: { deletedAt: null } },
+                        receipts: { where: { deletedAt: null } },
                     },
                 },
             },
@@ -29,6 +29,7 @@ export const supplierService = {
             where: { id, deletedAt: null },
             include: {
                 purchaseOrders: {
+                    where: { deletedAt: null },
                     take: 10,
                     orderBy: { createdAt: "desc" },
                     include: {
@@ -41,6 +42,7 @@ export const supplierService = {
                     },
                 },
                 receipts: {
+                    where: { deletedAt: null },
                     take: 10,
                     orderBy: { date: "desc" },
                     include: {
@@ -54,8 +56,8 @@ export const supplierService = {
                 },
                 _count: {
                     select: {
-                        purchaseOrders: true,
-                        receipts: true,
+                        purchaseOrders: { where: { deletedAt: null } },
+                        receipts: { where: { deletedAt: null } },
                     },
                 },
             },

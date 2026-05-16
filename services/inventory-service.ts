@@ -249,19 +249,23 @@ export const inventoryService = {
         const { productId, warehouseId, type, quantity, userId, reason, sourceType, sourceId, expedienteId } = data;
 
         return await prisma.$transaction(async (tx) => {
-            // Validar stock si es OUT y hay warehouse
-            if (type === "OUT" && warehouseId) {
-                const ws = await tx.warehouseStock.findUnique({
-                    where: {
-                        warehouseId_productId: {
-                            warehouseId,
-                            productId,
+            if (warehouseId) {
+                const effectiveChange =
+                    type === "OUT" ? -quantity : quantity;
+
+                if (effectiveChange < 0) {
+                    const ws = await tx.warehouseStock.findUnique({
+                        where: {
+                            warehouseId_productId: {
+                                warehouseId,
+                                productId,
+                            },
                         },
-                    },
-                });
-                const currentStock = ws?.quantity || 0;
-                if (currentStock < quantity) {
-                    throw new Error("Stock insuficiente en el depósito");
+                    });
+                    const currentStock = ws?.quantity || 0;
+                    if (currentStock < -effectiveChange) {
+                        throw new Error("Stock insuficiente en el depósito");
+                    }
                 }
             }
 
@@ -361,6 +365,52 @@ export const inventoryService = {
                     }
                 }
             }
+        });
+    },
+
+    async clearWarehouseStock(productId: string, warehouseId: string, userId: string) {
+        return await prisma.$transaction(async (tx) => {
+            const stock = await tx.warehouseStock.findUnique({
+                where: {
+                    warehouseId_productId: {
+                        warehouseId,
+                        productId,
+                    },
+                },
+            });
+
+            if (!stock || stock.quantity <= 0) {
+                return { success: true, message: "Sin stock para limpiar" };
+            }
+
+            const qty = stock.quantity;
+
+            // Crear movimiento de egreso para documentar la limpieza
+            await tx.stockMovement.create({
+                data: {
+                    productId,
+                    warehouseId,
+                    type: "OUT",
+                    quantity: qty,
+                    userId,
+                    reason: "Limpieza manual de stock desde administración de productos",
+                    sourceType: "ADJUSTMENT",
+                    sourceId: productId,
+                },
+            });
+
+            // Resetear stock a 0
+            await tx.warehouseStock.update({
+                where: {
+                    warehouseId_productId: {
+                        warehouseId,
+                        productId,
+                    },
+                },
+                data: { quantity: 0 },
+            });
+
+            return { success: true, message: `Stock de ${qty} unidad(es) eliminado` };
         });
     },
 

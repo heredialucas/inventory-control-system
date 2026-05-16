@@ -18,7 +18,7 @@ export const warehouseService = {
             include: {
                 _count: {
                     select: {
-                        stockItems: true,
+                        stockItems: { where: { quantity: { gt: 0 } } },
                         transfersFrom: true,
                         transfersTo: true,
                     },
@@ -36,6 +36,7 @@ export const warehouseService = {
             include: {
                 stockItems: {
                     where: {
+                        quantity: { gt: 0 },
                         product: {
                             deletedAt: null,
                         },

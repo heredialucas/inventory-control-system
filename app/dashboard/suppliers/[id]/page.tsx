@@ -21,12 +21,8 @@ const getPurchaseOrderStatusLabel = (status: string) => {
     switch (status) {
         case "DRAFT":
             return "Borrador";
-        case "PENDING":
-            return "Pendiente";
         case "RECEIVED":
             return "Recibida";
-        case "PARTIAL":
-            return "Parcial";
         case "CANCELLED":
             return "Cancelada";
         default:

@@ -44,7 +44,9 @@ export const expedienteService = {
     async getExpedientes(filters?: {
         status?: string;
     }) {
-        const where: Prisma.ExpedienteWhereInput = {};
+        const where: Prisma.ExpedienteWhereInput = {
+            deletedAt: null,
+        };
 
         if (filters?.status) {
             where.status = filters.status;
@@ -169,6 +171,117 @@ export const expedienteService = {
                 status: data.status || "ABIERTO",
                 categoryId: data.categoryId,
             },
+        });
+    },
+
+    /**
+     * Delete an expediente with cascade soft-delete on all related records and stock reversal.
+     * Everything happens inside a $transaction.
+     */
+    async deleteExpediente(id: string) {
+        return await prisma.$transaction(async (tx) => {
+            // 1. Get expediente with all its relations
+            const expediente = await tx.expediente.findUnique({
+                where: { id },
+                include: {
+                    purchases: true,
+                    deliveries: true,
+                    receipts: true,
+                    movements: true,
+                    transfers: true,
+                },
+            });
+
+            if (!expediente) {
+                throw new Error("Expediente no encontrado");
+            }
+
+            // 2. Soft-delete all related PurchaseOrders
+            if (expediente.purchases.length > 0) {
+                await tx.purchaseOrder.updateMany({
+                    where: { expedienteId: id },
+                    data: { deletedAt: new Date() },
+                });
+            }
+
+            // 3. Soft-delete all related Deliveries
+            if (expediente.deliveries.length > 0) {
+                await tx.delivery.updateMany({
+                    where: { expedienteId: id },
+                    data: { deletedAt: new Date() },
+                });
+            }
+
+            // 4. Soft-delete all related PurchaseReceipts
+            if (expediente.receipts.length > 0) {
+                await tx.purchaseReceipt.updateMany({
+                    where: { expedienteId: id },
+                    data: { deletedAt: new Date() },
+                });
+            }
+
+            // 5. Soft-delete all related WarehouseTransfers
+            if (expediente.transfers.length > 0) {
+                await tx.warehouseTransfer.updateMany({
+                    where: { expedienteId: id },
+                    data: { deletedAt: new Date() },
+                });
+            }
+
+            // 6. Reverse stock for each StockMovement, then soft-delete them
+            if (expediente.movements.length > 0) {
+                for (const movement of expediente.movements) {
+                    if (movement.warehouseId) {
+                        const signedQty =
+                            movement.type === "OUT"
+                                ? movement.quantity
+                                : -movement.quantity;
+
+                        // Validar stock suficiente si es decremento
+                        if (signedQty < 0) {
+                            const ws = await tx.warehouseStock.findUnique({
+                                where: {
+                                    warehouseId_productId: {
+                                        warehouseId: movement.warehouseId,
+                                        productId: movement.productId,
+                                    },
+                                },
+                            });
+                            const currentStock = ws?.quantity || 0;
+                            if (currentStock < -signedQty) {
+                                throw new Error(
+                                    `Stock insuficiente al eliminar expediente. Producto: ${movement.productId}. Stock actual: ${currentStock}, necesario: ${-signedQty}`
+                                );
+                            }
+                        }
+
+                        await tx.warehouseStock.update({
+                            where: {
+                                warehouseId_productId: {
+                                    warehouseId: movement.warehouseId,
+                                    productId: movement.productId,
+                                },
+                            },
+                            data: {
+                                quantity: { increment: signedQty },
+                            },
+                        });
+                    }
+                }
+
+                await tx.stockMovement.updateMany({
+                    where: { expedienteId: id },
+                    data: { deletedAt: new Date() },
+                });
+            }
+
+            // 7. Soft-delete the Expediente itself
+            await tx.expediente.update({
+                where: { id },
+                data: { deletedAt: new Date() },
+            });
+
+            return { success: true };
         });
     },
 

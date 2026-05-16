@@ -20,13 +20,24 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Search, AlertTriangle, Package } from "lucide-react";
-import { updateMinStockAction } from "@/app/actions/inventory";
+import { updateMinStockAction, clearWarehouseStockAction } from "@/app/actions/inventory";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface StockByWarehouse {
     warehouseId: string;
     warehouseName: string;
     warehouseType: string;
     quantity: number;
+    hasActiveMovements: boolean;
 }
 
 interface Product {
@@ -61,6 +72,40 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
     const [editingId, setEditingId] = useState<string | null>(null);
     const [minStockValue, setMinStockValue] = useState<number>(0);
     const [loading, setLoading] = useState<string | null>(null);
+    const [clearingStock, setClearingStock] = useState<string | null>(null);
+    const [confirmProduct, setConfirmProduct] = useState<{ id: string; name: string; warehouses: StockByWarehouse[]; totalStock: number } | null>(null);
+
+    const handleClearClick = (product: Product) => {
+        setConfirmProduct({
+            id: product.id,
+            name: product.name,
+            warehouses: product.stockByWarehouse,
+            totalStock: product.totalStock,
+        });
+    };
+
+    const handleClearConfirm = async () => {
+        if (!confirmProduct || clearingStock) return;
+        const { id, warehouses } = confirmProduct;
+        setClearingStock(id);
+        setConfirmProduct(null);
+        try {
+            for (const sw of warehouses) {
+                if (sw.quantity > 0) {
+                    const result = await clearWarehouseStockAction(id, sw.warehouseId);
+                    if (result.error) {
+                        alert(result.error);
+                        break;
+                    }
+                }
+            }
+            window.location.reload();
+        } catch (error) {
+            console.error("Error clearing stock:", error);
+        } finally {
+            setClearingStock(null);
+        }
+    };
 
     const uniqueCategories = Array.from(
         new Set(products.map((p) => p.categoryName).filter(Boolean))
@@ -126,19 +171,26 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
         
         return (
             <div className="flex flex-wrap gap-1">
-                {withStock.map((sw) => (
-                    <Badge
-                        key={sw.warehouseId}
-                        variant={sw.warehouseType === "OFFICE" ? "default" : "outline"}
-                        className={`text-[10px] py-0 px-1.5 ${
-                            sw.warehouseType === "OFFICE"
-                                ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                : ""
-                        }`}
-                    >
-                        {sw.warehouseName} ({sw.warehouseType === "OFFICE" ? "Oficina" : "Depósito"})
-                    </Badge>
-                ))}
+                {withStock.map((sw) => {
+                    const isOrphaned = !sw.hasActiveMovements;
+
+                    return (
+                        <Badge
+                            key={sw.warehouseId}
+                            variant={sw.warehouseType === "OFFICE" ? "default" : "outline"}
+                            className={`text-[10px] py-0 px-1.5 ${
+                                sw.warehouseType === "OFFICE"
+                                    ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                    : ""
+                            } ${isOrphaned ? "border-red-300 bg-red-50 text-red-700" : ""}`}
+                        >
+                            {sw.warehouseName} ({sw.warehouseType === "OFFICE" ? "Oficina" : "Depósito"})
+                            {isOrphaned && (
+                                <span className="ml-1 text-red-500" title="Stock sin origen documental">⚠️</span>
+                            )}
+                        </Badge>
+                    );
+                })}
             </div>
         );
     };
@@ -272,15 +324,28 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
                                         )}
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        {canManage && editingId !== product.id && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => startEditing(product)}
-                                            >
-                                                Editar Mín
-                                            </Button>
-                                        )}
+                                        <div className="flex items-center justify-center gap-1">
+                                            {canManage && editingId !== product.id && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => startEditing(product)}
+                                                >
+                                                    Editar Mín
+                                                </Button>
+                                            )}
+                                            {canManage && product.totalStock > 0 && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleClearClick(product)}
+                                                    disabled={clearingStock === product.id}
+                                                    className="text-red-600 border-red-300 hover:bg-red-50"
+                                                >
+                                                    {clearingStock === product.id ? "Limpiando..." : "Limpiar stock"}
+                                                </Button>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -316,7 +381,7 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
                                         </TableCell>
                                         <TableCell>{product.categoryName || "-"}</TableCell>
                                         <TableCell className="text-center">{product.totalStock}</TableCell>
-                                        <TableCell>{getStockByWarehouse(product.stockByWarehouse)}</TableCell>
+                                    <TableCell>{getStockByWarehouse(product.stockByWarehouse)}</TableCell>
                                         <TableCell className="text-center">{product.minStock}</TableCell>
                                     </TableRow>
                                 ))}
@@ -325,6 +390,32 @@ export function AdminProductList({ products, warehouses, canManage }: AdminProdu
                     </div>
                 </div>
             )}
+
+            <AlertDialog open={!!confirmProduct} onOpenChange={(open) => !open && setConfirmProduct(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Limpiar stock?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Se eliminarán todas las <strong>{confirmProduct?.totalStock || 0} unidad(es)</strong> de stock
+                            de <strong>{confirmProduct?.name}</strong> en todos los depósitos.
+                            Esta acción no se puede deshacer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleClearConfirm();
+                            }}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={!!clearingStock}
+                        >
+                            {clearingStock ? "Limpiando..." : "Sí, limpiar stock"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

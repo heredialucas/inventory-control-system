@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import {
     Table,
@@ -14,10 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Eye, Edit, Image as ImageIcon, Trash2, Loader2, FileText } from "lucide-react";
+import { Search, Eye, Edit, Image as ImageIcon, Trash2, Loader2, FileText, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { deleteReceipt } from "@/app/actions/receipts";
+import { deleteReceipt, completeReceipt } from "@/app/actions/receipts";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -29,20 +29,33 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
 
 interface ReceiptListProps {
     receipts: any[];
     canManage: boolean;
 }
 
+interface ReceiptGroup {
+    receiptNumber: string;
+    receipts: any[];
+    allCompleted: boolean;
+    count: number;
+    latestDate: Date;
+    suppliers: string[];
+}
+
 export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
+    const router = useRouter();
     const [search, setSearch] = useState("");
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [isCompleting, setIsCompleting] = useState<string | null>(null);
 
     const handleDelete = async (id: string) => {
         try {
             setIsDeleting(id);
             await deleteReceipt(id);
+            router.refresh();
         } catch (error) {
             console.error("Error deleting receipt:", error);
             alert("Error al eliminar el remito");
@@ -51,11 +64,51 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
         }
     };
 
-    const filtered = receipts.filter(
-        (r) =>
-            r.receiptNumber.toLowerCase().includes(search.toLowerCase()) ||
-            r.purchaseOrder?.orderNumber?.toLowerCase().includes(search.toLowerCase())
+    const handleCompleteGroup = useCallback(async (receiptNumber: string, group: ReceiptGroup) => {
+        try {
+            setIsCompleting(receiptNumber);
+            const activeReceipts = group.receipts.filter(r => r.status === "ACTIVE");
+            await Promise.all(activeReceipts.map(r => completeReceipt(r.id)));
+            router.refresh();
+        } catch (error) {
+            console.error("Error completing receipts:", error);
+            alert("Error al marcar el remito como completado");
+        } finally {
+            setIsCompleting(null);
+        }
+    }, [router]);
+
+    // Group receipts by receiptNumber
+    const groups = receipts.reduce<Record<string, ReceiptGroup>>((acc, r) => {
+        const key = r.receiptNumber;
+        if (!acc[key]) {
+            acc[key] = {
+                receiptNumber: key,
+                receipts: [],
+                allCompleted: true,
+                count: 0,
+                latestDate: r.date,
+                suppliers: [],
+            };
+        }
+        acc[key].receipts.push(r);
+        acc[key].count++;
+        if (r.status !== "COMPLETED") acc[key].allCompleted = false;
+        if (new Date(r.date) > new Date(acc[key].latestDate)) acc[key].latestDate = r.date;
+        const supplier = r.purchaseOrder?.supplier?.name || r.supplier?.name;
+        if (supplier && !acc[key].suppliers.includes(supplier)) {
+            acc[key].suppliers.push(supplier);
+        }
+        return acc;
+    }, {});
+
+    const filtered = Object.values(groups).filter(
+        (g) =>
+            g.receiptNumber.toLowerCase().includes(search.toLowerCase()) ||
+            g.suppliers.some(s => s.toLowerCase().includes(search.toLowerCase()))
     );
+
+    const sorted = filtered.sort((a, b) => new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime());
 
     return (
         <div className="space-y-4">
@@ -75,96 +128,119 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Remito</TableHead>
-                            <TableHead>Orden Asociada</TableHead>
+                            <TableHead>Ingresos</TableHead>
+                            <TableHead>Estado</TableHead>
                             <TableHead>Proveedor</TableHead>
-                            <TableHead>Expediente</TableHead>
                             <TableHead>Fecha</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filtered.length === 0 ? (
+                        {sorted.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                     No se encontraron remitos
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filtered.map((receipt) => (
-                                <TableRow key={receipt.id}>
-                                    <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2">
-                                            {receipt.receiptNumber}
-                                            {receipt.imageUrl && (
-                                                <span title="Tiene imagen adjunta">
-                                                    <ImageIcon className="h-3 w-3 text-muted-foreground" />
-                                                </span>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{receipt.purchaseOrder?.orderNumber || "N/A"}</TableCell>
-                                    <TableCell>{receipt.purchaseOrder?.supplier?.name || receipt.supplier?.name || "N/A"}</TableCell>
-                                    <TableCell>{receipt.expediente?.number || "N/A"}</TableCell>
-                                    <TableCell>
-                                        {format(new Date(receipt.date), "dd/MM/yyyy", { locale: es })}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Link href={`/dashboard/receipts/${receipt.id}`}>
-                                                <Button variant="ghost" size="icon" title="Ver detalle">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
+                            sorted.map((group) => {
+                                const firstId = group.receipts[0]?.id;
+                                return (
+                                    <TableRow key={group.receiptNumber}>
+                                        <TableCell className="font-medium">
+                                            <Link href={`/dashboard/receipts/${firstId}`} className="hover:underline">
+                                                {group.receiptNumber}
                                             </Link>
-                                            {canManage && (
-                                                <>
-                                                    <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
-                                                        <Button variant="ghost" size="icon" title="Editar remito">
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
-
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                title="Eliminar remito"
-                                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                                disabled={isDeleting === receipt.id}
-                                                            >
-                                                                {isDeleting === receipt.id ? (
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                ) : (
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                )}
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Esta acción eliminará el remito y revertirá el stock ingresado.
-                                                                    Si el remito está asociado a una Orden de Compra, el estado de la misma será actualizado.
-                                                                    Esta acción no se puede deshacer.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    onClick={() => handleDelete(receipt.id)}
-                                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                                >
-                                                                    Eliminar
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </>
+                                            {group.receipts.some(r => r.imageUrl) && (
+                                                <ImageIcon className="h-3 w-3 text-muted-foreground inline ml-1" />
                                             )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="secondary">{group.count} ingreso{group.count !== 1 ? "s" : ""}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={group.allCompleted ? "default" : "outline"}>
+                                                {group.allCompleted ? "Completado" : "En Proceso"}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>{group.suppliers[0] || "N/A"}</TableCell>
+                                        <TableCell>
+                                            {format(new Date(group.latestDate), "dd/MM/yyyy", { locale: es })}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                {canManage && !group.allCompleted && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleCompleteGroup(group.receiptNumber, group)}
+                                                        disabled={isCompleting === group.receiptNumber}
+                                                        title="Marca este remito como completamente recibido. Todos los ingresos bajo este número se marcarán como completados."
+                                                    >
+                                                        {isCompleting === group.receiptNumber ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                                                        )}
+                                                        Marcar Completado
+                                                    </Button>
+                                                )}
+                                                <Link href={`/dashboard/receipts/${firstId}`}>
+                                                    <Button variant="ghost" size="icon" title="Ver detalle">
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                                {canManage && (
+                                                    <>
+                                                        <Link href={`/dashboard/receipts/${firstId}/edit`}>
+                                                            <Button variant="ghost" size="icon" title="Editar remito">
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    title="Eliminar remito"
+                                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                    disabled={isDeleting === firstId}
+                                                                >
+                                                                    {isDeleting === firstId ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    )}
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        Esta acción eliminará el remito y revertirá el stock ingresado.
+                                                                        Si el remito está asociado a una Orden de Compra, el estado de la misma será actualizado.
+                                                                        Esta acción no se puede deshacer.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                    <AlertDialogAction
+                                                                        onClick={() => handleDelete(firstId!)}
+                                                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                    >
+                                                                        Eliminar
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>
@@ -172,7 +248,7 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
 
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
-                {filtered.length === 0 ? (
+                {sorted.length === 0 ? (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
@@ -183,94 +259,112 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                         </CardContent>
                     </Card>
                 ) : (
-                    filtered.map((receipt) => (
-                        <Card key={receipt.id}>
-                            <CardContent className="p-4">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="font-medium">{receipt.receiptNumber}</h4>
-                                            {receipt.imageUrl && (
-                                                <ImageIcon className="h-3 w-3 text-muted-foreground" />
-                                            )}
+                    sorted.map((group) => {
+                        const firstId = group.receipts[0]?.id;
+                        return (
+                            <Card key={group.receiptNumber}>
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="font-medium">{group.receiptNumber}</h4>
+                                                {group.receipts.some(r => r.imageUrl) && (
+                                                    <ImageIcon className="h-3 w-3 text-muted-foreground" />
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                {format(new Date(group.latestDate), "dd/MM/yyyy", { locale: es })}
+                                            </p>
                                         </div>
-                                        <p className="text-sm text-muted-foreground">
-                                            {format(new Date(receipt.date), "dd/MM/yyyy", { locale: es })}
-                                        </p>
+                                        <Badge variant={group.allCompleted ? "default" : "outline"}>
+                                            {group.allCompleted ? "Completo" : "Abierto"}
+                                        </Badge>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                                    <div>
-                                        <p className="text-muted-foreground">Orden</p>
-                                        <p className="mt-1">{receipt.purchaseOrder?.orderNumber || "N/A"}</p>
+                                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                                        <div>
+                                            <p className="text-muted-foreground">Ingresos</p>
+                                            <p className="mt-1">{group.count}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground">Proveedor</p>
+                                            <p className="mt-1">{group.suppliers[0] || "N/A"}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Proveedor</p>
-                                        <p className="mt-1">{receipt.purchaseOrder?.supplier?.name || receipt.supplier?.name || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Expediente</p>
-                                        <Badge variant="secondary" className="mt-1">{receipt.expediente?.number || "N/A"}</Badge>
-                                    </div>
-                                </div>
 
-                                <div className="flex flex-wrap gap-2 pt-3 border-t">
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link href={`/dashboard/receipts/${receipt.id}`}>
-                                            <Eye className="h-4 w-4 mr-1" />
-                                            Ver
-                                        </Link>
-                                    </Button>
-                                    {canManage && (
-                                        <>
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
-                                                    <Edit className="h-4 w-4 mr-1" />
-                                                    Editar
-                                                </Link>
+                                    <div className="flex flex-wrap gap-2 pt-3 border-t">
+                                        {canManage && !group.allCompleted && (
+                                            <Button
+                                                variant="default"
+                                                size="sm"
+                                                onClick={() => handleCompleteGroup(group.receiptNumber, group)}
+                                                disabled={isCompleting === group.receiptNumber}
+                                                title="Marca este remito como completamente recibido. Todos los ingresos bajo este número se marcarán como completados."
+                                            >
+                                                {isCompleting === group.receiptNumber ? (
+                                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                                ) : (
+                                                    <CheckCircle2 className="h-4 w-4 mr-1" />
+                                                )}
+                                                Marcar Completado
                                             </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        disabled={isDeleting === receipt.id}
-                                                    >
-                                                        {isDeleting === receipt.id ? (
-                                                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                                        ) : (
-                                                            <Trash2 className="h-4 w-4 mr-1" />
-                                                        )}
-                                                        Eliminar
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Esta acción eliminará el remito y revertirá el stock ingresado.
-                                                            Si el remito está asociado a una Orden de Compra, el estado de la misma será actualizado.
-                                                            Esta acción no se puede deshacer.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            onClick={() => handleDelete(receipt.id)}
-                                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        )}
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href={`/dashboard/receipts/${firstId}`}>
+                                                <Eye className="h-4 w-4 mr-1" />
+                                                Ver
+                                            </Link>
+                                        </Button>
+                                        {canManage && (
+                                            <>
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={`/dashboard/receipts/${firstId}/edit`}>
+                                                        <Edit className="h-4 w-4 mr-1" />
+                                                        Editar
+                                                    </Link>
+                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            disabled={isDeleting === firstId}
                                                         >
+                                                            {isDeleting === firstId ? (
+                                                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                                            ) : (
+                                                                <Trash2 className="h-4 w-4 mr-1" />
+                                                            )}
                                                             Eliminar
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Esta acción eliminará el remito y revertirá el stock ingresado.
+                                                                Si el remito está asociado a una Orden de Compra, el estado de la misma será actualizado.
+                                                                Esta acción no se puede deshacer.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction
+                                                                onClick={() => handleDelete(firstId!)}
+                                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                            >
+                                                                Eliminar
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })
                 )}
             </div>
         </div>

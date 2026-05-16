@@ -19,6 +19,15 @@ import { QuickSupplierDialog } from "@/components/suppliers/quick-supplier-dialo
 import { QuickExpedienteDialog } from "@/components/expedientes/quick-expediente-dialog";
 import { Separator } from "@/components/ui/separator";
 
+interface ExistingReceiptData {
+    imageUrl?: string | null;
+    expedienteId?: string | null;
+    purchaseOrderId?: string | null;
+    supplierId?: string | null;
+    warehouseId?: string | null;
+    items?: Array<{ productId: string; name: string; sku: string; quantity: number; price: number }>;
+}
+
 interface ReceiptFormProps {
     purchaseOrders: any[];
     products: any[];
@@ -28,9 +37,11 @@ interface ReceiptFormProps {
     suppliers: any[];
     userId: string;
     initialData?: any;
+    existingReceiptNumbers?: Record<string, number>;
+    existingReceiptsData?: Record<string, ExistingReceiptData>;
 }
 
-export function ReceiptForm({ purchaseOrders, products: initialProducts, warehouses, categories, expedientes: initialExpedientes, suppliers: initialSuppliers, userId, initialData }: ReceiptFormProps) {
+export function ReceiptForm({ purchaseOrders, products: initialProducts, warehouses, categories, expedientes: initialExpedientes, suppliers: initialSuppliers, userId, initialData, existingReceiptNumbers, existingReceiptsData }: ReceiptFormProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
@@ -179,6 +190,18 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
         });
     };
 
+    // Derive existing group items from props (no state needed)
+    const groupItems = (() => {
+        if (!existingReceiptsData || !receiptNumber) return [];
+        const data = existingReceiptsData[receiptNumber];
+        if (!data?.items) return [];
+        if (initialData) {
+            const currentIds = new Set(items.map(i => i.productId));
+            return data.items.filter(i => !currentIds.has(i.productId));
+        }
+        return data.items;
+    })();
+
     return (
         <form onSubmit={handleSubmit} className="max-w-[1200px] mx-auto space-y-8 pb-20">
             {/* Header */}
@@ -214,10 +237,43 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                                 <Input
                                     id="receiptNumber"
                                     value={receiptNumber}
-                                    onChange={(e) => setReceiptNumber(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setReceiptNumber(value);
+                                        if (initialData) return;
+                                        const data = existingReceiptsData?.[value];
+                                        if (data) {
+                                            if (data.imageUrl) setImageUrl(data.imageUrl);
+                                            if (data.expedienteId) setExpedienteId(data.expedienteId);
+                                            if (data.purchaseOrderId) setPurchaseOrderId(data.purchaseOrderId);
+                                            if (data.supplierId) setSupplierId(data.supplierId);
+                                            if (data.warehouseId) setWarehouseId(data.warehouseId);
+                                        } else {
+                                            setImageUrl("");
+                                            setBase64Image("");
+                                            setExpedienteId("");
+                                            setPurchaseOrderId("");
+                                            setSupplierId("");
+                                            setWarehouseId("");
+                                        }
+                                    }}
                                     placeholder="0001-00001234"
                                     className="font-mono"
+                                    list="existing-receipts"
                                 />
+                                <datalist id="existing-receipts">
+                                    {existingReceiptNumbers && Object.keys(existingReceiptNumbers).map((num) => (
+                                        <option key={num} value={num} />
+                                    ))}
+                                </datalist>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Si usás un número de remito ya existente, todos los ingresos se agruparán automáticamente bajo ese mismo remito.
+                                </p>
+                                {existingReceiptNumbers?.[receiptNumber] && !initialData && (
+                                    <p className="text-xs text-amber-600 font-medium mt-1">
+                                        Este número ya tiene {existingReceiptNumbers[receiptNumber]} ingreso(s). Se vinculará a ese remito existente.
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="date">Fecha *</Label>
@@ -324,19 +380,41 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {items.length === 0 ? (
+                                        {groupItems.length > 0 && (
+                                            <>
+                                                <TableRow className="bg-muted/30">
+                                                    <TableCell colSpan={4} className="text-xs font-semibold text-muted-foreground py-2">
+                                                        Productos ya ingresados en este remito
+                                                    </TableCell>
+                                                </TableRow>
+                                                {groupItems.map((item) => (
+                                                    <TableRow key={`existing-${item.productId}`} className="bg-muted/20 opacity-70">
+                                                        <TableCell>
+                                                            <div className="font-semibold">{item.name}</div>
+                                                            <div className="text-xs text-muted-foreground font-mono">{item.sku}</div>
+                                                        </TableCell>
+                                                        <TableCell className="text-center text-muted-foreground">
+                                                            {item.quantity}
+                                                        </TableCell>
+                                                        <TableCell className="text-center text-muted-foreground">
+                                                            ${item.price.toFixed(2)}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <span className="text-[10px] text-muted-foreground bg-background px-1.5 py-0.5 rounded uppercase tracking-wide">ya ingresado</span>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </>
+                                        )}
+                                        {items.length > 0 && groupItems.length > 0 && (
                                             <TableRow>
-                                                <TableCell colSpan={4} className="text-center py-16 text-muted-foreground">
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <Package className="h-10 w-10 opacity-20" />
-                                                        <p>La lista está vacía</p>
-                                                        <p className="text-xs">Usa el buscador superior para agregar productos</p>
-                                                    </div>
+                                                <TableCell colSpan={4} className="text-xs font-semibold text-muted-foreground py-2">
+                                                    Nuevos productos a ingresar
                                                 </TableCell>
                                             </TableRow>
-                                        ) : (
-                                            items.map((item) => (
-                                                <TableRow key={item.productId} className="hover:bg-muted/20">
+                                        )}
+                                        {items.map(item => (
+                                            <TableRow key={item.productId} className="hover:bg-muted/20">
                                                     <TableCell>
                                                         <div className="font-semibold text-primary">{item.name}</div>
                                                         <div className="text-xs text-muted-foreground font-mono">{item.sku}</div>
@@ -374,6 +452,17 @@ export function ReceiptForm({ purchaseOrders, products: initialProducts, warehou
                                                     </TableCell>
                                                 </TableRow>
                                             ))
+                                        }
+                                        {items.length === 0 && groupItems.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="text-center py-16 text-muted-foreground">
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <Package className="h-10 w-10 opacity-20" />
+                                                        <p>La lista está vacía</p>
+                                                        <p className="text-xs">Usa el buscador superior para agregar productos</p>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
                                         )}
                                     </TableBody>
                                 </Table>

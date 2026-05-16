@@ -215,7 +215,7 @@ Solicitud de compra a un proveedor.
 | `orderNumber` | String | Número de orden único |
 | `supplierId` | UUID | Proveedor |
 | `warehouseId` | UUID | Almacén destino |
-| `status` | Enum | Estado (DRAFT, PENDING, RECEIVED, PARTIAL, CANCELLED) |
+| `status` | Enum | Estado (DRAFT, RECEIVED, CANCELLED) |
 | `orderDate` | DateTime | Fecha de la orden |
 | `expectedDate` | DateTime | Fecha esperada de recepción |
 | `receivedDate` | DateTime | Fecha de recepción real |
@@ -229,9 +229,7 @@ Solicitud de compra a un proveedor.
 
 **Estados:**
 - `DRAFT`: Borrador
-- `PENDING`: Pendiente de recepción
 - `RECEIVED`: Completamente recibida
-- `PARTIAL`: Parcialmente recibida
 - `CANCELLED`: Cancelada
 
 **Nota importante:** La orden de compra es un flujo **independiente** de la recepción. El usuario de compras:

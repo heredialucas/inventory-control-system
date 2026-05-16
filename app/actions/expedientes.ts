@@ -96,3 +96,15 @@ export async function updateExpediente(id: string, data: {
     revalidatePath(`/dashboard/expedientes/${id}`);
     return serializePrisma(result);
 }
+
+export async function deleteExpediente(id: string) {
+    await verifyPermission("expedientes.manage");
+    try {
+        const result = await expedienteService.deleteExpediente(id);
+        revalidatePath("/dashboard/expedientes");
+        return { success: true, error: null };
+    } catch (error: any) {
+        console.error("Error deleting expediente:", error);
+        return { success: false, error: error.message || "Error al eliminar expediente" };
+    }
+}

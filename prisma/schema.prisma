@@ -128,6 +128,7 @@ model WarehouseTransfer {
   userId          String         @db.Uuid
   createdAt       DateTime       @default(now())
   completedAt     DateTime?
+  deletedAt       DateTime?
   expedienteId    String?        @db.Uuid
   expediente      Expediente?    @relation(fields: [expedienteId], references: [id])
   fromWarehouse   Warehouse      @relation("TransferFrom", fields: [fromWarehouseId], references: [id])
@@ -314,6 +315,7 @@ model StockMovement {
   expedienteId String?      @db.Uuid
   sourceId     String       @db.Uuid
   sourceType   String
+  deletedAt    DateTime?
   expediente   Expediente?  @relation(fields: [expedienteId], references: [id])
   product      Product      @relation(fields: [productId], references: [id])
   user         User         @relation(fields: [userId], references: [id])
@@ -346,6 +348,7 @@ model Expediente {
   categoryId  String?            @db.Uuid
   category    ExpedienteCategory? @relation(fields: [categoryId], references: [id])
   year        Int?
+  deletedAt   DateTime?
   deliveries  Delivery[]
   purchases   PurchaseOrder[]
   receipts    PurchaseReceipt[]
@@ -355,17 +358,25 @@ model Expediente {
   @@map("expedientes")
 }
 
+/// Status of individual purchase receipts for partial tracking
+enum PurchaseReceiptStatus {
+  ACTIVE
+  COMPLETED
+}
+
 model PurchaseReceipt {
   id              String                @id @default(uuid()) @db.Uuid
   purchaseOrderId String?               @db.Uuid
   receiptNumber   String
   date            DateTime
   totalAmount     Decimal               @db.Decimal(10, 2)
+  status          PurchaseReceiptStatus @default(ACTIVE)
   imageUrl        String?
   expedienteId    String?               @db.Uuid
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
   type            String                @default("PURCHASE")
+  deletedAt       DateTime?
   warehouseId     String?               @db.Uuid
   supplierId      String?               @db.Uuid
   items           PurchaseReceiptItem[]

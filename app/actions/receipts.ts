@@ -89,6 +89,14 @@ export async function updateReceipt(id: string, data: {
     return serializePrisma(result);
 }
 
+export async function completeReceipt(id: string) {
+    await verifyPermission("receipts.manage");
+    const result = await receiptService.completeReceipt(id);
+    revalidatePath("/dashboard/receipts");
+    revalidatePath("/dashboard/inventory");
+    return result;
+}
+
 export async function deleteReceipt(id: string) {
     await verifyPermission("receipts.manage");
     const user = await getCurrentUser();

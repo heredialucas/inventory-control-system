@@ -63,15 +63,45 @@ export async function getProductsWithWarehouseStock() {
         },
     });
     
-    const stockByProduct = new Map<string, Array<{ warehouseId: string; warehouseName: string; warehouseType: string; quantity: number }>>();
+    // Fetch active movement counts per product+warehouse
+    const allStockMovementKeys = stockItems.map(i => ({
+        productId: i.productId,
+        warehouseId: i.warehouseId,
+    }));
+    const movementKeySet = new Set(allStockMovementKeys.map(k => `${k.productId}:${k.warehouseId}`));
+    
+    // Obtener todos los movimientos activos agrupados por product+warehouse
+    const activeMovements = await prisma.stockMovement.groupBy({
+        by: ["productId", "warehouseId"],
+        where: {
+            deletedAt: null,
+            warehouseId: { not: null },
+            OR: Array.from(movementKeySet).map(key => {
+                const [pid, wid] = key.split(":");
+                return { productId: pid, warehouseId: wid };
+            }),
+        },
+        _count: true,
+    });
+    
+    const movementMap = new Map<string, number>();
+    for (const m of activeMovements) {
+        if (m.warehouseId) {
+            movementMap.set(`${m.productId}:${m.warehouseId}`, m._count);
+        }
+    }
+    
+    const stockByProduct = new Map<string, Array<{ warehouseId: string; warehouseName: string; warehouseType: string; quantity: number; hasActiveMovements: boolean }>>();
     
     for (const item of stockItems) {
         const existing = stockByProduct.get(item.productId) || [];
+        const key = `${item.productId}:${item.warehouseId}`;
         existing.push({
             warehouseId: item.warehouseId,
             warehouseName: item.warehouse.name,
             warehouseType: item.warehouse.type,
             quantity: item.quantity,
+            hasActiveMovements: (movementMap.get(key) || 0) > 0,
         });
         stockByProduct.set(item.productId, existing);
     }
@@ -436,4 +466,20 @@ export async function deleteCategoryAction(id: string) {
 
     revalidatePath("/dashboard/categories");
     return { success: true };
+}
+
+export async function clearWarehouseStockAction(productId: string, warehouseId: string) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "adminProducts.manage")) {
+        return { error: "No tienes permisos para limpiar stock" };
+    }
+
+    try {
+        const result = await inventoryService.clearWarehouseStock(productId, warehouseId, user.id);
+        revalidatePath("/dashboard/administracion/productos");
+        return { success: true, message: result.message };
+    } catch (error: any) {
+        console.error("Error clearing warehouse stock:", error);
+        return { error: error.message || "Error al limpiar stock" };
+    }
 }

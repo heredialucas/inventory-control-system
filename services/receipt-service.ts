@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { Prisma, PurchaseOrderStatus } from "@prisma/client";
+import { Prisma, PurchaseOrderStatus, PurchaseReceiptStatus } from "@prisma/client";
 
 export const receiptService = {
     /**
@@ -112,6 +112,15 @@ export const receiptService = {
         const { purchaseOrderId, warehouseId, receiptNumber, date, imageUrl, userId, expedienteId, supplierId, items } = data;
 
         return await prisma.$transaction(async (tx) => {
+            // Check if receipt group is already fully closed
+            const existing = await tx.purchaseReceipt.findMany({
+                where: { receiptNumber },
+                select: { status: true },
+            });
+            if (existing.length > 0 && existing.every(r => r.status === "COMPLETED")) {
+                throw new Error(`El remito ${receiptNumber} ya está cerrado. No se pueden agregar más ingresos.`);
+            }
+
             let finalWarehouseId = warehouseId;
             let receiptTotalAmount = 0;
             let order = null;
@@ -395,6 +404,24 @@ export const receiptService = {
                     // If no change, skip stock updates and movements
                     if (delta === 0) continue;
 
+                    // Validar stock suficiente si es decremento
+                    if (delta < 0) {
+                        const ws = await tx.warehouseStock.findUnique({
+                            where: {
+                                warehouseId_productId: {
+                                    warehouseId: finalWarehouseId!,
+                                    productId,
+                                },
+                            },
+                        });
+                        const currentStock = ws?.quantity || 0;
+                        if (currentStock < -delta) {
+                            throw new Error(
+                                `Stock insuficiente al editar remito. Producto: ${productId}. Stock actual: ${currentStock}, necesario: ${-delta}`
+                            );
+                        }
+                    }
+
                     // Update Warehouse Stock (can be negative if decrementing)
                     await tx.warehouseStock.upsert({
                         where: {
@@ -460,6 +487,22 @@ export const receiptService = {
 
             // 2. Revert stock and create "removal" movements
             for (const item of receipt.items) {
+                // Validar stock suficiente antes de decrementar
+                const currentWs = await tx.warehouseStock.findUnique({
+                    where: {
+                        warehouseId_productId: {
+                            warehouseId: finalWarehouseId,
+                            productId: item.productId,
+                        },
+                    },
+                });
+                const currentStock = currentWs?.quantity || 0;
+                if (currentStock < item.quantity) {
+                    throw new Error(
+                        `Stock insuficiente al eliminar remito. Producto: ${item.productId}. Stock actual: ${currentStock}, necesario: ${item.quantity}`
+                    );
+                }
+
                 // Decrease Warehouse Stock
                 await tx.warehouseStock.update({
                     where: {
@@ -530,5 +573,58 @@ export const receiptService = {
 
             return { success: true };
         });
+    },
+
+    /**
+     * Close an entire receipt group (all receipts sharing the same receiptNumber)
+     */
+    async completeReceipt(id: string) {
+        const receipt = await prisma.purchaseReceipt.findUnique({
+            where: { id },
+        });
+
+        if (!receipt) throw new Error("Remito no encontrado");
+
+        const allCompleted = await prisma.purchaseReceipt.updateMany({
+            where: { receiptNumber: receipt.receiptNumber, status: "ACTIVE" },
+            data: { status: "COMPLETED" },
+        });
+
+        return { count: allCompleted.count };
+    },
+
+    /**
+     * Get items for a receipt group (all receipts sharing the same receiptNumber)
+     */
+    async getGroupItems(receiptNumber: string) {
+        const receipts = await prisma.purchaseReceipt.findMany({
+            where: { receiptNumber },
+            include: {
+                items: {
+                    include: { product: true }
+                }
+            }
+        });
+
+        return receipts.flatMap(r => r.items.map(item => ({
+            productId: item.productId,
+            name: item.product.name,
+            sku: item.product.sku,
+            quantity: item.quantity,
+            price: Number(item.unitPrice),
+        })));
+    },
+
+    /**
+     * Get group status for a receipt number
+     */
+    async getReceiptGroupStatus(receiptNumber: string) {
+        const receipts = await prisma.purchaseReceipt.findMany({
+            where: { receiptNumber },
+            select: { status: true },
+        });
+
+        const allCompleted = receipts.every(r => r.status === "COMPLETED");
+        return { allCompleted, total: receipts.length };
     },
 };

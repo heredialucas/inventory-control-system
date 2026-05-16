@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
     Table,
     TableBody,
@@ -20,11 +21,22 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, Eye, Pencil } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, Eye, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
     deleteExpedienteCategory,
+    deleteExpediente,
 } from "@/app/actions/expedientes";
 import { toast } from "sonner";
 
@@ -44,6 +56,10 @@ interface ExpedienteListProps {
 export function ExpedienteList({ expedientes, canManage, categories = [] }: ExpedienteListProps) {
     const [search, setSearch] = useState("");
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [expedienteToDelete, setExpedienteToDelete] = useState<any>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const router = useRouter();
 
     const filtered = expedientes.filter((e) => {
         const matchSearch =
@@ -61,6 +77,31 @@ export function ExpedienteList({ expedientes, canManage, categories = [] }: Expe
             window.location.reload();
         } catch (error: any) {
             toast.error(error.message || "Error al eliminar categoría");
+        }
+    };
+
+    const handleDeleteClick = (expediente: any) => {
+        setExpedienteToDelete(expediente);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!expedienteToDelete) return;
+        setIsDeleting(true);
+        try {
+            const result = await deleteExpediente(expedienteToDelete.id);
+            if (result.error) {
+                toast.error(result.error);
+            } else {
+                toast.success("Expediente eliminado correctamente");
+                router.refresh();
+            }
+        } catch (error: any) {
+            toast.error(error.message || "Error al eliminar expediente");
+        } finally {
+            setIsDeleting(false);
+            setDeleteDialogOpen(false);
+            setExpedienteToDelete(null);
         }
     };
 
@@ -195,6 +236,16 @@ export function ExpedienteList({ expedientes, canManage, categories = [] }: Expe
                                                     </Link>
                                                 </Button>
                                             )}
+                                            {canManage && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDeleteClick(expediente)}
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -203,6 +254,33 @@ export function ExpedienteList({ expedientes, canManage, categories = [] }: Expe
                     </TableBody>
                 </Table>
             </div>
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción no se puede deshacer. Se eliminarán todas las compras, entregas,
+                            recepciones, movimientos y transferencias asociados al expediente{" "}
+                            <strong>{expedienteToDelete?.number}</strong>.
+                            El stock se revertirá automáticamente.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleConfirmDelete();
+                            }}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? "Eliminando..." : "Eliminar"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

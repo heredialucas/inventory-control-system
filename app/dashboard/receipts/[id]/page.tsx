@@ -1,14 +1,17 @@
 import { getCurrentUser, hasPermission } from "@/lib/auth";
-import { getReceipt } from "@/app/actions/receipts";
+import { getReceipt, completeReceipt } from "@/app/actions/receipts";
+import { receiptService } from "@/services/receipt-service";
 import { UnauthorizedAccess } from "@/components/unauthorized-access";
 import { redirect, notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Plus, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Plus, Image as ImageIcon, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { revalidatePath } from "next/cache";
 
 export default async function ReceiptDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -20,6 +23,29 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
     const receipt = await getReceipt(id);
     if (!receipt) notFound();
 
+    // Get group-level status and items (all receipts sharing this receiptNumber)
+    const groupStatus = await receiptService.getReceiptGroupStatus(receipt.receiptNumber);
+    const groupItems = await receiptService.getGroupItems(receipt.receiptNumber);
+
+    // Aggregate items by productId, summing quantities
+    const aggregatedItems = Object.values(
+        groupItems.reduce<Record<string, { productId: string; name: string; sku: string; quantity: number }>>((acc, item) => {
+            if (!acc[item.productId]) acc[item.productId] = { productId: item.productId, name: item.name, sku: item.sku, quantity: 0 };
+            acc[item.productId].quantity += item.quantity;
+            return acc;
+        }, {})
+    );
+    const groupTotalAmount = groupItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
+    async function closeReceipt() {
+        "use server";
+        await completeReceipt(id);
+        revalidatePath(`/dashboard/receipts/${id}`);
+    }
+
+    const canManage = hasPermission(user, "receipts.manage");
+    const isGroupActive = !groupStatus.allCompleted;
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -30,21 +56,40 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
                         </Button>
                     </Link>
                     <div className="min-w-0">
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
-                            Remito {receipt.receiptNumber}
-                        </h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
+                                Remito {receipt.receiptNumber}
+                            </h1>
+                            <Badge variant={isGroupActive ? "outline" : "default"}>
+                                {isGroupActive ? "En Proceso" : "Completado"}
+                            </Badge>
+                        </div>
                         <p className="text-muted-foreground text-sm">
                             {format(new Date(receipt.date), "dd/MM/yyyy", { locale: es })}
                         </p>
                     </div>
                 </div>
-                <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
-                    <Button variant="outline" className="w-full sm:w-auto">
-                        <Plus className="mr-2 h-4 w-4" />
-                        <span className="sm:hidden">Editar</span>
-                        <span className="hidden sm:inline">Editar Remito</span>
-                    </Button>
-                </Link>
+                <div className="flex gap-2">
+                    {canManage && isGroupActive && (
+                        <form action={closeReceipt}>
+                            <Button
+                                variant="default"
+                                className="w-full sm:w-auto"
+                                title="Marca este remito como completamente recibido. Todos los ingresos bajo este número se marcarán como completados."
+                            >
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Marcar Completado
+                            </Button>
+                        </form>
+                    )}
+                    <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
+                        <Button variant="outline" className="w-full sm:w-auto">
+                            <Plus className="mr-2 h-4 w-4" />
+                            <span className="sm:hidden">Editar</span>
+                            <span className="hidden sm:inline">Editar Remito</span>
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -79,7 +124,7 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
                     <CardContent className="space-y-3 text-sm">
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Total Importe</span>
-                            <span className="font-bold">${Number(receipt.totalAmount).toLocaleString()}</span>
+                            <span className="font-bold">${groupTotalAmount.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Fecha de Carga</span>
@@ -94,7 +139,11 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">Mercadería Recibida</CardTitle>
-                    <CardDescription className="text-sm">Detalle de los artículos ingresados al stock</CardDescription>
+                    <CardDescription className="text-sm">
+                        {groupStatus.total > 1
+                            ? `${groupStatus.total} ingresos · ${aggregatedItems.length} productos (cantidades totales agrupadas)`
+                            : "Detalle de los artículos ingresados al stock"}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {/* Tabla para desktop */}
@@ -104,14 +153,14 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
                                 <TableRow>
                                     <TableHead>Producto</TableHead>
                                     <TableHead>SKU</TableHead>
-                                    <TableHead className="text-right">Cantidad</TableHead>
+                                    <TableHead className="text-right">Cantidad Total</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {receipt.items.map((item: any) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="font-medium">{item.product.name}</TableCell>
-                                        <TableCell className="text-muted-foreground">{item.product.sku}</TableCell>
+                                {aggregatedItems.map((item: any) => (
+                                    <TableRow key={item.productId}>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell className="text-muted-foreground">{item.sku}</TableCell>
                                         <TableCell className="text-right font-bold text-primary">{item.quantity}</TableCell>
                                     </TableRow>
                                 ))}
@@ -121,11 +170,11 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
 
                     {/* Cards para móvil */}
                     <div className="md:hidden space-y-3">
-                        {receipt.items.map((item: any) => (
-                            <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        {aggregatedItems.map((item: any) => (
+                            <div key={item.productId} className="flex items-center justify-between p-3 border rounded-lg">
                                 <div className="min-w-0">
-                                    <p className="font-medium truncate">{item.product.name}</p>
-                                    <p className="text-sm text-muted-foreground font-mono">{item.product.sku}</p>
+                                    <p className="font-medium truncate">{item.name}</p>
+                                    <p className="text-sm text-muted-foreground font-mono">{item.sku}</p>
                                 </div>
                                 <span className="font-bold text-primary shrink-0 ml-2">{item.quantity}</span>
                             </div>
