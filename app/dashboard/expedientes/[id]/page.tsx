@@ -91,9 +91,13 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                             </div>
                         </div>
                         <div>
-                            <p className="text-muted-foreground">Origen / Área</p>
-                            <p>{expediente.origin || "No especificado"}</p>
-                        </div>
+                                <p className="text-muted-foreground">Categoría</p>
+                                <p>{expediente.category?.name || "Sin categoría"}</p>
+                            </div>
+                            <div>
+                                <p className="text-muted-foreground">Origen / Área</p>
+                                <p>{expediente.origin || "No especificado"}</p>
+                            </div>
                         <div>
                             <p className="text-muted-foreground">Descripción</p>
                             <p className="whitespace-pre-wrap">{expediente.description || "Sin descripción"}</p>
