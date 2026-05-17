@@ -343,9 +343,9 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, warehouses, pro
                                         <TableHeader className="bg-muted/80">
                                             <TableRow>
                                                 <TableHead className="font-bold">Producto</TableHead>
-                                                <TableHead className="w-[100px] text-center font-bold">Cantidad</TableHead>
-                                                <TableHead className="w-[100px] text-center font-bold">Precio Unit.</TableHead>
-                                                <TableHead className="w-[100px] text-center font-bold">Total</TableHead>
+                                                <TableHead className="w-[180px] text-center font-bold">Cantidad</TableHead>
+                                                <TableHead className="w-[180px] text-center font-bold">Precio Unit.</TableHead>
+                                                <TableHead className="w-[180px] text-center font-bold">Total</TableHead>
                                                 <TableHead className="w-[50px]"></TableHead>
                                             </TableRow>
                                         </TableHeader>
