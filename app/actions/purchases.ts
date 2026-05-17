@@ -84,6 +84,11 @@ export async function updatePurchaseOrder(
         status?: PurchaseOrderStatus;
     }
 ) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "purchases.manage")) {
+        throw new Error("No tienes permisos para editar órdenes de compra");
+    }
+
     try {
         const order = await purchaseService.updatePurchaseOrder(id, data);
         revalidatePath("/dashboard/purchases");
@@ -115,6 +120,11 @@ export async function cancelPurchaseOrder(id: string) {
 }
 
 export async function submitPurchaseOrder(id: string) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "purchases.manage")) {
+        throw new Error("No tienes permisos para enviar órdenes de compra");
+    }
+
     try {
         const order = await purchaseService.submitPurchaseOrder(id);
         revalidatePath("/dashboard/purchases");
@@ -127,6 +137,11 @@ export async function submitPurchaseOrder(id: string) {
 }
 
 export async function getPurchaseStats() {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "purchases.view")) {
+        throw new Error("No tienes permisos para ver estadísticas de compras");
+    }
+
     try {
         return await purchaseService.getPurchaseStats();
     } catch (error) {

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getWarehouse, getWarehouseStock, getWarehouses } from "@/app/actions/warehouses";
 import { getExpedientes } from "@/app/actions/expedientes";
 import { WarehouseForm } from "@/components/warehouses/warehouse-form";
@@ -32,6 +32,7 @@ export default async function WarehouseDetailPage({
 
     const warehouses = await getWarehouses();
     const user = await getCurrentUser();
+    if (!user) redirect("/login");
     const stock = warehouse.stockItems || [];
 
     let expedientes: any[] = [];
@@ -41,7 +42,7 @@ export default async function WarehouseDetailPage({
         // user lacks expediente permissions
     }
 
-    const canManage = hasPermission(user!, "warehouses.manage");
+    const canManage = hasPermission(user, "warehouses.manage");
 
     const lowStockItems = stock.filter(
         (item) => item.quantity <= item.product.minStock
@@ -75,7 +76,7 @@ export default async function WarehouseDetailPage({
                             <TransferForm
                                 warehouses={warehouses}
                                 expedientes={expedientes}
-                                userId={user!.id}
+                                userId={user.id}
                                 defaultFromWarehouseId={warehouse.id}
                                 trigger={
                                     <Button variant="outline" className="w-full sm:w-auto">

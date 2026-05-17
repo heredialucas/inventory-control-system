@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 export default async function ExpedienteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "expedientes.view")) {
+    if (!user) {
         return <UnauthorizedAccess action="ver" resource="expediente" />;
     }
 

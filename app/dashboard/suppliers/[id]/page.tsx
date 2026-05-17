@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getSupplier } from "@/app/actions/suppliers";
 import { SupplierForm } from "@/components/suppliers/supplier-form";
 import { Button } from "@/components/ui/button";
@@ -37,10 +38,15 @@ export default async function SupplierDetailPage({
 }) {
     const { id } = await params;
     const supplier = await getSupplier(id);
+    const user = await getCurrentUser();
 
     if (!supplier) {
         notFound();
     }
+
+    if (!user) redirect("/login");
+
+    const canManage = hasPermission(user, "suppliers.manage");
 
     const purchaseOrders = supplier.purchaseOrders || [];
     const receipts = supplier.receipts || [];
@@ -67,7 +73,7 @@ export default async function SupplierDetailPage({
                     </div>
                 </div>
                 <div className="flex justify-end">
-                    <SupplierForm supplier={supplier} />
+                    {canManage && <SupplierForm supplier={supplier} />}
                 </div>
             </div>
 

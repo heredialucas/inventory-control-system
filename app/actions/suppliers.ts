@@ -128,6 +128,9 @@ export async function deleteSupplier(id: string) {
 }
 
 export async function getSupplierStats(id: string) {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("No autenticado");
+
     try {
         return await supplierService.getSupplierStats(id);
     } catch (error) {

@@ -1,7 +1,7 @@
 import { getSuppliers } from "@/app/actions/suppliers";
 import { getWarehouses } from "@/app/actions/warehouses";
 import { getProducts } from "@/app/actions/inventory";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { PurchaseOrderForm } from "@/components/purchases/purchase-form";
 import { redirect } from "next/navigation";
 import { getExpedientes } from "@/app/actions/expedientes";
@@ -15,6 +15,7 @@ export const metadata = {
 export default async function NewPurchaseOrderPage() {
     const user = await getCurrentUser();
     if (!user) redirect("/login");
+    if (!hasPermission(user, "purchases.manage")) redirect("/dashboard/purchases");
 
     const [suppliers, warehouses, products, expedientes, categories] = await Promise.all([
         getSuppliers(),

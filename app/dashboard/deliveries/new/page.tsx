@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { getInstitutions } from "@/app/actions/institutions";
 import { getWarehouses } from "@/app/actions/warehouses";
 import { DeliveryForm } from "@/components/deliveries/delivery-form";
@@ -8,6 +8,7 @@ import { getExpedientes } from "@/app/actions/expedientes";
 export default async function NewDeliveryPage() {
     const user = await getCurrentUser();
     if (!user) redirect("/login");
+    if (!hasPermission(user, "deliveries.manage")) redirect("/dashboard/deliveries");
 
     const [schools, warehouses, expedientes] = await Promise.all([
         getInstitutions(),

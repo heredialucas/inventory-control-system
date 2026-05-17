@@ -19,6 +19,9 @@ export async function getInstitutions() {
 }
 
 export async function getInstitution(id: string) {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("No autenticado");
+
     try {
         return await institutionService.getInstitution(id);
     } catch (error) {

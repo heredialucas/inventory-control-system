@@ -9,7 +9,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     const { id } = await params;
     const user = await getCurrentUser();
 
-    if (!user || !hasPermission(user, "inventory.view")) {
+    if (!user) {
         redirect("/dashboard");
     }
 
@@ -22,11 +22,13 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2 border-b pb-4">
-                <div className="mb-2">
-                    <Button variant="ghost" size="sm" asChild className="-ml-3 text-muted-foreground">
-                        <Link href="/dashboard/inventory">← Volver a ingresos</Link>
-                    </Button>
-                </div>
+                {hasPermission(user, "inventory.view") && (
+                    <div className="mb-2">
+                        <Button variant="ghost" size="sm" asChild className="-ml-3 text-muted-foreground">
+                            <Link href="/dashboard/inventory">← Volver a ingresos</Link>
+                        </Button>
+                    </div>
+                )}
                 <h1 className="text-3xl font-bold">{product.name}</h1>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className="font-mono bg-muted px-2 py-0.5 rounded">Código: {product.sku}</span>

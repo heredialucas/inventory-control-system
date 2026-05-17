@@ -107,6 +107,11 @@ export async function markAsDelivered(deliveryId: string, userId: string) {
 }
 
 export async function cancelDelivery(id: string) {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "deliveries.manage")) {
+        throw new Error("No tienes permisos para cancelar entregas");
+    }
+
     try {
         const delivery = await deliveryService.cancelDelivery(id);
         revalidatePath("/dashboard/deliveries");
@@ -121,6 +126,11 @@ export async function cancelDelivery(id: string) {
 }
 
 export async function getDeliveryStats() {
+    const user = await getCurrentUser();
+    if (!user || !hasPermission(user, "deliveries.view")) {
+        throw new Error("No tienes permisos para ver estadísticas de entregas");
+    }
+
     try {
         return await deliveryService.getDeliveryStats();
     } catch (error) {

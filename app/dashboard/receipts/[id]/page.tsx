@@ -16,7 +16,7 @@ import { revalidatePath } from "next/cache";
 export default async function ReceiptDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const user = await getCurrentUser();
-    if (!user || !hasPermission(user, "receipts.view")) {
+    if (!user) {
         return <UnauthorizedAccess action="ver" resource="recepción" />;
     }
 
@@ -50,11 +50,19 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3 sm:gap-4">
-                    <Link href="/dashboard/inventory" className="self-start sm:self-center mt-1 sm:mt-0">
-                        <Button variant="ghost" size="icon" className="shrink-0">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                    </Link>
+                    {receipt.expedienteId ? (
+                        <Link href={`/dashboard/expedientes/${receipt.expedienteId}`} className="self-start sm:self-center mt-1 sm:mt-0">
+                            <Button variant="ghost" size="icon" className="shrink-0">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                    ) : hasPermission(user, "inventory.view") ? (
+                        <Link href="/dashboard/inventory" className="self-start sm:self-center mt-1 sm:mt-0">
+                            <Button variant="ghost" size="icon" className="shrink-0">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                    ) : null}
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
@@ -82,13 +90,15 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
                             </Button>
                         </form>
                     )}
-                    <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
-                        <Button variant="outline" className="w-full sm:w-auto">
-                            <Plus className="mr-2 h-4 w-4" />
-                            <span className="sm:hidden">Editar</span>
-                            <span className="hidden sm:inline">Editar Remito</span>
-                        </Button>
-                    </Link>
+                    {canManage && (
+                        <Link href={`/dashboard/receipts/${receipt.id}/edit`}>
+                            <Button variant="outline" className="w-full sm:w-auto">
+                                <Plus className="mr-2 h-4 w-4" />
+                                <span className="sm:hidden">Editar</span>
+                                <span className="hidden sm:inline">Editar Remito</span>
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             </div>
 

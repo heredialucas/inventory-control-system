@@ -19,7 +19,8 @@ export async function getReceipts(filters?: { expedienteId?: string; purchaseOrd
 }
 
 export async function getReceipt(id: string) {
-    await verifyPermission("receipts.view");
+    const user = await getCurrentUser();
+    if (!user) throw new Error("No autenticado");
     const result = await receiptService.getReceipt(id);
     return serializePrisma(result);
 }
