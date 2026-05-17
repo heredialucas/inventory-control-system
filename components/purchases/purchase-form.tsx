@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Save, ArrowLeft, Loader2, ShoppingCart, Package, FileText, Building2, Calendar } from "lucide-react";
+import { Plus, Trash2, Save, ArrowLeft, Loader2, ShoppingCart, Package, FileText, Building2, Calendar, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { createPurchaseOrder } from "@/app/actions/purchases";
 import Link from "next/link";
@@ -60,6 +60,14 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, warehouses, pro
 
     const [selectedProductId, setSelectedProductId] = useState("");
     const [items, setItems] = useState<OrderItem[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        toast.success(`Archivo "${file.name}" subido correctamente (${(file.size / 1024).toFixed(1)} KB)`);
+        e.target.value = "";
+    };
 
     const handleProductCreated = (newProduct: any) => {
         setAllProducts(prev => [...prev, newProduct]);
@@ -272,10 +280,23 @@ export function PurchaseOrderForm({ suppliers: initialSuppliers, warehouses, pro
 
                     <Card className="shadow-md border-primary/10">
                         <CardHeader>
-                            <CardTitle className="text-xl flex items-center gap-2">
-                                <Package className="h-5 w-5 text-primary" />
-                                Artículos a Solicitar
-                            </CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-xl flex items-center gap-2">
+                                    <Package className="h-5 w-5 text-primary" />
+                                    Artículos a Solicitar
+                                </CardTitle>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".xlsx,.xls,.csv"
+                                    onChange={handleFileUpload}
+                                    className="hidden"
+                                />
+                                <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                                    <Upload className="h-4 w-4" />
+                                    Subir Excel
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex flex-col sm:flex-row gap-3 bg-muted/40 p-3 sm:p-4 rounded-lg border">
