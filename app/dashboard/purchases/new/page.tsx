@@ -18,7 +18,7 @@ export default async function NewPurchaseOrderPage() {
 
     const [suppliers, warehouses, products, expedientes, categories] = await Promise.all([
         getSuppliers(),
-        getWarehouses(),
+        getWarehouses("DEPOSIT"),
         getProducts(),
         getExpedientes({ status: "ABIERTO" }),
         inventoryService.getCategories(),

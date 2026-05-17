@@ -26,7 +26,7 @@ export default async function NewReceiptPage() {
     const [allOrders, rawProducts, warehouses, categories, expedientes, suppliers, receipts] = await Promise.all([
         getPurchaseOrders(),
         inventoryService.getAllProductsIncludingDeleted(),
-        getWarehouses(),
+        getWarehouses("DEPOSIT"),
         inventoryService.getCategories(),
         getExpedientes(),
         getSuppliers(),

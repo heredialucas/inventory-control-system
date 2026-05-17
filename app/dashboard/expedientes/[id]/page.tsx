@@ -226,82 +226,135 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
 
                     {/* Receipts Section */}
                     <div id="receipts" className="scroll-mt-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold flex items-center gap-2">
-                                <FileText className="h-5 w-5 text-primary" />
-                                Remitos de Recepción
-                                <Badge variant="secondary">{expediente.receipts.length}</Badge>
-                            </h3>
-                        </div>
-                        {expediente.receipts.length > 0 ? (
-                            <>
-                                <div className="hidden md:block rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Número</TableHead>
-                                                <TableHead>OC Relacionada</TableHead>
-                                                <TableHead>Tipo</TableHead>
-                                                <TableHead>Monto Total</TableHead>
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead className="text-right">Acciones</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {expediente.receipts.map((receipt) => (
-                                                <TableRow key={receipt.id}>
-                                                    <TableCell className="font-medium">{receipt.receiptNumber}</TableCell>
-                                                    <TableCell>{receipt.purchaseOrder?.orderNumber || "Directo"}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="secondary">
-                                                            {receipt.type === "PURCHASE" ? "COMPRA" : 
-                                                             receipt.type === "REINGRESO" ? "REINGRESO" : receipt.type}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(Number(receipt.totalAmount))}
-                                                    </TableCell>
-                                                    <TableCell>{format(new Date(receipt.date || receipt.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Link href={`/dashboard/receipts/${receipt.id}`}>
-                                                            <Button variant="ghost" size="sm">
-                                                                Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
-                                                            </Button>
-                                                        </Link>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                                <div className="md:hidden space-y-3">
-                                    {expediente.receipts.map((receipt) => (
-                                        <Card key={receipt.id}>
-                                            <CardContent className="p-4 space-y-2">
-                                                <div className="flex justify-between items-start">
-                                                    <span className="font-medium">{receipt.receiptNumber}</span>
-                                                    <Badge variant="secondary" className="shrink-0">
-                                                        {receipt.type === "PURCHASE" ? "COMPRA" : receipt.type === "REINGRESO" ? "REINGRESO" : receipt.type}
-                                                    </Badge>
-                                                </div>
-                                                <div className="text-sm text-muted-foreground">
-                                                    <p>OC: {receipt.purchaseOrder?.orderNumber || "Directo"}</p>
-                                                    <p>Monto: {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(Number(receipt.totalAmount))}</p>
-                                                    <p>Fecha: {format(new Date(receipt.date || receipt.createdAt), "dd/MM/yyyy", { locale: es })}</p>
-                                                </div>
-                                                <Link href={`/dashboard/receipts/${receipt.id}`}>
-                                                    <Button variant="ghost" size="sm" className="w-full mt-2">
-                                                        Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
-                                                    </Button>
-                                                </Link>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
-                            <p className="text-sm text-muted-foreground italic">No hay remitos de recepción vinculados.</p>
-                        )}
+                        {(() => {
+                            const groups: Record<string, any> = {};
+                            for (const r of expediente.receipts) {
+                                const key = r.receiptNumber;
+                                if (!groups[key]) {
+                                    groups[key] = {
+                                        receiptNumber: key,
+                                        receipts: [],
+                                        totalAmount: 0,
+                                        count: 0,
+                                        allCompleted: true,
+                                        latestDate: r.date || r.createdAt,
+                                        firstReceipt: r,
+                                    };
+                                }
+                                groups[key].receipts.push(r);
+                                groups[key].count++;
+                                groups[key].totalAmount += Number(r.totalAmount);
+                                if (r.status !== "COMPLETED") groups[key].allCompleted = false;
+                                if (new Date(r.date || r.createdAt) > new Date(groups[key].latestDate))
+                                    groups[key].latestDate = r.date || r.createdAt;
+                            }
+
+                            const sortedGroups = Object.values(groups).sort(
+                                (a, b) => new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime()
+                            );
+
+                            return (
+                                <>
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            <FileText className="h-5 w-5 text-primary" />
+                                            Remitos de Recepción
+                                            <Badge variant="secondary">{sortedGroups.length}</Badge>
+                                        </h3>
+                                    </div>
+                                    {sortedGroups.length > 0 ? (
+                                        <>
+                                            <div className="hidden md:block rounded-md border">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Número</TableHead>
+                                                            <TableHead>Ingresos</TableHead>
+                                                            <TableHead>OC Relacionada</TableHead>
+                                                            <TableHead>Tipo</TableHead>
+                                                            <TableHead>Monto Total</TableHead>
+                                                            <TableHead>Estado</TableHead>
+                                                            <TableHead>Fecha</TableHead>
+                                                            <TableHead className="text-right">Acciones</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {sortedGroups.map((group) => {
+                                                            const first = group.firstReceipt;
+                                                            return (
+                                                                <TableRow key={group.receiptNumber}>
+                                                                    <TableCell className="font-medium">{group.receiptNumber}</TableCell>
+                                                                    <TableCell>
+                                                                        <Badge variant="secondary">{group.count} ingreso{group.count !== 1 ? "s" : ""}</Badge>
+                                                                    </TableCell>
+                                                                    <TableCell>{first.purchaseOrder?.orderNumber || "Directo"}</TableCell>
+                                                                    <TableCell>
+                                                                        <Badge variant="secondary">
+                                                                            {first.type === "PURCHASE" ? "COMPRA" : 
+                                                                             first.type === "REINGRESO" ? "REINGRESO" : first.type}
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(group.totalAmount)}
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        <Badge variant={group.allCompleted ? "default" : "outline"}>
+                                                                            {group.allCompleted ? "Completado" : "En Proceso"}
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                    <TableCell>{format(new Date(group.latestDate), "dd/MM/yyyy", { locale: es })}</TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        <Link href={`/dashboard/receipts/${first.id}`}>
+                                                                            <Button variant="ghost" size="sm">
+                                                                                Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
+                                                                            </Button>
+                                                                        </Link>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            );
+                                                        })}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                            <div className="md:hidden space-y-3">
+                                                {sortedGroups.map((group) => {
+                                                    const first = group.firstReceipt;
+                                                    return (
+                                                        <Card key={group.receiptNumber}>
+                                                            <CardContent className="p-4 space-y-2">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div>
+                                                                        <span className="font-medium">{group.receiptNumber}</span>
+                                                                        <Badge variant="secondary" className="ml-2">
+                                                                            {group.count} ingreso{group.count !== 1 ? "s" : ""}
+                                                                        </Badge>
+                                                                    </div>
+                                                                    <Badge variant={group.allCompleted ? "default" : "outline"} className="shrink-0">
+                                                                        {group.allCompleted ? "Completado" : "En Proceso"}
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    <p>OC: {first.purchaseOrder?.orderNumber || "Directo"}</p>
+                                                                    <p>Monto: {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(group.totalAmount)}</p>
+                                                                    <p>Fecha: {format(new Date(group.latestDate), "dd/MM/yyyy", { locale: es })}</p>
+                                                                </div>
+                                                                <Link href={`/dashboard/receipts/${first.id}`}>
+                                                                    <Button variant="ghost" size="sm" className="w-full mt-2">
+                                                                        Ver detalle <ExternalLink className="ml-2 h-3 w-3" />
+                                                                    </Button>
+                                                                </Link>
+                                                            </CardContent>
+                                                        </Card>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground italic">No hay remitos de recepción vinculados.</p>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
 
                     <Separator />
