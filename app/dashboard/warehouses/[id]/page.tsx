@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { getWarehouse, getWarehouseStock } from "@/app/actions/warehouses";
+import { getWarehouse, getWarehouseStock, getWarehouses } from "@/app/actions/warehouses";
+import { getExpedientes } from "@/app/actions/expedientes";
 import { WarehouseForm } from "@/components/warehouses/warehouse-form";
 import { TransferForm } from "@/components/warehouses/transfer-form";
-import { getWarehouses } from "@/app/actions/warehouses";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,13 @@ export default async function WarehouseDetailPage({
     const warehouses = await getWarehouses();
     const user = await getCurrentUser();
     const stock = warehouse.stockItems || [];
+
+    let expedientes: any[] = [];
+    try {
+        expedientes = await getExpedientes({ status: "ABIERTO" });
+    } catch (e) {
+        // user lacks expediente permissions
+    }
 
     const canManage = hasPermission(user!, "warehouses.manage");
 
@@ -67,6 +74,7 @@ export default async function WarehouseDetailPage({
                         <>
                             <TransferForm
                                 warehouses={warehouses}
+                                expedientes={expedientes}
                                 userId={user!.id}
                                 defaultFromWarehouseId={warehouse.id}
                                 trigger={

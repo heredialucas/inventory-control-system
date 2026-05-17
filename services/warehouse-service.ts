@@ -343,7 +343,6 @@ export const warehouseService = {
     }) {
         const { fromWarehouseId, toWarehouseId, productId, quantity, userId, expedienteId, notes } = data;
 
-        // Validación
         if (fromWarehouseId === toWarehouseId) {
             throw new Error("Los depósitos de origen y destino deben ser diferentes");
         }
@@ -353,7 +352,6 @@ export const warehouseService = {
         }
 
         return await prisma.$transaction(async (tx) => {
-            // Verificar disponibilidad de stock en depósito origen
             const sourceStock = await tx.warehouseStock.findUnique({
                 where: {
                     warehouseId_productId: {
@@ -376,13 +374,29 @@ export const warehouseService = {
                     },
                 },
                 data: {
-                    quantity: {
-                        decrement: quantity,
-                    },
+                    quantity: { decrement: quantity },
                 },
             });
 
-            // Crear registro de transferencia PRIMERO para obtener el ID
+            // Agregar stock al depósito destino
+            await tx.warehouseStock.upsert({
+                where: {
+                    warehouseId_productId: {
+                        warehouseId: toWarehouseId,
+                        productId,
+                    },
+                },
+                create: {
+                    warehouseId: toWarehouseId,
+                    productId,
+                    quantity,
+                },
+                update: {
+                    quantity: { increment: quantity },
+                },
+            });
+
+            // Crear registro de transferencia (COMPLETED directamente)
             const transfer = await tx.warehouseTransfer.create({
                 data: {
                     fromWarehouseId,
@@ -392,16 +406,12 @@ export const warehouseService = {
                     userId,
                     expedienteId,
                     notes,
-                    status: "PENDING",
-                },
-                include: {
-                    fromWarehouse: true,
-                    toWarehouse: true,
-                    product: true,
+                    status: "COMPLETED",
+                    completedAt: new Date(),
                 },
             });
 
-            // Crear movimiento de stock para origen (OUT)
+            // Movimiento de salida desde origen
             await tx.stockMovement.create({
                 data: {
                     productId,
@@ -409,7 +419,22 @@ export const warehouseService = {
                     type: "OUT",
                     quantity,
                     userId,
-                    reason: `Transferencia a depósito (Transferencia pendiente)`,
+                    reason: `Transferencia a depósito completada`,
+                    sourceType: "TRANSFER",
+                    sourceId: transfer.id,
+                    expedienteId,
+                },
+            });
+
+            // Movimiento de entrada a destino
+            await tx.stockMovement.create({
+                data: {
+                    productId,
+                    warehouseId: toWarehouseId,
+                    type: "IN",
+                    quantity,
+                    userId,
+                    reason: `Transferencia desde depósito completada`,
                     sourceType: "TRANSFER",
                     sourceId: transfer.id,
                     expedienteId,
@@ -516,46 +541,92 @@ export const warehouseService = {
             });
 
             if (!transfer) throw new Error("Transferencia no encontrada");
-            if (transfer.status === "COMPLETED") {
-                throw new Error("No se puede cancelar una transferencia completada");
-            }
             if (transfer.status === "CANCELLED") {
                 throw new Error("La transferencia ya está cancelada");
             }
 
-            // Devolver stock al depósito origen
-            await tx.warehouseStock.update({
-                where: {
-                    warehouseId_productId: {
-                        warehouseId: transfer.fromWarehouseId,
+            if (transfer.status === "COMPLETED") {
+                // Reversión completa: descuenta del destino, devuelve al origen
+                await tx.warehouseStock.update({
+                    where: {
+                        warehouseId_productId: {
+                            warehouseId: transfer.toWarehouseId,
+                            productId: transfer.productId,
+                        },
+                    },
+                    data: {
+                        quantity: { decrement: transfer.quantity },
+                    },
+                });
+
+                await tx.warehouseStock.update({
+                    where: {
+                        warehouseId_productId: {
+                            warehouseId: transfer.fromWarehouseId,
+                            productId: transfer.productId,
+                        },
+                    },
+                    data: {
+                        quantity: { increment: transfer.quantity },
+                    },
+                });
+
+                await tx.stockMovement.create({
+                    data: {
                         productId: transfer.productId,
+                        warehouseId: transfer.toWarehouseId,
+                        type: "OUT",
+                        quantity: transfer.quantity,
+                        userId,
+                        reason: `Transferencia cancelada - stock retirado del destino`,
+                        sourceType: "TRANSFER",
+                        sourceId: transfer.id,
+                        expedienteId: transfer.expedienteId,
                     },
-                },
-                data: {
-                    quantity: {
-                        increment: transfer.quantity,
+                });
+
+                await tx.stockMovement.create({
+                    data: {
+                        productId: transfer.productId,
+                        warehouseId: transfer.fromWarehouseId,
+                        type: "IN",
+                        quantity: transfer.quantity,
+                        userId,
+                        reason: `Transferencia cancelada - stock devuelto al origen`,
+                        sourceType: "TRANSFER",
+                        sourceId: transfer.id,
+                        expedienteId: transfer.expedienteId,
                     },
-                },
-            });
+                });
+            } else {
+                // PENDING / IN_TRANSIT: solo devolver stock al origen
+                await tx.warehouseStock.update({
+                    where: {
+                        warehouseId_productId: {
+                            warehouseId: transfer.fromWarehouseId,
+                            productId: transfer.productId,
+                        },
+                    },
+                    data: {
+                        quantity: { increment: transfer.quantity },
+                    },
+                });
 
-            // Crear movimiento de stock para devolución (IN)
-            await tx.stockMovement.create({
-                data: {
-                    productId: transfer.productId,
-                    warehouseId: transfer.fromWarehouseId,
-                    type: "IN",
-                    quantity: transfer.quantity,
-                    userId,
-                    reason: `Transferencia cancelada - stock devuelto`,
-                    sourceType: "TRANSFER",
-                    sourceId: transfer.id,
-                    expedienteId: transfer.expedienteId,
-                },
-            });
+                await tx.stockMovement.create({
+                    data: {
+                        productId: transfer.productId,
+                        warehouseId: transfer.fromWarehouseId,
+                        type: "IN",
+                        quantity: transfer.quantity,
+                        userId,
+                        reason: `Transferencia cancelada - stock devuelto`,
+                        sourceType: "TRANSFER",
+                        sourceId: transfer.id,
+                        expedienteId: transfer.expedienteId,
+                    },
+                });
+            }
 
-
-
-            // Marcar transferencia como cancelada
             return await tx.warehouseTransfer.update({
                 where: { id: transferId },
                 data: {

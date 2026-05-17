@@ -250,12 +250,12 @@ export async function createTransfer(data: {
     }
 
     try {
-        const transfer = await warehouseService.createTransfer(data);
+        await warehouseService.createTransfer(data);
         revalidatePath("/dashboard/warehouses/transfers");
         revalidatePath(`/dashboard/warehouses/${data.fromWarehouseId}`);
         revalidatePath(`/dashboard/warehouses/${data.toWarehouseId}`);
         revalidatePath("/dashboard/warehouses");
-        return transfer;
+        return { success: true };
     } catch (error: any) {
         console.error("Error creating transfer:", error);
         throw new Error(error.message || "Error al crear transferencia");

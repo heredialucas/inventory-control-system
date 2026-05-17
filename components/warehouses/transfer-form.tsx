@@ -29,6 +29,7 @@ type Warehouse = {
     id: string;
     name: string;
     code: string;
+    type?: string;
 };
 
 type Product = {
@@ -128,7 +129,7 @@ export function TransferForm({ warehouses, expedientes = [], userId, defaultFrom
                         ...formData,
                         userId,
                     });
-                    toast.success("Transferencia creada exitosamente");
+                    toast.success("Transferencia realizada exitosamente");
                 }
 
                 setOpen(false);
@@ -178,7 +179,7 @@ export function TransferForm({ warehouses, expedientes = [], userId, defaultFrom
                                 <SelectContent>
                                     {warehouses.filter(w => w.id !== formData.toWarehouseId).map((warehouse) => (
                                         <SelectItem key={warehouse.id} value={warehouse.id}>
-                                            🔄 Transferir desde {warehouse.code}
+                                            {warehouse.code} - {warehouse.name}{warehouse.type === "OFFICE" ? " (Oficina)" : " (Depósito)"}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -200,7 +201,7 @@ export function TransferForm({ warehouses, expedientes = [], userId, defaultFrom
                                         .filter(w => w.id !== formData.fromWarehouseId)
                                         .map((warehouse) => (
                                             <SelectItem key={warehouse.id} value={warehouse.id}>
-                                                {warehouse.code} - {warehouse.name}
+                                                {warehouse.code} - {warehouse.name}{warehouse.type === "OFFICE" ? " (Oficina)" : " (Depósito)"}
                                             </SelectItem>
                                         ))}
                                 </SelectContent>

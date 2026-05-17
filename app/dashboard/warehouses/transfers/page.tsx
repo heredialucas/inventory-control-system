@@ -22,7 +22,12 @@ export default async function WarehouseTransfersPage() {
 
     const warehouses = await getWarehouses();
     const allTransfers = await getTransfers();
-    const expedientes = await getExpedientes({ status: "ABIERTO" });
+    let expedientes: any[] = [];
+    try {
+        expedientes = await getExpedientes({ status: "ABIERTO" });
+    } catch (e) {
+        // user lacks expediente permissions
+    }
 
     const pendingTransfers = allTransfers.filter((t) => t.status === "PENDING");
     const inTransitTransfers = allTransfers.filter((t) => t.status === "IN_TRANSIT");

@@ -13,17 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, ArrowRight, Check, Truck, X } from "lucide-react";
+import { ArrowRight, Check, Truck, X } from "lucide-react";
 import { toast } from "sonner";
-import { completeTransfer, cancelTransfer, markTransferInTransit } from "@/app/actions/warehouses";
+import { completeTransfer, cancelTransfer } from "@/app/actions/warehouses";
 import { TransferStatus } from "@prisma/client";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -97,18 +89,6 @@ export function TransferList({ transfers, userId, canManage = false }: TransferL
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
-    const handleMarkInTransit = (id: string) => {
-        startTransition(async () => {
-            try {
-                await markTransferInTransit(id);
-                toast.success("Transferencia marcada como en tránsito");
-                router.refresh();
-            } catch (error: any) {
-                toast.error(error.message || "Error al actualizar transferencia");
-            }
-        });
-    };
-
     const handleComplete = (id: string) => {
         if (!confirm("¿Marcar esta transferencia como completada?")) return;
 
@@ -124,7 +104,7 @@ export function TransferList({ transfers, userId, canManage = false }: TransferL
     };
 
     const handleCancel = (id: string) => {
-        if (!confirm("¿Cancelar esta transferencia? El stock será devuelto al depósito origen.")) return;
+        if (!confirm("¿Cancelar esta transferencia? El stock será revertido al depósito origen.")) return;
 
         startTransition(async () => {
             try {
@@ -216,68 +196,33 @@ export function TransferList({ transfers, userId, canManage = false }: TransferL
                                         {formatDistanceToNow(new Date(transfer.createdAt), { addSuffix: true, locale: es })}
                                     </TableCell>
                                     <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" disabled={isPending}>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                    <span className="sr-only">Acciones</span>
+                                        <div className="flex items-center gap-1">
+                                            {canManage && !isIngreso && transfer.status === "PENDING" && (
+                                                <>
+                                                    <Button variant="outline" size="sm" onClick={() => handleComplete(transfer.id)} disabled={isPending}>
+                                                        <Check className="h-3 w-3 mr-1" /> Completar
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => handleCancel(transfer.id)} disabled={isPending} className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                                                        <X className="h-3 w-3 mr-1" /> Cancelar
+                                                    </Button>
+                                                </>
+                                            )}
+                                            {canManage && !isIngreso && transfer.status === "IN_TRANSIT" && (
+                                                <>
+                                                    <Button variant="outline" size="sm" onClick={() => handleComplete(transfer.id)} disabled={isPending}>
+                                                        <Check className="h-3 w-3 mr-1" /> Completar
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => handleCancel(transfer.id)} disabled={isPending} className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                                                        <X className="h-3 w-3 mr-1" /> Cancelar
+                                                    </Button>
+                                                </>
+                                            )}
+                                            {canManage && !isIngreso && transfer.status === "COMPLETED" && (
+                                                <Button variant="outline" size="sm" onClick={() => handleCancel(transfer.id)} disabled={isPending} className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                                                    <X className="h-3 w-3 mr-1" /> Cancelar
                                                 </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-                                                {isIngreso ? (
-                                                    <DropdownMenuItem disabled>
-                                                        <Check className="mr-2 h-4 w-4" />
-                                                        Ingreso Completado
-                                                    </DropdownMenuItem>
-                                                ) : canManage ? (
-                                                    <>
-                                                        {transfer.status === "PENDING" && (
-                                                            <>
-                                                                <DropdownMenuItem onClick={() => handleMarkInTransit(transfer.id)}>
-                                                                    <Truck className="mr-2 h-4 w-4" />
-                                                                    Marcar En Tránsito
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleComplete(transfer.id)}>
-                                                                    <Check className="mr-2 h-4 w-4" />
-                                                                    Completar Transferencia
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    className="text-destructive"
-                                                                    onClick={() => handleCancel(transfer.id)}
-                                                                >
-                                                                    <X className="mr-2 h-4 w-4" />
-                                                                    Cancelar
-                                                                </DropdownMenuItem>
-                                                            </>
-                                                        )}
-                                                        {transfer.status === "IN_TRANSIT" && (
-                                                            <>
-                                                                <DropdownMenuItem onClick={() => handleComplete(transfer.id)}>
-                                                                    <Check className="mr-2 h-4 w-4" />
-                                                                    Completar Transferencia
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    className="text-destructive"
-                                                                    onClick={() => handleCancel(transfer.id)}
-                                                                >
-                                                                    <X className="mr-2 h-4 w-4" />
-                                                                    Cancelar
-                                                                </DropdownMenuItem>
-                                                            </>
-                                                        )}
-                                                        {(transfer.status === "COMPLETED" || transfer.status === "CANCELLED") && (
-                                                            <DropdownMenuItem disabled>No hay acciones disponibles</DropdownMenuItem>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <DropdownMenuItem disabled>Solo lectura</DropdownMenuItem>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                            )}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             );
@@ -353,69 +298,22 @@ export function TransferList({ transfers, userId, canManage = false }: TransferL
                                     )}
                                 </div>
 
-                                <div className="flex justify-end mt-4 pt-3 border-t">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" disabled={isPending}>
-                                                <MoreHorizontal className="h-4 w-4 mr-1" />
-                                                Acciones
+                                <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
+                                    {canManage && !isIngreso && (transfer.status === "PENDING" || transfer.status === "IN_TRANSIT") && (
+                                        <>
+                                            <Button variant="outline" size="sm" onClick={() => handleComplete(transfer.id)} disabled={isPending}>
+                                                <Check className="h-4 w-4 mr-1" /> Completar
                                             </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            {isIngreso ? (
-                                                <DropdownMenuItem disabled>
-                                                    <Check className="mr-2 h-4 w-4" />
-                                                    Ingreso Completado
-                                                </DropdownMenuItem>
-                                            ) : canManage ? (
-                                                <>
-                                                    {transfer.status === "PENDING" && (
-                                                        <>
-                                                            <DropdownMenuItem onClick={() => handleMarkInTransit(transfer.id)}>
-                                                                <Truck className="mr-2 h-4 w-4" />
-                                                                Marcar En Tránsito
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleComplete(transfer.id)}>
-                                                                <Check className="mr-2 h-4 w-4" />
-                                                                Completar Transferencia
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem
-                                                                className="text-destructive"
-                                                                onClick={() => handleCancel(transfer.id)}
-                                                            >
-                                                                <X className="mr-2 h-4 w-4" />
-                                                                Cancelar
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                    {transfer.status === "IN_TRANSIT" && (
-                                                        <>
-                                                            <DropdownMenuItem onClick={() => handleComplete(transfer.id)}>
-                                                                <Check className="mr-2 h-4 w-4" />
-                                                                Completar Transferencia
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem
-                                                                className="text-destructive"
-                                                                onClick={() => handleCancel(transfer.id)}
-                                                            >
-                                                                <X className="mr-2 h-4 w-4" />
-                                                                Cancelar
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                    {(transfer.status === "COMPLETED" || transfer.status === "CANCELLED") && (
-                                                        <DropdownMenuItem disabled>No hay acciones disponibles</DropdownMenuItem>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <DropdownMenuItem disabled>Solo lectura</DropdownMenuItem>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                            <Button variant="outline" size="sm" onClick={() => handleCancel(transfer.id)} disabled={isPending} className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                                                <X className="h-4 w-4 mr-1" /> Cancelar
+                                            </Button>
+                                        </>
+                                    )}
+                                    {canManage && !isIngreso && transfer.status === "COMPLETED" && (
+                                        <Button variant="outline" size="sm" onClick={() => handleCancel(transfer.id)} disabled={isPending} className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                                            <X className="h-4 w-4 mr-1" /> Cancelar
+                                        </Button>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
