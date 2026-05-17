@@ -43,6 +43,7 @@ interface ReceiptGroup {
     count: number;
     latestDate: Date;
     suppliers: string[];
+    completedAt: Date | null;
 }
 
 export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
@@ -89,11 +90,18 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                 count: 0,
                 latestDate: r.date,
                 suppliers: [],
+                completedAt: null,
             };
         }
         acc[key].receipts.push(r);
         acc[key].count++;
         if (r.status !== "COMPLETED") acc[key].allCompleted = false;
+        if (r.status === "COMPLETED") {
+            const completedAt = new Date(r.updatedAt);
+            if (!acc[key].completedAt || completedAt > acc[key].completedAt!) {
+                acc[key].completedAt = completedAt;
+            }
+        }
         if (new Date(r.date) > new Date(acc[key].latestDate)) acc[key].latestDate = r.date;
         const supplier = r.purchaseOrder?.supplier?.name || r.supplier?.name;
         if (supplier && !acc[key].suppliers.includes(supplier)) {
@@ -132,13 +140,14 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                             <TableHead>Estado</TableHead>
                             <TableHead>Proveedor</TableHead>
                             <TableHead>Fecha</TableHead>
+                            <TableHead>Llevar a Compras</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {sorted.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                                     No se encontraron remitos
                                 </TableCell>
                             </TableRow>
@@ -166,6 +175,21 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                                         <TableCell>{group.suppliers[0] || "N/A"}</TableCell>
                                         <TableCell>
                                             {format(new Date(group.latestDate), "dd/MM/yyyy", { locale: es })}
+                                        </TableCell>
+                                        <TableCell>
+                                            {group.allCompleted && group.completedAt ? (() => {
+                                                const deadline = new Date(group.completedAt!.getTime() + 3 * 24 * 60 * 60 * 1000);
+                                                const days = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                                if (days > 0) {
+                                                    return <span className="text-emerald-600 font-medium">Faltan {days} día{days !== 1 ? "s" : ""}</span>;
+                                                } else if (days === 0) {
+                                                    return <span className="text-amber-600 font-medium">Vence hoy</span>;
+                                                } else {
+                                                    return <span className="text-destructive font-medium">Atrasado {-days} día{-days !== 1 ? "s" : ""}</span>;
+                                                }
+                                            })() : (
+                                                <span className="text-muted-foreground">—</span>
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-2">
@@ -281,7 +305,7 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                                         </Badge>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                                    <div className="grid grid-cols-3 gap-4 text-sm mb-4">
                                         <div>
                                             <p className="text-muted-foreground">Ingresos</p>
                                             <p className="mt-1">{group.count}</p>
@@ -289,6 +313,24 @@ export function ReceiptList({ receipts, canManage }: ReceiptListProps) {
                                         <div>
                                             <p className="text-muted-foreground">Proveedor</p>
                                             <p className="mt-1">{group.suppliers[0] || "N/A"}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground">Llevar a Compras</p>
+                                            <p className="mt-1">
+                                                {group.allCompleted && group.completedAt ? (() => {
+                                                    const deadline = new Date(group.completedAt!.getTime() + 3 * 24 * 60 * 60 * 1000);
+                                                    const days = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                                    if (days > 0) {
+                                                        return <span className="text-emerald-600 font-medium">Faltan {days} día{days !== 1 ? "s" : ""}</span>;
+                                                    } else if (days === 0) {
+                                                        return <span className="text-amber-600 font-medium">Vence hoy</span>;
+                                                    } else {
+                                                        return <span className="text-destructive font-medium">Atrasado {-days} día{-days !== 1 ? "s" : ""}</span>;
+                                                    }
+                                                })() : (
+                                                    <span className="text-muted-foreground">—</span>
+                                                )}
+                                            </p>
                                         </div>
                                     </div>
 
