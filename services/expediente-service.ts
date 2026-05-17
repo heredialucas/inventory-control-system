@@ -55,6 +55,7 @@ export const expedienteService = {
         return await prisma.expediente.findMany({
             where,
             include: {
+                category: true,
                 _count: {
                     select: {
                         purchases: true,
@@ -75,6 +76,7 @@ export const expedienteService = {
         return await prisma.expediente.findUnique({
             where: { id },
             include: {
+                category: true,
                 purchases: {
                     include: {
                         supplier: true,
