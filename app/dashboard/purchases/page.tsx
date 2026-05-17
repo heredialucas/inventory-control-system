@@ -20,8 +20,6 @@ import { es } from "date-fns/locale";
 
 const getPurchaseOrderStatusLabel = (status: string) => {
     switch (status) {
-        case "DRAFT":
-            return "Borrador";
         case "RECEIVED":
             return "Confirmada";
         case "CANCELLED":
@@ -37,7 +35,6 @@ export const metadata = {
 };
 
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    DRAFT: "secondary",
     RECEIVED: "default",
     CANCELLED: "destructive",
 };
@@ -50,7 +47,6 @@ export default async function PurchasesPage() {
     }
 
     const allOrders = await getPurchaseOrders();
-    const draftOrders = allOrders.filter((o) => o.status === "DRAFT");
     const receivedOrders = allOrders.filter((o) => o.status === "RECEIVED");
     const canManage = hasPermission(user, "purchases.manage");
 
@@ -77,16 +73,12 @@ export default async function PurchasesPage() {
                 <div className="overflow-x-auto">
                     <TabsList className="inline-flex w-max">
                         <TabsTrigger value="all">Todas ({allOrders.length})</TabsTrigger>
-                        <TabsTrigger value="draft">Borrador ({draftOrders.length})</TabsTrigger>
                         <TabsTrigger value="received">Confirmadas ({receivedOrders.length})</TabsTrigger>
                     </TabsList>
                 </div>
 
                 <TabsContent value="all" className="mt-6">
                     <PurchaseOrderTable orders={allOrders} />
-                </TabsContent>
-                <TabsContent value="draft" className="mt-6">
-                    <PurchaseOrderTable orders={draftOrders} />
                 </TabsContent>
                 <TabsContent value="received" className="mt-6">
                     <PurchaseOrderTable orders={receivedOrders} />

@@ -20,8 +20,6 @@ import { es } from "date-fns/locale";
 
 const getPurchaseOrderStatusLabel = (status: string) => {
     switch (status) {
-        case "DRAFT":
-            return "Borrador";
         case "RECEIVED":
             return "Confirmada";
         case "CANCELLED":
@@ -56,7 +54,6 @@ export default async function PurchaseOrderDetailPage({
         redirect(`/dashboard/purchases/${id}`); // Refresh page
     }
 
-    const isDraft = order.status === "DRAFT";
     const isCancelled = order.status === "CANCELLED";
     const canManage = hasPermission(user, "purchases.manage");
 
@@ -81,19 +78,11 @@ export default async function PurchaseOrderDetailPage({
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2 sm:ml-auto">
-                    {canManage && isDraft && (
+                    {canManage && !isCancelled && (
                         <form action={cancelOrder}>
                             <Button variant="destructive" size="sm" className="w-full sm:w-auto">
                                 <XCircle className="mr-2 h-4 w-4" />
                                 <span>Cancelar Orden</span>
-                            </Button>
-                        </form>
-                    )}
-                    {canManage && !isDraft && !isCancelled && (
-                        <form action={cancelOrder}>
-                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                                <XCircle className="mr-2 h-4 w-4" />
-                                <span>Cancelar</span>
                             </Button>
                         </form>
                     )}

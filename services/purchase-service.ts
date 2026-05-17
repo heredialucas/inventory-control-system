@@ -134,6 +134,7 @@ export const purchaseService = {
                 ...orderData,
                 orderNumber,
                 totalAmount,
+                status: "RECEIVED",
                 expedienteId,
                 items: {
                     create: items,

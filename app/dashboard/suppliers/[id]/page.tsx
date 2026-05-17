@@ -20,8 +20,6 @@ import { es } from "date-fns/locale";
 
 const getPurchaseOrderStatusLabel = (status: string) => {
     switch (status) {
-        case "DRAFT":
-            return "Borrador";
         case "RECEIVED":
             return "Recibida";
         case "CANCELLED":
