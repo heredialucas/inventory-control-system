@@ -19,6 +19,30 @@ import {
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 
+const getPurchaseOrderStatusLabel = (status: string) => {
+    switch (status) {
+        case "RECEIVED":
+            return "Confirmada";
+        case "CANCELLED":
+            return "Cancelada";
+        default:
+            return status;
+    }
+};
+
+const getDeliveryStatusLabel = (status: string) => {
+    switch (status) {
+        case "DRAFT":
+            return "En Camino";
+        case "DELIVERED":
+            return "Entregado";
+        case "CANCELLED":
+            return "Cancelado";
+        default:
+            return status;
+    }
+};
+
 export default async function ExpedienteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const user = await getCurrentUser();
@@ -185,7 +209,7 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                                                     <TableCell>{purchase.supplier?.name || "N/A"}</TableCell>
                                                     <TableCell>{format(new Date(purchase.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline">{purchase.status}</Badge>
+                                                        <Badge variant="outline">{getPurchaseOrderStatusLabel(purchase.status)}</Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <Link href={`/dashboard/purchases/${purchase.id}`}>
@@ -205,7 +229,7 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                                             <CardContent className="p-4 space-y-2">
                                                 <div className="flex justify-between items-start">
                                                     <span className="font-medium">{purchase.orderNumber}</span>
-                                                    <Badge variant="outline" className="shrink-0">{purchase.status}</Badge>
+                                                    <Badge variant="outline" className="shrink-0">{getPurchaseOrderStatusLabel(purchase.status)}</Badge>
                                                 </div>
                                                 <div className="text-sm text-muted-foreground">
                                                     <p>Proveedor: {purchase.supplier?.name || "N/A"}</p>
@@ -392,7 +416,7 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                                                     <TableCell>{delivery.institution?.name || "N/A"}</TableCell>
                                                     <TableCell>{delivery.deliveryDate ? format(new Date(delivery.deliveryDate), "dd/MM/yyyy", { locale: es }) : format(new Date(delivery.createdAt), "dd/MM/yyyy", { locale: es })}</TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline">{delivery.status}</Badge>
+                                                        <Badge variant="outline">{getDeliveryStatusLabel(delivery.status)}</Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <Link href={`/dashboard/deliveries/${delivery.id}`}>
@@ -412,7 +436,7 @@ export default async function ExpedienteDetailsPage({ params }: { params: Promis
                                             <CardContent className="p-4 space-y-2">
                                                 <div className="flex justify-between items-start">
                                                     <span className="font-medium">{delivery.deliveryNumber}</span>
-                                                    <Badge variant="outline" className="shrink-0">{delivery.status}</Badge>
+                                                    <Badge variant="outline" className="shrink-0">{getDeliveryStatusLabel(delivery.status)}</Badge>
                                                 </div>
                                                 <div className="text-sm text-muted-foreground">
                                                     <p>Institución: {delivery.institution?.name || "N/A"}</p>
