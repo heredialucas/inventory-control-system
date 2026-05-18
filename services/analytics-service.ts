@@ -215,6 +215,9 @@ export const analyticsService = {
                 createdAt: {
                     gte: startDate,
                 },
+                sourceType: {
+                    not: "TRANSFER",
+                },
             },
             _sum: {
                 quantity: true,
