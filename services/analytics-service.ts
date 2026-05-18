@@ -79,8 +79,9 @@ export const analyticsService = {
             }),
         ]);
 
-        // Calculate total stock value
+        // Calculate total stock value (only items with stock > 0)
         const warehouseStock = await prisma.warehouseStock.findMany({
+            where: { quantity: { gt: 0 } },
             include: {
                 product: {
                     select: { price: true },
@@ -111,6 +112,7 @@ export const analyticsService = {
      */
     async getStockByCategory() {
         const warehouseStock = await prisma.warehouseStock.findMany({
+            where: { quantity: { gt: 0 } },
             include: {
                 product: {
                     include: { category: true },
@@ -118,21 +120,23 @@ export const analyticsService = {
             },
         });
 
-        const byCategory: Record<string, { productCount: number; totalStock: number; totalValue: number }> = {};
+        const byCategory: Record<string, { products: Set<string>; totalStock: number; totalValue: number }> = {};
 
         for (const ws of warehouseStock) {
             const catName = ws.product.category?.name || "Sin categoría";
             if (!byCategory[catName]) {
-                byCategory[catName] = { productCount: 0, totalStock: 0, totalValue: 0 };
+                byCategory[catName] = { products: new Set(), totalStock: 0, totalValue: 0 };
             }
-            byCategory[catName].productCount += 1;
+            byCategory[catName].products.add(ws.productId);
             byCategory[catName].totalStock += ws.quantity;
             byCategory[catName].totalValue += ws.quantity * Number(ws.product.price || 0);
         }
 
         return Object.entries(byCategory).map(([categoryName, data]) => ({
             categoryName,
-            ...data,
+            productCount: data.products.size,
+            totalStock: data.totalStock,
+            totalValue: data.totalValue,
         }));
     },
 
@@ -144,6 +148,7 @@ export const analyticsService = {
             where: { isActive: true },
             include: {
                 stockItems: {
+                    where: { quantity: { gt: 0 } },
                     include: {
                         product: {
                             select: {
