@@ -46,8 +46,8 @@ const getDeliveryStatusLabel = (status: string) => {
 export default async function ExpedienteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const user = await getCurrentUser();
-    if (!user) {
-        return <UnauthorizedAccess action="ver" resource="expediente" />;
+    if (!user || !hasPermission(user, "expedientes.view")) {
+        return <UnauthorizedAccess action="ver" resource="expedientes" />;
     }
 
     const expediente = await getExpediente(id);

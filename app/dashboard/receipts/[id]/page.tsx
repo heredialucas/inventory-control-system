@@ -50,7 +50,7 @@ export default async function ReceiptDetailsPage({ params }: { params: Promise<{
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3 sm:gap-4">
-                    {receipt.expedienteId ? (
+                    {receipt.expedienteId && hasPermission(user, "expedientes.view") ? (
                         <Link href={`/dashboard/expedientes/${receipt.expedienteId}`} className="self-start sm:self-center mt-1 sm:mt-0">
                             <Button variant="ghost" size="icon" className="shrink-0">
                                 <ArrowLeft className="h-4 w-4" />
